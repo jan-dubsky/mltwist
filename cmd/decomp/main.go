@@ -2,6 +2,8 @@ package main
 
 import (
 	"decomp/internal/executable"
+	"decomp/internal/parser"
+	"decomp/internal/riscv"
 	"fmt"
 	"os"
 )
@@ -19,6 +21,11 @@ func run() error {
 
 	fmt.Printf("Entrypoint: 0x%x\n", exec.Entrypoint)
 	fmt.Printf("Bytes: %b\n", exec.Bytes(exec.Entrypoint, 4))
+
+	_, err = parser.Parse(exec.Entrypoint, &exec, &riscv.ParsingStrategy{})
+	if err != nil {
+		return fmt.Errorf("instruction parsing failed: %w", err)
+	}
 
 	return nil
 }
