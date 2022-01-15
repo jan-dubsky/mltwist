@@ -46,7 +46,7 @@ func opcode17(high byte, mid byte, low byte) opcode.Opcode {
 	}
 }
 
-var known = []*instr{
+var arithm32 = []*instr{
 	{
 		name:   "lui",
 		opcode: opcode7(0b0110111),
@@ -202,3 +202,123 @@ var known = []*instr{
 		opcode: opcode10(0b111, 0b1110011),
 	},
 }
+
+var arithm64 = []*instr{
+	{
+		name:   "lwu",
+		opcode: opcode10(0b110, 0b0000011),
+	}, {
+		name:   "ld",
+		opcode: opcode10(0b011, 0b0000011),
+	}, {
+		name:   "sd",
+		opcode: opcode10(0b011, 0b0100011),
+	}, {
+		name:   "slli",
+		opcode: opcode17(0b0000000, 0b001, 0b0010011),
+	}, {
+		name:   "srli",
+		opcode: opcode17(0b0000000, 0b101, 0b0010011),
+	}, {
+		name:   "srai",
+		opcode: opcode17(0b010000, 0b101, 0b0010011),
+	}, {
+		name:   "addiw",
+		opcode: opcode10(0b000, 0b0011011),
+	}, {
+		name:   "slliw",
+		opcode: opcode17(0b0000000, 0b001, 0b0011011),
+	}, {
+		name:   "srliw",
+		opcode: opcode17(0b0000000, 0b101, 0b0011011),
+	}, {
+		name:   "sraiw",
+		opcode: opcode17(0b0100000, 0b101, 0b0011011),
+	}, {
+		name:   "addw",
+		opcode: opcode17(0b0000000, 0b000, 0b0111011),
+	}, {
+		name:   "subw",
+		opcode: opcode17(0b0100000, 0b000, 0b0111011),
+	}, {
+		name:   "sllw",
+		opcode: opcode17(0b0000000, 0b001, 0b0111011),
+	}, {
+		name:   "srlw",
+		opcode: opcode17(0b0000000, 0b101, 0b0111011),
+	}, {
+		name:   "sraw",
+		opcode: opcode17(0b0100000, 0b101, 0b0111011),
+	},
+}
+
+var mul32 = []*instr{
+	{
+		name:   "mul",
+		opcode: opcode17(0b0000001, 0b000, 0b0110011),
+	}, {
+		name:   "mulh",
+		opcode: opcode17(0b0000001, 0b001, 0b0110011),
+	}, {
+		name:   "mulhsu",
+		opcode: opcode17(0b0000001, 0b010, 0b0110011),
+	}, {
+		name:   "mulhu",
+		opcode: opcode17(0b0000001, 0b011, 0b0110011),
+	}, {
+		name:   "div",
+		opcode: opcode17(0b0000001, 0b100, 0b0110011),
+	}, {
+		name:   "divu",
+		opcode: opcode17(0b0000001, 0b101, 0b0110011),
+	}, {
+		name:   "rem",
+		opcode: opcode17(0b0000001, 0b110, 0b0110011),
+	}, {
+		name:   "remu",
+		opcode: opcode17(0b0000001, 0b111, 0b0110011),
+	},
+}
+
+var mul64 = []*instr{
+	{
+		name:   "mulw",
+		opcode: opcode17(0b0000001, 0b000, 0b0111011),
+	}, {
+		name:   "divw",
+		opcode: opcode17(0b0000001, 0b100, 0b0111011),
+	}, {
+		name:   "divuw",
+		opcode: opcode17(0b0000001, 0b101, 0b0111011),
+	}, {
+		name:   "remw",
+		opcode: opcode17(0b0000001, 0b110, 0b0111011),
+	}, {
+		name:   "remuw",
+		opcode: opcode17(0b0000001, 0b111, 0b0111011),
+	},
+}
+
+func mergeInstructions(arrays ...[]*instr) []*instr {
+	length := 0
+	for _, a := range arrays {
+		length += len(a)
+	}
+
+	merged := make([]*instr, 0, length)
+	for _, a := range arrays {
+		merged = append(merged, a...)
+	}
+
+	return merged
+}
+
+var (
+	known32 = mergeInstructions(arithm32, mul32)
+	known64 = mergeInstructions(
+		arithm32,
+		arithm64,
+		mul32,
+		mul64,
+	)
+)

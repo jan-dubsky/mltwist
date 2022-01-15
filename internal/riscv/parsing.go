@@ -27,8 +27,8 @@ func (*ParsingStrategy) Parse(bytes []byte) (instruction.Instruction, error) {
 }
 
 var decoder = func() *opcode.Decoder {
-	getters := make([]opcode.OpcodeGetter, len(known))
-	for i, ins := range known {
+	getters := make([]opcode.OpcodeGetter, len(known32))
+	for i, ins := range known32 {
 		getters[i] = ins
 	}
 
