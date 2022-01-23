@@ -20,13 +20,25 @@ func newHashableOpcode(o opcode.Opcode) hashableOpcode {
 	}
 }
 
-func assertValid(t testing.TB, instrs ...*instr) {
+func (i instructionOpcode) Validate() error {
+	if i.inputRegCnt > 2 {
+		return fmt.Errorf("too many input registers: %d", i.inputRegCnt)
+	}
+
+	if err := i.Opcode().Validate(); err != nil {
+		return fmt.Errorf("invalid opcode definition: %w", err)
+	}
+
+	return nil
+}
+
+func assertValid(t testing.TB, instrs ...*instructionOpcode) {
 	for _, ins := range instrs {
-		require.NoError(t, ins.Opcode().Validate())
+		require.NoError(t, ins.Validate())
 	}
 }
 
-func assertUnique(t testing.TB, instrs ...*instr) {
+func assertUnique(t testing.TB, instrs ...*instructionOpcode) {
 	opcodeSet := make(map[hashableOpcode]struct{}, len(known32))
 	for i, ins := range instrs {
 		o := ins.Opcode()

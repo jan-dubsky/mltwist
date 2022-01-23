@@ -22,7 +22,7 @@ func (*ParsingStrategy) Parse(bytes []byte) (instruction.Instruction, error) {
 	return instruction.Instruction{
 		ByteLen: instrLen,
 		Type:    instruction.TypeAritm,
-		Details: *found.(*instr),
+		Details: *found.(*instructionOpcode),
 	}, nil
 }
 

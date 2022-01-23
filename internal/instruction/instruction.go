@@ -5,6 +5,12 @@ type Instruction struct {
 	ByteLen     uint64
 	JumpTargets []Address
 
+	InputMemory   []Address
+	InputRegistry []Register
+
+	OutputMemory   []Address
+	OutputRegistry []Register
+
 	Details PlatformDetails
 }
 
