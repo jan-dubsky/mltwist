@@ -1,5 +1,7 @@
 package riscv
 
+import "fmt"
+
 // immType represents one of 6 potential RISC V encodings of an immediate value
 // in an instruction opcode.
 //
@@ -81,54 +83,65 @@ const (
 	// of the specification this allows to decrease hardware complexity as
 	// in all opcodes the 31 bit is the sign bit.
 	immTypeJ
-
-	// immTypeISh32 is an instruction opcode preudo-format which we defined
-	// ourselves - it's not listed in the RISC V specification). This format
-	// is a modification of immTypeI used to encode bit shift instructions
-	// with bit shift encoded in an immediate value of the opcode for 32 bit
-	// registers.
-	//
-	// This format is standard immTypeI, but as bit shift of more than
-	// number of bits in a register width does not make sense, the immediate
-	// value is limited to as many bits to express XLEN (5 for 32 bit XLEN).
-	// All other bits of immediate value (but one - see below) are reserved.
-	//
-	// Moreover, the encoding of logical and arithmetic shift opcodes differ
-	// just by bit [30] of the opcode, which in I type instruction encoding
-	// represents 10th bit of an immediate value. This style of encoding is
-	// very similar to a way how R type opcodes encode func7 part of opcode,
-	// but it differs because there is no immediate value in R type opcode
-	// format. In this pseudo-format, there is still an immediate value
-	// encoded, there are just not all 12 bits of immediate used for an
-	// immediate. Instead, some of them are reserved and some of them are
-	// used to encode a part of instruction opcode.
-	immTypeISh32
-
-	// immTypeISh64 is an instruction opcode preudo-format which we defined
-	// ourselves - it's not listed in the RISC V specification). This format
-	// is a modification of immTypeI used to encode bit shift instructions
-	// with bit shift encoded in an immediate value of the opcode for 64 bit
-	// registers.
-	//
-	// This format is standard immTypeI, but as bit shift of more than
-	// number of bits in a register width does not make sense, the immediate
-	// value is limited to as many bits to express XLEN (6 for 64 bit XLEN).
-	// All other bits of immediate value (but one - see below) are reserved.
-	//
-	// Moreover, the encoding of logical and arithmetic shift opcodes differ
-	// just by bit [30] of the opcode, which in I type instruction encoding
-	// represents 10th bit of an immediate value. This style of encoding is
-	// very similar to a way how R type opcodes encode func7 part of opcode,
-	// but it differs because there is no immediate value in R type opcode
-	// format. In this pseudo-format, there is still an immediate value
-	// encoded, there are just not all 12 bits of immediate used for an
-	// immediate. Instead, some of them are reserved and some of them are
-	// used to encode a part of instruction opcode.
-	immTypeISh64
 )
 
-func parseImmediate(tp immType, b []byte) {
-	assertOpcodeLen(b)
+func parseBitRange(b InstrBytes, begin uint8, end uint8) uint32 {
+	value := b.uint32()
+	endMask := (uint32(1) << end) - 1
+	return (value & endMask) >> begin
+}
 
-	// FIXME:
+func signExtend(unsigned uint32, signBit uint8) int32 {
+	if unsigned >= uint32(1)<<31 {
+		panic(fmt.Sprintf(
+			"invalid unsigned value for sign extension in bit %d: 0x%x",
+			signBit, unsigned))
+	}
+
+	if signBitMask := uint32(1) << signBit; (unsigned & signBitMask) == 0 {
+		return int32(unsigned)
+	}
+
+	mask := -(int32(1) << (signBit + 1))
+	return int32(unsigned) | mask
+}
+
+func (t immType) parseValue(b InstrBytes) (int32, bool) {
+	switch t {
+	case immTypeR:
+		return 0, false
+	case immTypeI:
+		val := signExtend(parseBitRange(b, 20, 32), 11)
+		return val, true
+	case immTypeS:
+		low := parseBitRange(b, 7, 12)
+		high := parseBitRange(b, 25, 32)
+		val := signExtend((high)<<5|low, 11)
+		return val, true
+	case immTypeB:
+		first := parseBitRange(b, 8, 12)
+		second := parseBitRange(b, 25, 31)
+		third := parseBitRange(b, 7, 8)
+		sign := parseBitRange(b, 31, 32)
+
+		// Bit [0] is set to 0 be hardware.
+		unsigned := (first << 1) | (second << 5) | (third << 11) | (sign << 12)
+		val := signExtend(unsigned, 12)
+		return val, true
+	case immTypeU:
+		unsigned := parseBitRange(b, 12, 32)
+		return int32(unsigned << 12), true
+	case immTypeJ:
+		first := parseBitRange(b, 21, 31)
+		second := parseBitRange(b, 20, 21)
+		third := parseBitRange(b, 12, 20)
+		sign := parseBitRange(b, 31, 32)
+
+		// Bit [0] is set to 0 be hardware.
+		unsigned := (first << 1) | (second << 11) | (third << 12) | (sign << 20)
+		val := signExtend(unsigned, 20)
+		return val, true
+	default:
+		panic(fmt.Sprintf("unknown immediate type: %v", t))
+	}
 }

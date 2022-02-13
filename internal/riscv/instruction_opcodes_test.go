@@ -51,30 +51,23 @@ func assertUniqueOpcode(t testing.TB, instrs ...*instructionOpcode) {
 	}
 }
 
+func assertUniqueNames(t testing.TB, instrs ...*instructionOpcode) {
+	m := make(map[string]*instructionOpcode, len(instrs))
+	for _, ins := range instrs {
+		_, ok := m[ins.name]
+		require.False(t, ok)
+		m[ins.name] = ins
+	}
+}
+
 func TestOpcodes32(t *testing.T) {
 	assertValidOpcode(t, known32...)
 	assertUniqueOpcode(t, known32...)
+	assertUniqueNames(t, known32...)
 }
 
 func TestOpcodes64(t *testing.T) {
 	assertValidOpcode(t, known64...)
 	assertUniqueOpcode(t, known64...)
+	assertUniqueNames(t, known64...)
 }
-
-func instructionNameMap(instrs []*instructionOpcode) map[string]*instructionOpcode {
-	m := make(map[string]*instructionOpcode, len(instrs))
-	for i, ins := range instrs {
-		if _, ok := m[ins.name]; ok {
-			panic(fmt.Sprintf("duplicate instruction at %d/%d: %s",
-				i, len(instrs), ins.name))
-		}
-		m[ins.name] = ins
-	}
-
-	return m
-}
-
-var (
-	instrMap32 = instructionNameMap(known32)
-	instrMap64 = instructionNameMap(known64)
-)

@@ -18,25 +18,42 @@ package instruction
 type Type uint64
 
 const (
-	TypeMov Type = 1 << iota
-	TypeAritm
+	TypeAritm Type = 1 << iota
 	// TypeJump represents an instruction type which execution will
 	// unconditionally modify the instruction pointer. In other words, if an
 	// instruction i is a jump instruction, it will never happen that
 	// execution would follow to instruction offset(i)+len(i), as I will
 	// jump elsewhere.
+	//
+	// Register move instruction is also considered an arithmetic
+	// instruction.
 	TypeJump
+	// TypeCJump represents a conditional jump. In other words a jump which
+	// might or might not happen based on a runtime condition.
 	TypeCJump
+	// TypeJumpDyn represents a jump to dynamic value (value from either
+	// register or memory). In other words, it's any jump which target
+	// cannot (in generic case) be identified using any sort of static
+	// analysis.
+	TypeJumpDyn
+	// TypeLoad describes an instruction which loads some sort of
+	// information from a memory.
 	TypeLoad
+	// TypeStore describes an instruction which stores some sort of
+	// information into a memory.
 	TypeStore
+	// TypeMemOrder is any instruction which enforces memory ordering. An
+	// example of such instructions are for example memory fences.
 	TypeMemOrder
 	TypeCPUStateChange
 	TypeSyscall
 )
 
-func (t Type) Mov() bool   { return t&TypeMov != 0 }
-func (t Type) Aritm() bool { return t&TypeAritm != 0 }
-func (t Type) Jump() bool  { return t&TypeJump != 0 }
-func (t Type) CJump() bool { return t&TypeCJump != 0 }
-func (t Type) Load() bool  { return t&TypeLoad != 0 }
-func (t Type) Store() bool { return t&TypeStore != 0 }
+func (t Type) Aritm() bool    { return t&TypeAritm != 0 }
+func (t Type) Jump() bool     { return t&TypeJump != 0 }
+func (t Type) CJump() bool    { return t&TypeCJump != 0 }
+func (t Type) JumpDyn() bool  { return t&TypeJumpDyn != 0 }
+func (t Type) Load() bool     { return t&TypeLoad != 0 }
+func (t Type) Store() bool    { return t&TypeStore != 0 }
+func (t Type) MemOrder() bool { return t&TypeMemOrder != 0 }
+func (t Type) Syscall() bool  { return t&TypeSyscall != 0 }

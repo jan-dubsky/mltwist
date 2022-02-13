@@ -13,16 +13,21 @@ type ParsingStrategy struct{}
 func (*ParsingStrategy) Window() uint64 { return instrLen }
 
 func (*ParsingStrategy) Parse(bytes []byte) (instruction.Instruction, error) {
-	found := decoder.Match(bytes)
+	found := decoder.Match(bytes).(*instructionOpcode)
 	if found == nil {
 		err := fmt.Errorf("unknown instruction opcode: 0x%x", bytes)
 		return instruction.Instruction{}, err
 	}
 
+	instr := newInstruction(bytes, found)
+
 	return instruction.Instruction{
-		ByteLen: instrLen,
-		Type:    instruction.TypeAritm,
-		Details: *found.(*instructionOpcode),
+		ByteLen:        instrLen,
+		Type:           found.instrType,
+		InputRegistry:  instr.inputRegs(),
+		OutputRegistry: instr.outputRegs(),
+
+		Details: instr,
 	}, nil
 }
 
