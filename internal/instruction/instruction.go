@@ -1,14 +1,17 @@
 package instruction
 
-type Instruction struct {
-	Type        Type
-	ByteLen     uint64
-	JumpTargets []Address
+import "decomp/internal/memory"
 
-	InputMemory   []Address
+type Instruction struct {
+	Type    Type
+	ByteLen uint64
+
+	JumpTargets []memory.Address
+
+	InputMemory   []memory.Address
 	InputRegistry []Register
 
-	OutputMemory   []Address
+	OutputMemory   []memory.Address
 	OutputRegistry []Register
 
 	Details PlatformDetails

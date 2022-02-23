@@ -1,60 +1,41 @@
 package parser
 
-import "fmt"
+import (
+	"decomp/internal/instruction"
+	"decomp/internal/memory"
+	"fmt"
+)
 
-type parsing struct {
-	m      Memory
-	s      Strategy
-	window uint64
+type Instructions struct {
+	Entrypoint   memory.Address
+	Memory       *memory.Memory
+	Instructions []instruction.Instruction
 }
 
-type Instructions struct{}
+func Parse(
+	entrypoint memory.Address,
+	m *memory.Memory,
+	s Strategy,
+) (Instructions, error) {
+	instrs := make([]instruction.Instruction, 0)
+	for _, block := range m.Blocks {
+		for addr := block.Begin; addr < block.End(); {
+			instr, err := s.Parse(block.Addr(addr))
+			if err != nil {
+				return Instructions{}, fmt.Errorf(
+					"cannot parse instruction at offset 0x%x: %w",
+					addr, err)
+			}
 
-func Parse(entrypoint uint64, m Memory, s Strategy) (Instructions, error) {
-	p := parsing{
-		m:      m,
-		s:      s,
-		window: s.Window(),
-	}
-
-	err := p.parse(entrypoint)
-	if err != nil {
-		return Instructions{}, err
-	}
-
-	return Instructions{}, nil
-}
-
-func (p *parsing) parse(offset uint64) error {
-	bytes := p.m.Bytes(offset, p.window)
-	if bytes == nil {
-		return fmt.Errorf("cannot read %d bytes at offset 0x%x", p.window, offset)
-	}
-
-	instr, err := p.s.Parse(bytes)
-	if err != nil {
-		return fmt.Errorf("cannot parse instruction at offset 0x%x: %w",
-			offset, err)
-	}
-
-	fmt.Printf("instruction: %s\n", instr.Details.String())
-
-	// Jump instructions unconditionally jump elsewhere, which makes
-	// instruction following jump instruction unreachable (unless addressed
-	// by another jump/CJump/call/... instruction).
-	if !instr.Type.Jump() {
-		err = p.parse(offset + instr.ByteLen)
-		if err != nil {
-			return err
+			instrs = append(instrs, instr)
+			fmt.Printf("%d (0x%x): %s\n", len(instrs), addr, instr.Details.String())
+			addr += instr.ByteLen
 		}
 	}
 
-	for _, t := range instr.JumpTargets {
-		err = p.parse(uint64(t))
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return Instructions{
+		Entrypoint:   entrypoint,
+		Memory:       m,
+		Instructions: instrs,
+	}, nil
 }

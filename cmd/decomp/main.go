@@ -20,9 +20,9 @@ func run() error {
 	}
 
 	fmt.Printf("Entrypoint: 0x%x\n", exec.Entrypoint)
-	fmt.Printf("Bytes: %b\n", exec.Bytes(exec.Entrypoint, 4))
+	fmt.Printf("Bytes: %b\n", exec.Memory.Addr(exec.Entrypoint)[:4])
 
-	_, err = parser.Parse(exec.Entrypoint, &exec, &riscv.ParsingStrategy{})
+	_, err = parser.Parse(exec.Entrypoint, exec.Memory, &riscv.ParsingStrategy{})
 	if err != nil {
 		return fmt.Errorf("instruction parsing failed: %w", err)
 	}
