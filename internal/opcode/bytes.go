@@ -22,7 +22,7 @@ func byteEQ(first []byte, second []byte) bool {
 	return true
 }
 
-func byteLE(first []byte, second []byte) bool {
+func byteLT(first []byte, second []byte) bool {
 	if len(first) < len(second) {
 		return true
 	} else if len(first) > len(second) {
@@ -37,5 +37,5 @@ func byteLE(first []byte, second []byte) bool {
 		}
 	}
 
-	return true
+	return false
 }

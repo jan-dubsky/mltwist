@@ -3,18 +3,10 @@ package riscv
 import (
 	"decomp/internal/instruction"
 	"decomp/internal/opcode"
-	"fmt"
 )
 
 // instructionLen is length of RISC V opcode in bytes.
 const instructionLen = 4
-
-func assertOpcodeLen(b []byte) {
-	if l := len(b); l != instructionLen {
-		panic(fmt.Sprintf("invalid byte slice length to represent an opcode: %d",
-			l))
-	}
-}
 
 type instructionOpcode struct {
 	name   string
@@ -35,8 +27,4 @@ type instructionOpcode struct {
 }
 
 func (i instructionOpcode) Opcode() opcode.Opcode { return i.opcode }
-
-func (i instructionOpcode) String() string {
-	// FIXME: This is a hack!
-	return i.name
-}
+func (i instructionOpcode) Name() string          { return i.name }

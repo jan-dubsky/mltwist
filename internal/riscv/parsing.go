@@ -6,24 +6,26 @@ import (
 	"fmt"
 )
 
-const instrLen = 4
-
 type ParsingStrategy struct{}
 
-func (*ParsingStrategy) Window() uint64 { return instrLen }
-
 func (*ParsingStrategy) Parse(bytes []byte) (instruction.Instruction, error) {
-	found := decoder.Match(bytes).(*instructionOpcode)
-	if found == nil {
-		err := fmt.Errorf("unknown instruction opcode: 0x%x", bytes)
-		return instruction.Instruction{}, err
+	if l := len(bytes); l < instructionLen {
+		return instruction.Instruction{}, fmt.Errorf(
+			"bytes are too short (%d) to represent an instruction opcode", l)
 	}
 
-	instr := newInstruction(bytes, found)
+	found := decoder32.Match(bytes)
+	if found == nil {
+		return instruction.Instruction{}, fmt.Errorf(
+			"unknown instruction opcode: 0x%x", bytes[:instructionLen])
+	}
+
+	opcode := found.(*instructionOpcode)
+	instr := newInstruction(bytes, opcode)
 
 	return instruction.Instruction{
-		ByteLen:        instrLen,
-		Type:           found.instrType,
+		ByteLen:        instructionLen,
+		Type:           opcode.instrType,
 		InputRegistry:  instr.inputRegs(),
 		OutputRegistry: instr.outputRegs(),
 
@@ -31,9 +33,9 @@ func (*ParsingStrategy) Parse(bytes []byte) (instruction.Instruction, error) {
 	}, nil
 }
 
-var decoder = func() *opcode.Decoder {
-	getters := make([]opcode.OpcodeGetter, len(known32))
-	for i, ins := range known32 {
+func newDecoder(opcs ...*instructionOpcode) *opcode.Decoder {
+	getters := make([]opcode.OpcodeGetter, len(opcs))
+	for i, ins := range opcs {
 		getters[i] = ins
 	}
 
@@ -43,4 +45,9 @@ var decoder = func() *opcode.Decoder {
 	}
 
 	return dec
-}()
+}
+
+var (
+	decoder32 = newDecoder(known32...)
+	decoder64 = newDecoder(known64...)
+)

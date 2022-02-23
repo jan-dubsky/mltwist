@@ -113,7 +113,7 @@ func opcodeShiftImm(arithmetic bool, shiftBits uint8, mid byte, low byte) opcode
 	// Shift is encoded in bits [20:(20+shiftBits)]. So we do 1<<shiftBits
 	// to get 2^shiftBits. Then we subtract 1 which creates is a bit mask
 	// for bits encoding values 0..(2^shiftBits)-1. We then invert the mask
-	// to force all reserved bits to be zero.
+	// to ensure that all other reserved bits of the actual opcode are zero.
 	//
 	// And then we have to shift this mask to the right place - to 20th bit
 	// of opcode. As we have just high half of instruction opcode, we are
@@ -122,12 +122,12 @@ func opcodeShiftImm(arithmetic bool, shiftBits uint8, mid byte, low byte) opcode
 	highHalfMask := (^shiftBitMask) << 4
 
 	return opcode.Opcode{
-		Bytes: []byte{high, 0, mid, low},
+		Bytes: []byte{low, mid << 4, 0, high},
 		Mask: []byte{
-			byte(highHalfMask >> 8),
-			byte(highHalfMask),
-			low3Bits << 4,
 			low7Bits,
+			low3Bits << 4,
+			byte(highHalfMask),
+			byte(highHalfMask >> 8),
 		},
 	}
 }

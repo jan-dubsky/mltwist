@@ -49,7 +49,9 @@ type Instruction struct {
 }
 
 func newInstruction(b []byte, opcode *instructionOpcode) Instruction {
-	assertOpcodeLen(b)
+	if l := len(b); l < instructionLen {
+		panic(fmt.Sprintf("not enough bytes to represent valid opcode: %d", l))
+	}
 
 	var bytes InstrBytes
 	copy(bytes[:], b)

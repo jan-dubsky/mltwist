@@ -5,87 +5,90 @@ import (
 	"sort"
 )
 
-type instr struct {
+type opcode struct {
 	getter OpcodeGetter
 	opcode Opcode
 	masked []byte
 }
 
-type maskGroup struct {
-	mask         []byte
-	instructions []instr
+func duplicateOpcodeErr(op1 opcode, op2 opcode) error {
+	return fmt.Errorf("ambiguous opcodes: %s (%s) and %s (%s)",
+		op1.getter.Name(), op1.opcode.String(),
+		op2.getter.Name(), op2.opcode.String())
 }
 
 type Decoder struct {
 	groups []maskGroup
 }
 
-func NewDecoder(opcodes ...OpcodeGetter) (*Decoder, error) {
-	instrs := make([]instr, len(opcodes))
-	for i, g := range opcodes {
+func NewDecoder(opcs ...OpcodeGetter) (*Decoder, error) {
+	opcodes := make([]opcode, len(opcs))
+	for i, g := range opcs {
 		o := g.Opcode()
 		if err := o.Validate(); err != nil {
 			return nil, fmt.Errorf("invalid opcode definition %d/%d: %w",
-				i, len(opcodes), err)
+				i, len(opcs), err)
 		}
 
-		instrs[i] = instr{
+		opcodes[i] = opcode{
 			getter: g,
 			opcode: o,
 			masked: applyMask(o.Bytes, o.Mask),
 		}
 	}
 
+	groups, err := group(opcodes)
+	if err != nil {
+		return nil, fmt.Errorf("opcode grouping failed: %w", err)
+	}
+
 	return &Decoder{
-		groups: group(instrs),
+		groups: groups,
 	}, nil
 }
 
-func group(instrs []instr) []maskGroup {
-	sort.Slice(instrs, func(i, j int) bool {
-		return byteLE(instrs[i].opcode.Mask, instrs[j].opcode.Mask)
+func group(opcodes []opcode) ([]maskGroup, error) {
+	sort.Slice(opcodes, func(i, j int) bool {
+		return byteLT(opcodes[i].opcode.Mask, opcodes[j].opcode.Mask)
 	})
 
-	groups := make([]maskGroup, 0, uniqueMasks(instrs))
-	for begin := 0; begin < len(instrs); {
-		mask := instrs[begin].opcode.Mask
-		end := begin + sort.Search(len(instrs)-begin, func(i int) bool {
-			return !byteEQ(instrs[i+begin].opcode.Mask, mask)
+	groups := make([]maskGroup, 0, 1)
+	for begin := 0; begin < len(opcodes); {
+		mask := opcodes[begin].opcode.Mask
+		end := begin + sort.Search(len(opcodes)-begin, func(i int) bool {
+			return !byteEQ(opcodes[i+begin].opcode.Mask, mask)
 		})
 
-		groupInstrs := instrs[begin:end]
-		sort.Slice(groupInstrs, func(i, j int) bool {
-			return byteLE(groupInstrs[i].masked, groupInstrs[j].masked)
-		})
-
-		g := maskGroup{
-			mask:         mask,
-			instructions: groupInstrs,
+		g, err := newMaskGroup(opcodes[begin:end])
+		if err != nil {
+			return nil, fmt.Errorf("cannot create group for mask 0x%x: %w",
+				mask, err)
 		}
 
 		groups = append(groups, g)
 		begin = end
 	}
 
-	return groups
-}
+	for i, gi := range groups {
+		for j, gj := range groups {
+			if i == j {
+				continue
+			}
 
-func uniqueMasks(instrs []instr) int {
-	var (
-		last []byte
-		cnt  int
-	)
-
-	for _, ins := range instrs {
-		if !byteEQ(last, ins.opcode.Mask) {
-			cnt++
-			last = ins.opcode.Mask
+			for _, o := range gj.opcodes {
+				opc, ok := gi.matchInstruction(o.opcode.Bytes)
+				if ok {
+					return nil, duplicateOpcodeErr(o, opc)
+				}
+			}
 		}
 	}
 
-	return cnt
+	return groups, nil
 }
 
+// Match matches a sequence of bytes to Opcode returned by OpcodeGetters. This
+// method returns nil if no opcode was matched.
 func (d *Decoder) Match(bytes []byte) OpcodeGetter {
 	for _, g := range d.groups {
 		ins, ok := g.matchInstruction(bytes)
@@ -95,20 +98,4 @@ func (d *Decoder) Match(bytes []byte) OpcodeGetter {
 	}
 
 	return nil
-}
-
-func (g *maskGroup) matchInstruction(bytes []byte) (instr, bool) {
-	if len(g.mask) > len(bytes) {
-		return instr{}, false
-	}
-
-	masked := applyMask(bytes, g.mask)
-	idx := sort.Search(len(g.instructions), func(i int) bool {
-		return byteLE(masked, g.instructions[i].masked)
-	})
-
-	if idx == len(g.instructions) {
-		return instr{}, false
-	}
-	return g.instructions[idx], true
 }

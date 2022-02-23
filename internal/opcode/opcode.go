@@ -2,8 +2,12 @@ package opcode
 
 import "fmt"
 
+// OpcodeGetter is an arbitrary type which exposes an opcode.
 type OpcodeGetter interface {
+	// Opcode returns the opcode definition.
 	Opcode() Opcode
+	// Name returns a name of an instruction the Opcode belong to.
+	Name() string
 }
 
 // Opcode represents a sequence of bits representing an opcode in any possible
@@ -45,4 +49,9 @@ func (o Opcode) Validate() error {
 	}
 
 	return nil
+}
+
+// String returns a human readable representation of an opcode.
+func (o Opcode) String() string {
+	return fmt.Sprintf("bytes: 0x%x (mask: 0x%x)", o.Bytes, o.Mask)
 }
