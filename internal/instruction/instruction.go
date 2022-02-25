@@ -1,17 +1,20 @@
 package instruction
 
-import "decomp/internal/memory"
+import "decomp/internal/addr"
 
 type Instruction struct {
 	Type    Type
 	ByteLen uint64
+	// TODO: Consider moving address to another level of abstraction as this
+	// is architecture independent value.
+	Address addr.Address
 
-	JumpTargets []memory.Address
+	JumpTargets []addr.Address
 
-	InputMemory   []memory.Address
+	InputMemory   []addr.Address
 	InputRegistry []Register
 
-	OutputMemory   []memory.Address
+	OutputMemory   []addr.Address
 	OutputRegistry []Register
 
 	Details PlatformDetails

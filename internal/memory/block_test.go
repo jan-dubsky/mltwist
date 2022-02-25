@@ -1,6 +1,7 @@
 package memory_test
 
 import (
+	"decomp/internal/addr"
 	"decomp/internal/memory"
 	"testing"
 
@@ -11,7 +12,7 @@ func TestBlock_Addr(t *testing.T) {
 	tests := []struct {
 		name   string
 		block  memory.Block
-		addr   memory.Address
+		addr   addr.Address
 		length int
 	}{
 		{

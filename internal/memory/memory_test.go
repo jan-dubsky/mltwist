@@ -1,6 +1,7 @@
 package memory_test
 
 import (
+	"decomp/internal/addr"
 	"decomp/internal/memory"
 	"sort"
 	"testing"
@@ -74,7 +75,7 @@ func TestMemory_New(t *testing.T) {
 			r.Equal(tt.blockCnt, len(m.Blocks))
 
 			r.True(sort.SliceIsSorted(m.Blocks, func(i, j int) bool {
-				return m.Blocks[i].Begin < m.Blocks[j].Begin
+				return m.Blocks[i].Begin() < m.Blocks[j].Begin()
 			}))
 		})
 	}
@@ -84,7 +85,7 @@ func TestMemory_Addr(t *testing.T) {
 	tests := []struct {
 		name   string
 		blocks []memory.Block
-		addr   memory.Address
+		addr   addr.Address
 		length int
 	}{
 		{

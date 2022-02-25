@@ -1,4 +1,4 @@
-package memory
+package addr
 
 // Address represents an arbitrary memory address in a program (user-space)
 // address space.
