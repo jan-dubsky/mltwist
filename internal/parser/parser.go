@@ -21,13 +21,16 @@ func Parse(
 	instrs := make([]instruction.Instruction, 0)
 	for _, block := range m.Blocks {
 		for addr := block.Begin(); addr < block.End(); {
-			instr, err := s.Parse(block.Addr(addr))
+			b := block.Addr(addr)
+
+			instr, err := s.Parse(b)
 			if err != nil {
 				return Program{}, fmt.Errorf(
 					"cannot parse instruction at offset 0x%x: %w",
 					addr, err)
 			}
 
+			instr.Bytes = b[:instr.ByteLen]
 			instr.Address = addr
 
 			instrs = append(instrs, instr)

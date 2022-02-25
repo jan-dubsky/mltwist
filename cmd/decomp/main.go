@@ -1,6 +1,7 @@
 package main
 
 import (
+	"decomp/internal/basicblock"
 	"decomp/internal/executable"
 	"decomp/internal/parser"
 	"decomp/internal/riscv"
@@ -22,9 +23,24 @@ func run() error {
 	fmt.Printf("Entrypoint: 0x%x\n", exec.Entrypoint)
 	fmt.Printf("Bytes: %b\n", exec.Memory.Addr(exec.Entrypoint)[:4])
 
-	_, err = parser.Parse(exec.Entrypoint, exec.Memory, &riscv.ParsingStrategy{})
+	ins, err := parser.Parse(exec.Entrypoint, exec.Memory, &riscv.ParsingStrategy{})
 	if err != nil {
 		return fmt.Errorf("instruction parsing failed: %w", err)
+	}
+
+	blocks, err := basicblock.Parse(ins.Instructions)
+	if err != nil {
+		return fmt.Errorf("basic block parsing failed: %w", err)
+	}
+	for i, b := range blocks {
+		if i > 0 {
+			fmt.Printf("\n")
+		}
+		fmt.Printf("Basic block %d:\n", i)
+
+		for j, in := range b.Seq {
+			fmt.Printf("\t%d (0x%x): %s\n", j, in.Address, in.Details.String())
+		}
 	}
 
 	return nil

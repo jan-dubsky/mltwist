@@ -5,9 +5,11 @@ import "decomp/internal/addr"
 type Instruction struct {
 	Type    Type
 	ByteLen uint64
+
 	// TODO: Consider moving address to another level of abstraction as this
 	// is architecture independent value.
 	Address addr.Address
+	Bytes   []byte
 
 	JumpTargets []addr.Address
 

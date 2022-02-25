@@ -102,7 +102,7 @@ func (i Instruction) String() string {
 	}
 
 	if imm, ok := i.opcode.immediate.parseValue(i.bytes); ok {
-		arguments = append(arguments, fmt.Sprintf("0x%x", imm))
+		arguments = append(arguments, fmt.Sprintf("%d", imm))
 	}
 
 	return fmt.Sprintf("%s %s", i.opcode.name, strings.Join(arguments, ", "))

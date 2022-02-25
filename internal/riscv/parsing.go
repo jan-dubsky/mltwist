@@ -14,7 +14,7 @@ func (*ParsingStrategy) Parse(bytes []byte) (instruction.Instruction, error) {
 			"bytes are too short (%d) to represent an instruction opcode", l)
 	}
 
-	found := decoder32.Match(bytes)
+	found := decoder64.Match(bytes)
 	if found == nil {
 		return instruction.Instruction{}, fmt.Errorf(
 			"unknown instruction opcode: 0x%x", bytes[:instructionLen])
@@ -24,8 +24,9 @@ func (*ParsingStrategy) Parse(bytes []byte) (instruction.Instruction, error) {
 	instr := newInstruction(bytes, opcode)
 
 	return instruction.Instruction{
-		ByteLen:        instructionLen,
-		Type:           opcode.instrType,
+		Type:    opcode.instrType,
+		ByteLen: instructionLen,
+
 		InputRegistry:  instr.inputRegs(),
 		OutputRegistry: instr.outputRegs(),
 

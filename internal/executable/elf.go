@@ -28,6 +28,13 @@ func Parse(filename string) (Executable, error) {
 		if s.Flags&elf.SHF_EXECINSTR == 0 {
 			continue
 		}
+		// Procedure linkage table is not a code, just set of addressed
+		// filled by the linker.
+		// TODO: Is there any better way how to do this?
+		if s.Name == ".plt" {
+			continue
+		}
+
 		if s.Flags&elf.SHF_COMPRESSED != 0 {
 			err = fmt.Errorf("section %s is compressed", s.Name)
 			return Executable{}, err
