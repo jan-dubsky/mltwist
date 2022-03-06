@@ -17,6 +17,9 @@ package model
 // type.
 type Type uint64
 
+// typeInvalid represents an invalid value of Type.
+const typeInvalid Type = 0
+
 const (
 	TypeAritm Type = 1 << iota
 	// TypeJump represents an instruction type which execution will
@@ -47,6 +50,10 @@ const (
 	TypeMemOrder
 	TypeCPUStateChange
 	TypeSyscall
+
+	// typeMax is maximal exclusive allowed value of Type. Any value higher
+	// or equal to this is invalid.
+	typeMax
 )
 
 func (t Type) Aritm() bool    { return t&TypeAritm != 0 }

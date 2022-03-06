@@ -62,26 +62,29 @@ func newInstruction(b []byte, opcode *instructionOpcode) Instruction {
 	}
 }
 
-func (i Instruction) inputRegs() []model.Register {
+func (i Instruction) inputRegs() map[model.Register]struct{} {
 	if i.opcode.inputRegCnt == 0 {
 		return nil
 	}
 
-	regs := make([]model.Register, 0, i.opcode.inputRegCnt)
-	regs = append(regs, model.Register(i.bytes.regNum(rs1)))
+	regs := make(map[model.Register]struct{}, i.opcode.inputRegCnt)
+
+	regs[model.Register(i.bytes.regNum(rs1))] = struct{}{}
 	if i.opcode.inputRegCnt > 1 {
-		regs = append(regs, model.Register(i.bytes.regNum(rs2)))
+		regs[model.Register(i.bytes.regNum(rs2))] = struct{}{}
 	}
 
 	return regs
 }
 
-func (i Instruction) outputRegs() []model.Register {
+func (i Instruction) outputRegs() map[model.Register]struct{} {
 	if !i.opcode.hasOutputReg {
 		return nil
 	}
 
-	return []model.Register{model.Register(i.bytes.regNum(rd))}
+	return map[model.Register]struct{}{
+		model.Register(i.bytes.regNum(rd)): {},
+	}
 }
 
 func (i Instruction) Bytes() InstrBytes { return i.bytes }

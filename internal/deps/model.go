@@ -1,30 +1,20 @@
 package deps
 
-import "decomp/pkg/model"
+import "decomp/internal/repr"
 
-type cpuModel struct {
-	regs map[model.Register]*Instruction
+type Model struct {
+	blocks []*Block
 }
 
-func newCPUModel() cpuModel {
-	return cpuModel{
-		// 32 registers is quite typical number of registers.
-		regs: make(map[model.Register]*Instruction, 32),
+func NewModel(seqs [][]repr.Instruction) *Model {
+	blocks := make([]*Block, len(seqs))
+	for i, seq := range seqs {
+		blocks[i] = newBlock(seq)
+	}
+
+	return &Model{
+		blocks: blocks,
 	}
 }
 
-func (m *cpuModel) process(ins *Instruction) []*Instruction {
-	deps := make([]*Instruction, 0)
-
-	for _, r := range ins.Instr.InputRegistry {
-		if idx, ok := m.regs[r]; ok {
-			deps = append(deps, idx)
-		}
-	}
-
-	for _, r := range ins.Instr.OutputRegistry {
-		m.regs[r] = ins
-	}
-
-	return deps
-}
+func (m *Model) Blocks() []*Block { return m.blocks }
