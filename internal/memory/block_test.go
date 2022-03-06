@@ -1,8 +1,8 @@
 package memory_test
 
 import (
-	"decomp/internal/addr"
 	"decomp/internal/memory"
+	"decomp/pkg/model"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,7 +12,7 @@ func TestBlock_Addr(t *testing.T) {
 	tests := []struct {
 		name   string
 		block  memory.Block
-		addr   addr.Address
+		addr   model.Address
 		length int
 	}{
 		{

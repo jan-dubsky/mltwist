@@ -1,29 +1,29 @@
 package riscv
 
 import (
-	"decomp/internal/instruction"
 	"decomp/internal/opcode"
+	"decomp/pkg/model"
 	"fmt"
 )
 
 type ParsingStrategy struct{}
 
-func (*ParsingStrategy) Parse(bytes []byte) (instruction.Instruction, error) {
+func (*ParsingStrategy) Parse(bytes []byte) (model.Instruction, error) {
 	if l := len(bytes); l < instructionLen {
-		return instruction.Instruction{}, fmt.Errorf(
+		return model.Instruction{}, fmt.Errorf(
 			"bytes are too short (%d) to represent an instruction opcode", l)
 	}
 
 	found := decoder64.Match(bytes)
 	if found == nil {
-		return instruction.Instruction{}, fmt.Errorf(
+		return model.Instruction{}, fmt.Errorf(
 			"unknown instruction opcode: 0x%x", bytes[:instructionLen])
 	}
 
 	opcode := found.(*instructionOpcode)
 	instr := newInstruction(bytes, opcode)
 
-	return instruction.Instruction{
+	return model.Instruction{
 		Type:    opcode.instrType,
 		ByteLen: instructionLen,
 

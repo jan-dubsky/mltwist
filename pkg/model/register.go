@@ -1,4 +1,4 @@
-package instruction
+package model
 
 // Register represents an arbitrary (but single) cpu register.
 //

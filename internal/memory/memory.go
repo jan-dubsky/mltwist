@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"decomp/internal/addr"
+	"decomp/pkg/model"
 	"fmt"
 	"sort"
 )
@@ -41,7 +41,7 @@ func New(blocks ...Block) (*Memory, error) {
 
 // Addr returns the longest available slice of memory starting at memory address
 // addr.
-func (m *Memory) Addr(addr addr.Address) []byte {
+func (m *Memory) Addr(addr model.Address) []byte {
 	idx := sort.Search(len(m.Blocks), func(i int) bool {
 		return m.Blocks[i].End() > addr
 	})

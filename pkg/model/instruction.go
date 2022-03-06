@@ -1,22 +1,15 @@
-package instruction
-
-import "decomp/internal/addr"
+package model
 
 type Instruction struct {
 	Type    Type
 	ByteLen uint64
 
-	// TODO: Consider moving address to another level of abstraction as this
-	// is architecture independent value.
-	Address addr.Address
-	Bytes   []byte
+	JumpTargets []Address
 
-	JumpTargets []addr.Address
-
-	InputMemory   []addr.Address
+	InputMemory   []Address
 	InputRegistry []Register
 
-	OutputMemory   []addr.Address
+	OutputMemory   []Address
 	OutputRegistry []Register
 
 	Details PlatformDetails
@@ -28,6 +21,6 @@ type PlatformDetails interface {
 	//
 	// The representation contains not just the instruction, but also all
 	// the registers and memory addresses. All the text should follow
-	// platform specific standars how to write instructions and operands.
+	// platform specific notation of instructions operands and immediate.
 	String() string
 }

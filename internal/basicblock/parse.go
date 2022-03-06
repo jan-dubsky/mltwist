@@ -1,13 +1,13 @@
 package basicblock
 
 import (
-	"decomp/internal/instruction"
+	"decomp/internal/repr"
 	"fmt"
 	"sort"
 )
 
 // Parse identifies basic blocks in a sequence of program instructions.
-func Parse(instrs []instruction.Instruction) ([]Block, error) {
+func Parse(instrs []repr.Instruction) ([]Block, error) {
 	sort.Slice(instrs, func(i, j int) bool {
 		return instrs[i].Address < instrs[j].Address
 	})
@@ -22,7 +22,7 @@ func Parse(instrs []instruction.Instruction) ([]Block, error) {
 	return blocks, nil
 }
 
-func seqsToBlocks(seqs [][]instruction.Instruction) []Block {
+func seqsToBlocks(seqs [][]repr.Instruction) []Block {
 	blocks := make([]Block, len(seqs))
 	for i, s := range seqs {
 		blocks[i] = newBlock(s)
@@ -31,8 +31,8 @@ func seqsToBlocks(seqs [][]instruction.Instruction) []Block {
 	return blocks
 }
 
-func splitByAddress(seq []instruction.Instruction) [][]instruction.Instruction {
-	seqs := make([][]instruction.Instruction, 0, 1)
+func splitByAddress(seq []repr.Instruction) [][]repr.Instruction {
+	seqs := make([][]repr.Instruction, 0, 1)
 	begin := 0
 
 	for i := range seq[1:] {
@@ -51,8 +51,8 @@ func splitByAddress(seq []instruction.Instruction) [][]instruction.Instruction {
 	return seqs
 }
 
-func splitByJumps(seq []instruction.Instruction) [][]instruction.Instruction {
-	seqs := make([][]instruction.Instruction, 0, 1)
+func splitByJumps(seq []repr.Instruction) [][]repr.Instruction {
+	seqs := make([][]repr.Instruction, 0, 1)
 	begin := 0
 
 	for i, ins := range seq {

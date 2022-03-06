@@ -1,4 +1,4 @@
-package instruction
+package model
 
 // Type respresents a role of instruction in any kind of machine code.
 //

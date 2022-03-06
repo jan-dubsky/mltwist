@@ -1,8 +1,8 @@
 package riscv
 
 import (
-	"decomp/internal/instruction"
 	"decomp/internal/opcode"
+	"decomp/pkg/model"
 )
 
 // instructionLen is length of RISC V opcode in bytes.
@@ -23,7 +23,7 @@ type instructionOpcode struct {
 	immediate           immType
 	additionalImmediate addOpcodeInfo
 
-	instrType instruction.Type
+	instrType model.Type
 }
 
 func (i instructionOpcode) Opcode() opcode.Opcode { return i.opcode }

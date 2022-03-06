@@ -1,7 +1,7 @@
 package riscv
 
 import (
-	"decomp/internal/instruction"
+	"decomp/pkg/model"
 	"fmt"
 	"strings"
 )
@@ -62,26 +62,26 @@ func newInstruction(b []byte, opcode *instructionOpcode) Instruction {
 	}
 }
 
-func (i Instruction) inputRegs() []instruction.Register {
+func (i Instruction) inputRegs() []model.Register {
 	if i.opcode.inputRegCnt == 0 {
 		return nil
 	}
 
-	regs := make([]instruction.Register, 0, i.opcode.inputRegCnt)
-	regs = append(regs, instruction.Register(i.bytes.regNum(rs1)))
+	regs := make([]model.Register, 0, i.opcode.inputRegCnt)
+	regs = append(regs, model.Register(i.bytes.regNum(rs1)))
 	if i.opcode.inputRegCnt > 1 {
-		regs = append(regs, instruction.Register(i.bytes.regNum(rs2)))
+		regs = append(regs, model.Register(i.bytes.regNum(rs2)))
 	}
 
 	return regs
 }
 
-func (i Instruction) outputRegs() []instruction.Register {
+func (i Instruction) outputRegs() []model.Register {
 	if !i.opcode.hasOutputReg {
 		return nil
 	}
 
-	return []instruction.Register{instruction.Register(i.bytes.regNum(rd))}
+	return []model.Register{model.Register(i.bytes.regNum(rd))}
 }
 
 func (i Instruction) Bytes() InstrBytes { return i.bytes }

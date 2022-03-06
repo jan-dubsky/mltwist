@@ -1,8 +1,8 @@
 package basicblock
 
 import (
-	"decomp/internal/addr"
-	"decomp/internal/instruction"
+	"decomp/internal/repr"
+	"decomp/pkg/model"
 	"fmt"
 	"sort"
 )
@@ -18,17 +18,17 @@ import (
 // basic block just because it't not possible to identify jump target of this
 // dynamic jump during the decompilation process.
 type Block struct {
-	Seq    []instruction.Instruction
-	length addr.Address
+	Seq    []repr.Instruction
+	length model.Address
 }
 
-func newBlock(seq []instruction.Instruction) Block {
+func newBlock(seq []repr.Instruction) Block {
 	return Block{Seq: seq, length: seqBytes(seq)}
 }
 
 // seqBytes calculates sum of instruction lengths in a sequence.
-func seqBytes(seq []instruction.Instruction) addr.Address {
-	var length addr.Address
+func seqBytes(seq []repr.Instruction) model.Address {
+	var length model.Address
 	for _, ins := range seq {
 		length += ins.ByteLen
 	}
@@ -36,16 +36,16 @@ func seqBytes(seq []instruction.Instruction) addr.Address {
 }
 
 // Begin returns inclusive start address of b.
-func (b Block) Begin() addr.Address { return b.Seq[0].Address }
+func (b Block) Begin() model.Address { return b.Seq[0].Address }
 
 // Length returns length of the basic block in bytes.
-func (b Block) Length() addr.Address { return b.length }
+func (b Block) Length() model.Address { return b.length }
 
 // End returns exclusive end address of b.
-func (b Block) End() addr.Address { return b.Begin() + b.Length() }
+func (b Block) End() model.Address { return b.Begin() + b.Length() }
 
 // Containts check if addr is inside the basic block.
-func (b Block) Contains(addr addr.Address) bool {
+func (b Block) Contains(addr model.Address) bool {
 	return addr >= b.Begin() || addr < b.End()
 }
 
@@ -57,7 +57,7 @@ func (b Block) Contains(addr addr.Address) bool {
 // Please note that even though adds==b.Begin() is technically correct and will
 // result in empty first block returned, it makes just little sense to perform
 // split at b.Begin() address.
-func (b Block) Split(addr addr.Address) (Block, Block, error) {
+func (b Block) Split(addr model.Address) (Block, Block, error) {
 	if !b.Contains(addr) {
 		err := fmt.Errorf("block doesn't contain address 0x%x", addr)
 		return Block{}, Block{}, err
@@ -80,7 +80,7 @@ type blocks []Block
 
 // split splits block containing addr into 2 blocks using Split(addr) and
 // modifies blocks to contain both new blocks instead of the one splitted.
-func (bs *blocks) split(addr addr.Address) error {
+func (bs *blocks) split(addr model.Address) error {
 	idx := sort.Search(len(*bs), func(i int) bool { return (*bs)[i].End() > addr })
 	if idx == len(*bs) {
 		return fmt.Errorf("no basic block with address 0x%x found", addr)
