@@ -4,7 +4,7 @@ import "fmt"
 
 type Instruction struct {
 	Type    Type
-	ByteLen uint64
+	ByteLen Address
 
 	JumpTargets []Address
 

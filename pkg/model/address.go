@@ -11,9 +11,8 @@ import "math"
 // this alias and to make the code more variable in the future.
 //
 // For future compatibility, it's guaranteed that this type will be always an
-// unsigned integer. What can change in the future is its bit width, which will
-// be most likely expanded to 128 bits.
-type Address = uint64
+// unsigned integer and that uint64 will be always castable to this type.
+type Address uint64
 
 const (
 	// MinAddress is the smallest value Address is able to represent.

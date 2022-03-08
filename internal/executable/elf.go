@@ -3,12 +3,13 @@ package executable
 import (
 	"debug/elf"
 	"decomp/internal/memory"
+	"decomp/pkg/model"
 	"fmt"
 	"io"
 )
 
 type Executable struct {
-	Entrypoint uint64
+	Entrypoint model.Address
 	Memory     *memory.Memory
 }
 
@@ -52,7 +53,7 @@ func Parse(filename string) (Executable, error) {
 				s.Size, len(bytes))
 		}
 
-		blocks = append(blocks, memory.NewBlock(s.Addr, bytes))
+		blocks = append(blocks, memory.NewBlock(model.Address(s.Addr), bytes))
 	}
 
 	if len(blocks) == 0 {
@@ -65,7 +66,7 @@ func Parse(filename string) (Executable, error) {
 	}
 
 	return Executable{
-		Entrypoint: f.Entry,
+		Entrypoint: model.Address(f.Entry),
 		Memory:     mem,
 	}, nil
 }

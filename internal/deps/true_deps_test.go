@@ -54,6 +54,18 @@ type dep struct {
 	dst int
 }
 
+func (d dep) Validate() error {
+	f, t := d.src, d.dst
+	if f == t {
+		return fmt.Errorf("instruction cannot depend on itself: %d -> %d", f, t)
+	}
+	if f > t {
+		return fmt.Errorf("invalid direction of dependency: %d -> %d", f, t)
+	}
+
+	return nil
+}
+
 func depMap(deps []dep) map[dep]struct{} {
 	m := make(map[dep]struct{}, len(deps))
 	for _, d := range deps {
@@ -95,6 +107,9 @@ func runDepsTest(
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
+			for _, d := range tt.deps {
+				r.NoError(d.Validate())
+			}
 			deps := depMap(tt.deps)
 
 			f(tt.ins)

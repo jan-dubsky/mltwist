@@ -31,7 +31,7 @@ func Parse(
 			}
 
 			instrs = append(instrs, instrRepr(ins, addr, b))
-			addr += ins.ByteLen
+			addr += model.Address(ins.ByteLen)
 		}
 	}
 

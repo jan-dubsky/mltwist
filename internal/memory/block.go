@@ -24,7 +24,7 @@ func (b Block) Begin() model.Address { return b.begin }
 func (b Block) Len() int { return len(b.Bytes) }
 
 // End calculates exclusive end of the block.
-func (b Block) End() model.Address { return b.Begin() + uint64(b.Len()) }
+func (b Block) End() model.Address { return b.Begin() + model.Address(b.Len()) }
 
 // Addr returns the longest available slice of memory starting at memory address
 // addr.

@@ -27,7 +27,7 @@ type instruction struct {
 	blockIdx int
 }
 
-func newInstruction(ins repr.Instruction) *instruction {
+func newInstruction(ins repr.Instruction, index int) *instruction {
 	// Those are absolutely thumbsucked numbers of expected dependencies.
 	// There is no scientific neither measured reason for those constant,
 	// but given that Go default for map size is 100, those are definitely
@@ -45,10 +45,7 @@ func newInstruction(ins repr.Instruction) *instruction {
 		outputDepsFwd:  make(insSet, expectedDeps),
 		outputDepsBack: make(insSet, expectedDeps),
 
-		// We put -1 as dummy value just to catch potential errors with
-		// non-overwriting this value later. It's not 0 as 0 is valid
-		// value for blockIdx.
-		blockIdx: -1,
+		blockIdx: index,
 	}
 }
 
