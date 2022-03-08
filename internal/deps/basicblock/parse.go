@@ -7,7 +7,7 @@ import (
 )
 
 // Parse identifies basic blocks in a sequence of program instructions.
-func Parse(instrs []repr.Instruction) ([]Block, error) {
+func Parse(instrs []repr.Instruction) ([][]repr.Instruction, error) {
 	sort.Slice(instrs, func(i, j int) bool {
 		return instrs[i].Address < instrs[j].Address
 	})
@@ -19,11 +19,16 @@ func Parse(instrs []repr.Instruction) ([]Block, error) {
 		return nil, fmt.Errorf("cannot split blocks by jump targets: %w", err)
 	}
 
-	return blocks, nil
+	sequences := make([][]repr.Instruction, len(blocks))
+	for i, b := range blocks {
+		sequences[i] = b.Seq
+	}
+
+	return sequences, nil
 }
 
-func seqsToBlocks(seqs [][]repr.Instruction) []Block {
-	blocks := make([]Block, len(seqs))
+func seqsToBlocks(seqs [][]repr.Instruction) []block {
+	blocks := make([]block, len(seqs))
 	for i, s := range seqs {
 		blocks[i] = newBlock(s)
 	}
@@ -69,7 +74,7 @@ func splitByJumps(seq []repr.Instruction) [][]repr.Instruction {
 	return seqs
 }
 
-func splitByJumpTargets(bs []Block) ([]Block, error) {
+func splitByJumpTargets(bs []block) ([]block, error) {
 	blocks := make(blocks, len(bs))
 	for i, b := range bs {
 		blocks[i] = b

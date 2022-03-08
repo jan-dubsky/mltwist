@@ -11,6 +11,10 @@ type Instruction struct {
 
 func (i Instruction) String() string { return i.i.Instr.Details.String() }
 
+// Address returns the in-memory address of the instruction in the original
+// binary.
+func (i Instruction) Address() model.Address { return i.i.Instr.Address }
+
 type insSet map[*instruction]struct{}
 
 type instruction struct {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"decomp/internal/basicblock"
+	"decomp/internal/deps"
 	"decomp/internal/executable"
 	"decomp/internal/parser"
 	"decomp/internal/riscv"
@@ -28,18 +28,18 @@ func run() error {
 		return fmt.Errorf("instruction parsing failed: %w", err)
 	}
 
-	blocks, err := basicblock.Parse(ins.Instructions)
+	model, err := deps.NewModel(ins.Instructions)
 	if err != nil {
-		return fmt.Errorf("basic block parsing failed: %w", err)
+		return fmt.Errorf("cannot parse model: %w", err)
 	}
-	for i, b := range blocks {
+	for i, b := range model.Blocks() {
 		if i > 0 {
 			fmt.Printf("\n")
 		}
 		fmt.Printf("Basic block %d:\n", i)
 
-		for j, in := range b.Seq {
-			fmt.Printf("\t%d (0x%x): %s\n", j, in.Address, in.Details.String())
+		for j, in := range b.Instructions() {
+			fmt.Printf("\t%00d (0x%x): %s\n", j, in.Address(), in.String())
 		}
 	}
 
