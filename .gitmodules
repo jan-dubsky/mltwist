@@ -1,0 +1,3 @@
+[submodule "sources/grep/git_source"]
+	path = sources/grep/git_source
+	url = https://git.savannah.gnu.org/git/grep.git

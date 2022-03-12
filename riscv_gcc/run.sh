@@ -21,4 +21,7 @@ if printf '%s\n' "$DIR" | grep -q :; then
 	exit 1
 fi
 
-docker run --rm -v "$DIR:/build" riscv-gcc "$@"
+ID="$(id -u)"
+readonly ID
+
+docker run --rm -v "$DIR:/build" -u "$ID" google2/riscv-gnu-toolchain-rv64ima:latest "$@"
