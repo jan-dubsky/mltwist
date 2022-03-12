@@ -10,12 +10,14 @@ type Block struct {
 	begin model.Address
 	end   model.Address
 	seq   []*instruction
+
+	idx int
 }
 
 // newBlock parses a non-empty sequence of instructions sorted by their
 // in-memory addresses into a Block and analyzes dependencies in between
 // instructions.
-func newBlock(seq []repr.Instruction) *Block {
+func newBlock(idx int, seq []repr.Instruction) *Block {
 	var length model.Address
 	instrs := make([]*instruction, len(seq))
 	for i, ins := range seq {
@@ -31,6 +33,7 @@ func newBlock(seq []repr.Instruction) *Block {
 		begin: seq[0].Address,
 		end:   seq[0].Address + length,
 		seq:   instrs,
+		idx:   idx,
 	}
 }
 
@@ -48,6 +51,9 @@ func (b *Block) Bytes() model.Address { return b.end - b.begin }
 // Len returns number of instructions in b.
 func (b *Block) Len() int { return len(b.seq) }
 
+// Idx returns index of an instruction in list of basic blocks.
+func (b *Block) Idx() int { return b.idx }
+
 // Instructions lists all instructions in b.
 func (b *Block) Instructions() []Instruction {
 	seq := make([]Instruction, len(b.seq))
@@ -57,18 +63,20 @@ func (b *Block) Instructions() []Instruction {
 	return seq
 }
 
-// Idx returns instruction at index i in b.
-func (b *Block) Idx(i int) Instruction { return b.seq[i].ptr() }
+// Index returns instruction at index i in b.
+func (b *Block) Index(i int) Instruction { return b.seq[i].ptr() }
 
 // Move moves instruction in the block from index from to index to. All
 // instructions in between from and to are shifted one instruction back or
 // forward respectively. This method will fail in case the move violates
 // instruction dependency constraints.
 func (b *Block) Move(from int, to int) error {
+	if err := b.checkMove(from, to); err != nil {
+		return fmt.Errorf("cannot move %d to %d: %w", from, to, err)
+	}
+
 	if from == to {
 		return nil
-	} else if err := b.checkMove(from, to); err != nil {
-		return fmt.Errorf("cannot move %d to %d: %w", from, to, err)
 	}
 
 	f := b.seq[from]

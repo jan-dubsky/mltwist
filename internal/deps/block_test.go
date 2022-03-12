@@ -95,13 +95,13 @@ func TestBlock_Bounds(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			block := newBlock(tt.ins)
+			block := newBlock(0, tt.ins)
 			for i, ins := range block.seq {
 				r.Equal(i, ins.blockIdx)
 			}
 
 			for i, b := range tt.bounds {
-				ins := block.Idx(i)
+				ins := block.Index(i)
 				l, u := block.LowerBound(ins), block.UpperBound(ins)
 				r.LessOrEqual(l, u)
 				r.GreaterOrEqual(l, 0)

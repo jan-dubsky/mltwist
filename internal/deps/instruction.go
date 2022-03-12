@@ -5,16 +5,6 @@ import (
 	"decomp/pkg/model"
 )
 
-type Instruction struct {
-	i *instruction
-}
-
-func (i Instruction) String() string { return i.i.Instr.Details.String() }
-
-// Address returns the in-memory address of the instruction in the original
-// binary.
-func (i Instruction) Address() model.Address { return i.i.Instr.Address }
-
 type insSet map[*instruction]struct{}
 
 type instruction struct {
@@ -54,3 +44,6 @@ func newInstruction(ins repr.Instruction, index int) *instruction {
 }
 
 func (i *instruction) ptr() Instruction { return Instruction{i: i} }
+
+// Idx returns index of an instruction in its basic block.
+func (i *instruction) Idx() int { return i.blockIdx }

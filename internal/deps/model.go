@@ -7,7 +7,8 @@ import (
 )
 
 type Model struct {
-	blocks []*Block
+	blocks   []*Block
+	instrCnt int
 }
 
 func NewModel(seq []repr.Instruction) (*Model, error) {
@@ -18,12 +19,21 @@ func NewModel(seq []repr.Instruction) (*Model, error) {
 
 	blocks := make([]*Block, len(seqs))
 	for i, seq := range seqs {
-		blocks[i] = newBlock(seq)
+		blocks[i] = newBlock(i, seq)
+	}
+
+	var instrCnt int
+	for _, b := range blocks {
+		instrCnt += b.Len()
 	}
 
 	return &Model{
-		blocks: blocks,
+		blocks:   blocks,
+		instrCnt: instrCnt,
 	}, nil
 }
 
-func (m *Model) Blocks() []*Block { return m.blocks }
+func (m *Model) Blocks() []*Block   { return m.blocks }
+func (m *Model) Len() int           { return len(m.blocks) }
+func (m *Model) NumInstr() int      { return m.instrCnt }
+func (m *Model) Index(i int) *Block { return m.blocks[i] }
