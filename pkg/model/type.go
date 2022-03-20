@@ -1,24 +1,24 @@
 package model
 
-// Type respresents a role of instruction in any kind of machine code.
+// Type respresents a role of instruction in machine code.
 //
-// To implement any sort of generic instruction analysis, we need to be able to
-// say the purpose of an instruction in machine code. For this reason, we have
-// to introduce some categories of instructions which we will use for this
-// purpose.
+// To implement a generic instruction analysis, we need to be able to say the
+// purpose of an instruction in machine code. For this reason, we have to
+// introduce some categories of instructions which we will use for this purpose.
 //
-// It seems to be a good idea to use RISC-like categories as most of CISC
-// instructions typically correctpond to some chain of RISC instructions.
+// As any CISC instruction can be described as a chain of RISC instruction, it
+// is in practice sufficient to use RISC categories of instructions. We will
+// then use multiple types to describe CISC instruction.
 //
-// As one CISC instruction might belong into multiple categories, we represent
+// As one instruction might belong into multiple categories, we represent
 // instruction type as set of bit flags, where every bit represents a single
-// category. This form will allow us to represent an arbitrary set of categories
-// for every instruction. Zero value of Type then represents no instruction
+// category. This form will allow us to represent an arbitrary set of types for
+// every instruction. Zero value of Type then represents no/invalid instruction
 // type.
 type Type uint64
 
-// typeInvalid represents an invalid value of Type.
-const typeInvalid Type = 0
+// TypeInvalid is an invalid value of Type.
+const TypeInvalid Type = 0
 
 const (
 	TypeAritm Type = 1 << iota
@@ -48,7 +48,12 @@ const (
 	// TypeMemOrder is any instruction which enforces memory ordering. An
 	// example of such instructions are for example memory fences.
 	TypeMemOrder
+	// TypeCPUStateChange describe any
 	TypeCPUStateChange
+	// TypeSyscall is any instruction which calls an operating system. This
+	// type describes not only syscall instructions, but also any kind of
+	// trap which results in operating system interraction with the
+	// userspace program.
 	TypeSyscall
 
 	// typeMax is maximal exclusive allowed value of Type. Any value higher
