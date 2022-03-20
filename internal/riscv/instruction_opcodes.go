@@ -4,15 +4,18 @@ import (
 	"decomp/internal/opcode"
 	"decomp/pkg/model"
 	"fmt"
-	"sort"
-	"strings"
 )
 
 const (
+	// low7Bits is a byte (mask) with bottom 7 bits set and last bit unset.
 	low7Bits byte = 0x7F
+	// low3Bits is a byte (mask) with bottom 3 bits set and all higher bits
+	// unset.
 	low3Bits byte = 0x7
 )
 
+// assertMask checks that only bits set in mask are set in b. This method will
+// panic if any other bit is set on b.
 func assertMask(b byte, mask byte) {
 	if b&mask != b {
 		panic(fmt.Sprintf("bits must match mask 0x%x: 0x%x", mask, b))
@@ -39,6 +42,10 @@ func revertBytes(b []byte) []byte {
 	return b
 }
 
+// opcode7 returns opcode matching low with bottom 7 bits of an instruction.
+//
+// As 1 byte opcodes have only 7 bits, this method will panic for values of low
+// greater than 127.
 func opcode7(low byte) opcode.Opcode {
 	assertMask(low, low7Bits)
 
@@ -48,16 +55,25 @@ func opcode7(low byte) opcode.Opcode {
 	}
 }
 
-func opcode10(high byte, low byte) opcode.Opcode {
+// opcode10 returns opcode matching low with bottom 7 bits and mid with bits
+// [12..14] of an instruction.
+//
+// This method panics if low is greater than 127 or if mid is greater than 7.
+func opcode10(mid byte, low byte) opcode.Opcode {
 	assertMask(low, low7Bits)
-	assertMask(high, low3Bits)
+	assertMask(mid, low3Bits)
 
 	return opcode.Opcode{
-		Bytes: []byte{low, high << 4},
+		Bytes: []byte{low, mid << 4},
 		Mask:  []byte{low7Bits, low3Bits << 4},
 	}
 }
 
+// opcode10 returns opcode matching low with bottom 7 bits, mid with bits
+// [12..14] and high with bits [25..31] of an instruction.
+//
+// This method panics if low is greater than 127, mid is greater than 7 or if
+// high is greater than 127.
 func opcode17(high byte, mid byte, low byte) opcode.Opcode {
 	assertMask(low, low7Bits)
 	assertMask(mid, low3Bits)
@@ -72,31 +88,39 @@ func opcode17(high byte, mid byte, low byte) opcode.Opcode {
 // opcodeShiftImm creates an opcode definition for RISC V bit shift instruction
 // with shift immediate encoded in an instruction opcode.
 //
-// Even though RISC V manual states that there are only 6 distint instruction
-// types and all of them should be describable by either opcode7, opcode10, or
-// opcode17, there is one small exception (yes x86, you are not the only one
-// architecture doing this...). The exception are bit shift with fixes argument
-// in instruction opcode immediate. Technically, such an instruction is just a
-// bit shift with 12 bit immediate, but there are a few catches.
+// Even though RISC V manual states that there are only 6 distinct instruction
+// encodings and all of them should be describable by either opcode7, opcode10,
+// or opcode17, there is one small exception. Yes x86, you are not the only one
+// architecture doing weird things... The exceptional opcode encoding is the one
+// with fixed bit short argument in the instruction immediate value.
+// Technically, such an instruction is just a bit shift with 12 bit immediate,
+// but there are a few catches.
 //
 // The first catch is that not all immediate values are allowed. To be more
 // specific, on an architecture with XLEN bits in registers (for simplicity
-// let's consider XLEN=32, which is true for 32 bit processors), it doesn't make
-// sense to encode more than 32 bit immediate value to shift and though all (but
-// one, see below) higher bits of immediate value are reserved to be zero.
+// let's consider XLEN=32 - 32 bit processors), it doesn't make sense to encode
+// more than 31 bit immediate value to shift and though all (but one - see
+// below) higher bits of immediate value are reserved to be zero.
 //
-// Another exception is the logical vs arithmetic shift difference, as the bit
-// differentiating those two is bit [30] of an instruction opcode, which
-// corresponds to 11th bit of the 12 bit immediate value in I opcode encoding
-// type. This brings a weird inconsistency when two instructions represented by
-// two different assembler instructions ("srli" and "srai") have the same opcode
-// but are differentiated only by a single bit in an immediate value field.
+// Another irregularity in immediate shift instruction encoding is the different
+// in between logical and arithmetic shift. The bit differentiating logical and
+// arithmetic shift is bit [30] of an instruction opcode which would correcpond
+// to bit [11] of 12bit I immediate type encoding. Unfortunately this encodings
+// brings a weird inconsistency when two distinct instructions identified by two
+// different assembler names (srli and srai) have the same opcode but differ
+// only in an immediate value bit.
 //
 // As different immediate value can encode different assembler instructions, we
 // need them to be parsed as 2 different instructions. Consequently we are
 // forced to describe this instruction opcode meta-format which is not specified
 // by the architecture specification document by itself, but which allows us to
 // parse bit shifts by an immediate value.
+//
+// The problem with differentiating logical and arithmetic shirt applies as well
+// on srl and sra instructions (i.e. shift instructions accepting register
+// arguments). Fortunately there we can treat the instruction opcode as 17bit
+// opcode as every other bit (but bit [30]) of an immediate value is reserved to
+// be zero.
 func opcodeShiftImm(arithmetic bool, shiftBits uint8, mid byte, low byte) opcode.Opcode {
 	assertMask(low, low7Bits)
 	assertMask(mid, low3Bits)
@@ -114,11 +138,10 @@ func opcodeShiftImm(arithmetic bool, shiftBits uint8, mid byte, low byte) opcode
 	// to get 2^shiftBits. Then we subtract 1 which creates is a bit mask
 	// for bits encoding values 0..(2^shiftBits)-1. We then invert the mask
 	// to ensure that all other reserved bits of the actual opcode are zero.
-	//
-	// And then we have to shift this mask to the right place - to 20th bit
-	// of opcode. As we have just high half of instruction opcode, we are
-	// already shifted 16 bits. So 4 bits are remaining.
 	shiftBitMask := (uint16(1) << shiftBits) - 1
+	// Then we have to shift this mask to the right place - to 20th bit of
+	// opcode. As we have just high half of instruction opcode, we are
+	// already shifted 16 bits. So 4 bits are remaining.
 	highHalfMask := (^shiftBitMask) << 4
 
 	return opcode.Opcode{
@@ -132,7 +155,7 @@ func opcodeShiftImm(arithmetic bool, shiftBits uint8, mid byte, low byte) opcode
 	}
 }
 
-var arithm32 = []*instructionOpcode{
+var integer32 = []*instructionOpcode{
 	{
 		name:         "lui",
 		opcode:       opcode7(0b0110111),
@@ -481,7 +504,7 @@ var arithm32 = []*instructionOpcode{
 	},
 }
 
-var arithm64 = []*instructionOpcode{
+var integer64 = []*instructionOpcode{
 	{
 		name:         "lwu",
 		opcode:       opcode10(0b110, 0b0000011),
@@ -693,80 +716,13 @@ var mul64 = []*instructionOpcode{
 	},
 }
 
-// mergeInstructions merges multiple lists of instruntionOpcode to a single
-// list.
-func mergeInstructions(lists ...[]*instructionOpcode) []*instructionOpcode {
-	length := 0
-	for _, a := range lists {
-		length += len(a)
-	}
-
-	merged := make([]*instructionOpcode, 0, length)
-	for _, a := range lists {
-		merged = append(merged, a...)
-	}
-
-	return merged
+var instructions = map[Variant]map[Extension][]*instructionOpcode{
+	Variant32: {
+		extI: integer32,
+		ExtM: mul32,
+	},
+	Variant64: {
+		extI: overrideInstructions(integer32, integer64),
+		ExtM: overrideInstructions(mul32, mul64),
+	},
 }
-
-// overrideInstructions applies X-bit architecture instruction changes to a
-// previous version (typically X/2-bit) of instructions based in instruction
-// names.
-//
-// Every X-bit architecture extension has to define some new instructions, but
-// more importantly it has to redefine some previous instructions to fit well to
-// the new architecture with (typically) twice as big registers. For this
-// reason, we need a way how to filter out instructions from the previous
-// architecture which has been redefined. We do so simply bby filtering those
-// instructions which names match to a name of some instruction in an override
-// list.
-//
-// Filtering based on instruction name is not ideal and works mostly because of
-// RISC V convention where an instruction without prefix (i.e. add, sub, sll) is
-// used to operate on XLEN bits and there are defined new instructions to
-// operate XLEN/2 bit portions of XLEN bit long registers. We could also use
-// opcode-wise filtering. But as definition of opcode equivalence is not trivial
-// to even define and has some corner cases (for example slli, srli, srai), we
-// have decided to avoid opcode code comparison. The logic would be more error
-// prone then this simple comparison based in instruction names.
-func overrideInstructions(
-	instrs []*instructionOpcode,
-	overrides []*instructionOpcode,
-) []*instructionOpcode {
-	// Create own sorted copy to allow quick O(log(n)) search. This trick
-	// decreases the overall complexity from O(n^2) to O(n*log(n))
-	os := make([]*instructionOpcode, len(overrides))
-	copy(os, overrides)
-	sort.Slice(os, func(i, j int) bool {
-		return strings.Compare(os[i].name, os[j].name) == -1
-	})
-
-	// Preallocate the worst possible case - as there will be few filtered
-	// instructions, we are not waisting as much as in case of exponential
-	// growth of the buffer, which would most likely result in significantly
-	// bigger array.
-	replaced := make([]*instructionOpcode, 0, len(instrs)+len(overrides))
-	for _, instr := range instrs {
-		i := sort.Search(len(os), func(i int) bool {
-			return strings.Compare(os[i].name, instr.name) > -1
-		})
-
-		if i == len(os) || os[i].name != instr.name {
-			replaced = append(replaced, instr)
-		}
-	}
-
-	replaced = append(replaced, overrides...)
-	return replaced
-}
-
-var (
-	known32 = mergeInstructions(arithm32, mul32)
-	known64 = overrideInstructions(
-		known32,
-		mergeInstructions(
-			arithm64,
-			mul64,
-		),
-	)
-)

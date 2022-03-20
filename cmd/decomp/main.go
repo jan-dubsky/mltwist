@@ -24,7 +24,8 @@ func run() error {
 	fmt.Printf("Entrypoint: 0x%x\n", exec.Entrypoint)
 	fmt.Printf("Bytes: %b\n", exec.Memory.Addr(exec.Entrypoint)[:4])
 
-	ins, err := parser.Parse(exec.Entrypoint, exec.Memory, &riscv.ParsingStrategy{})
+	riscvParser := riscv.NewParser(riscv.Variant64, riscv.ExtM)
+	ins, err := parser.Parse(exec.Entrypoint, exec.Memory, riscvParser)
 	if err != nil {
 		return fmt.Errorf("instruction parsing failed: %w", err)
 	}

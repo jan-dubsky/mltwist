@@ -6,45 +6,8 @@ import (
 	"strings"
 )
 
-type InstrBytes [instructionLen]byte
-
-func (bytes InstrBytes) regNum(r reg) regNum {
-	b := bytes[:]
-	bitOffsetRaw := r.bitOffset()
-	byteOffset := bitOffsetRaw / 8
-	b = b[byteOffset:]
-	bitOffset := bitOffsetRaw % 8
-
-	var num uint8
-	num = b[0] >> bitOffset
-
-	// Bits overlowing to b[1]
-	var remBits uint8
-	if end := bitOffset + regBits; end > 8 {
-		remBits = end - 8
-	}
-
-	remVal := b[1] & ((uint8(1) << remBits) - 1)
-	num |= remVal << (8 - bitOffset)
-
-	if num >= regCnt {
-		panic(fmt.Sprintf("BUG: parsed RISC-V register number: %d", num))
-	}
-
-	return regNum(num)
-}
-
-func (b InstrBytes) uint32() uint32 {
-	var value uint32
-	for i, v := range b {
-		value |= uint32(v) << (8 * i)
-	}
-
-	return value
-}
-
 type Instruction struct {
-	bytes  InstrBytes
+	value  uint32
 	opcode *instructionOpcode
 }
 
@@ -53,11 +16,13 @@ func newInstruction(b []byte, opcode *instructionOpcode) Instruction {
 		panic(fmt.Sprintf("not enough bytes to represent valid opcode: %d", l))
 	}
 
-	var bytes InstrBytes
-	copy(bytes[:], b)
+	var value uint32
+	for i, v := range b[:instructionLen] {
+		value |= uint32(v) << (8 * i)
+	}
 
 	return Instruction{
-		bytes:  bytes,
+		value:  value,
 		opcode: opcode,
 	}
 }
@@ -69,9 +34,9 @@ func (i Instruction) inputRegs() map[model.Register]struct{} {
 
 	regs := make(map[model.Register]struct{}, i.opcode.inputRegCnt)
 
-	regs[model.Register(i.bytes.regNum(rs1))] = struct{}{}
+	regs[model.Register(rs1.regNum(i.value))] = struct{}{}
 	if i.opcode.inputRegCnt > 1 {
-		regs[model.Register(i.bytes.regNum(rs2))] = struct{}{}
+		regs[model.Register(rs2.regNum(i.value))] = struct{}{}
 	}
 
 	return regs
@@ -83,28 +48,28 @@ func (i Instruction) outputRegs() map[model.Register]struct{} {
 	}
 
 	return map[model.Register]struct{}{
-		model.Register(i.bytes.regNum(rd)): {},
+		model.Register(rd.regNum(i.value)): {},
 	}
 }
 
-func (i Instruction) Bytes() InstrBytes { return i.bytes }
-func (i Instruction) Name() string      { return i.opcode.name }
+func (i Instruction) Value() uint32 { return i.value }
+func (i Instruction) Name() string  { return i.opcode.name }
 
 func (i Instruction) String() string {
 	// Optimistic preallocation.
 	arguments := make([]string, 0, 3)
 
 	if i.opcode.hasOutputReg {
-		arguments = append(arguments, i.bytes.regNum(rd).String())
+		arguments = append(arguments, rd.regNum(i.value).String())
 	}
 	if i.opcode.inputRegCnt > 0 {
-		arguments = append(arguments, i.bytes.regNum(rs1).String())
+		arguments = append(arguments, rs1.regNum(i.value).String())
 	}
 	if i.opcode.inputRegCnt > 1 {
-		arguments = append(arguments, i.bytes.regNum(rs2).String())
+		arguments = append(arguments, rs2.regNum(i.value).String())
 	}
 
-	if imm, ok := i.opcode.immediate.parseValue(i.bytes); ok {
+	if imm, ok := i.opcode.immediate.parseValue(i.value); ok {
 		arguments = append(arguments, fmt.Sprintf("%d", imm))
 	}
 
