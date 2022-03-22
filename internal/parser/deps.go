@@ -15,7 +15,7 @@ type Parser interface {
 	// Byte slice b has to be treated as read-only. Any write or
 	// modification of b is considered an API violation.
 	//
-	// This method might fail in case it's not possible to identify an
+	// This method can fail in case it's not possible to identify an
 	// instruction, b doesn't start with a valid opcode or b is too short to
 	// contain the full instruction opcode.
 	Parse(b []byte) (model.Instruction, error)

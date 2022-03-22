@@ -12,18 +12,26 @@ import (
 
 const regInvalid model.Register = math.MaxUint64
 
-func testInsReg(out model.Register, in ...model.Register) *instruction {
+func testIns(ins repr.Instruction) *instruction {
 	return &instruction{
-		trueDepsFwd:    make(insSet, numRegs),
-		trueDepsBack:   make(insSet, numRegs),
-		antiDepsFwd:    make(insSet, numRegs),
-		antiDepsBack:   make(insSet, numRegs),
-		outputDepsFwd:  make(insSet, numRegs),
-		outputDepsBack: make(insSet, numRegs),
-		blockIdx:       -1,
+		trueDepsFwd:     make(insSet, numRegs),
+		trueDepsBack:    make(insSet, numRegs),
+		antiDepsFwd:     make(insSet, numRegs),
+		antiDepsBack:    make(insSet, numRegs),
+		outputDepsFwd:   make(insSet, numRegs),
+		outputDepsBack:  make(insSet, numRegs),
+		controlDepsFwd:  make(insSet, 1),
+		controlDepsBack: make(insSet, 0),
+		specialDepsFwd:  make(insSet, 0),
+		specialDepsBack: make(insSet, 0),
+		blockIdx:        -1,
 
-		Instr: testInsReprReg(out, in...),
+		Instr: ins,
 	}
+}
+
+func testInsReg(out model.Register, in ...model.Register) *instruction {
+	return testIns(testInsReprReg(out, in...))
 }
 
 func testInsReprReg(out model.Register, in ...model.Register) repr.Instruction {
@@ -125,8 +133,8 @@ func runDepsTest(
 			for d := range deps {
 				src := tt.ins[d.src]
 				dst := tt.ins[d.dst]
-				r.Contains(fwdF(src), dst)
-				r.Contains(backF(dst), src)
+				r.Contains(fwdF(src), dst, "dependency: %v", d)
+				r.Contains(backF(dst), src, "dependency: %v", d)
 			}
 
 			srcs := depCnts(deps, func(d dep) int { return d.src })

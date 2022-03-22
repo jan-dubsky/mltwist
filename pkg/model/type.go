@@ -61,11 +61,21 @@ const (
 	typeMax
 )
 
-func (t Type) Aritm() bool    { return t&TypeAritm != 0 }
-func (t Type) Jump() bool     { return t&TypeJump != 0 }
-func (t Type) CJump() bool    { return t&TypeCJump != 0 }
-func (t Type) JumpDyn() bool  { return t&TypeJumpDyn != 0 }
-func (t Type) Load() bool     { return t&TypeLoad != 0 }
-func (t Type) Store() bool    { return t&TypeStore != 0 }
-func (t Type) MemOrder() bool { return t&TypeMemOrder != 0 }
-func (t Type) Syscall() bool  { return t&TypeSyscall != 0 }
+// Is checks if type set t contains type other.
+//
+// As Type type represents a set of instruction types where every single type is
+// represented by a single bit which is either set or unset, this check can be
+// effectively performed using a single AND operation. Consequence of this Type
+// implementation is that this method makes sense only for Type sets with just
+// one bit set - i.e. those defined as constants in this package.
+func (t Type) Is(other Type) bool { return t&other != 0 }
+
+func (t Type) Aritm() bool          { return t.Is(TypeAritm) }
+func (t Type) Jump() bool           { return t.Is(TypeJump) }
+func (t Type) CJump() bool          { return t.Is(TypeCJump) }
+func (t Type) JumpDyn() bool        { return t.Is(TypeJumpDyn) }
+func (t Type) Load() bool           { return t.Is(TypeLoad) }
+func (t Type) Store() bool          { return t.Is(TypeStore) }
+func (t Type) MemOrder() bool       { return t.Is(TypeMemOrder) }
+func (t Type) CPUStateChange() bool { return t.Is(TypeCPUStateChange) }
+func (t Type) Syscall() bool        { return t.Is(TypeSyscall) }

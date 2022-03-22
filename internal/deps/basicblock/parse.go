@@ -2,6 +2,7 @@ package basicblock
 
 import (
 	"decomp/internal/repr"
+	"decomp/pkg/model"
 	"fmt"
 	"sort"
 )
@@ -56,12 +57,16 @@ func splitByAddress(seq []repr.Instruction) [][]repr.Instruction {
 	return seqs
 }
 
+func controlFlowInstruction(t model.Type) bool {
+	return t.Jump() || t.CJump() || t.JumpDyn()
+}
+
 func splitByJumps(seq []repr.Instruction) [][]repr.Instruction {
 	seqs := make([][]repr.Instruction, 0, 1)
 	begin := 0
 
 	for i, ins := range seq {
-		if t := ins.Type; t.Jump() || t.CJump() || t.JumpDyn() {
+		if t := ins.Type; controlFlowInstruction(t) {
 			seqs = append(seqs, seq[begin:i+1])
 			begin = i + 1
 		}

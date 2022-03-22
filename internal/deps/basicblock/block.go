@@ -83,7 +83,7 @@ func (bs *blocks) split(addr model.Address) error {
 		return fmt.Errorf("no basic block with address 0x%x found", addr)
 	}
 
-	// Splitting an empty block makes no sense.
+	// Address is at basic block start, so no splitting is necessary.
 	if (*bs)[idx].begin() == addr {
 		return nil
 	}

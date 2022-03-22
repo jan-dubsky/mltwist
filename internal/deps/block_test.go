@@ -10,6 +10,9 @@ import (
 )
 
 func TestBlock_Bounds(t *testing.T) {
+	// Keep in mind that last instruction in a basic block has always
+	// control dependency on all other instructions.
+
 	type bounds struct {
 		lower int
 		upper int
@@ -54,9 +57,9 @@ func TestBlock_Bounds(t *testing.T) {
 				4: {lower: 3, upper: 7},
 				5: {lower: 4, upper: 6},
 				6: {lower: 2, upper: 6},
-				7: {lower: 7, upper: 9},
-				8: {lower: 7, upper: 9},
-				9: {lower: 0, upper: 9},
+				7: {lower: 7, upper: 8},
+				8: {lower: 7, upper: 8},
+				9: {lower: 9, upper: 9},
 			},
 		},
 		{
@@ -71,13 +74,13 @@ func TestBlock_Bounds(t *testing.T) {
 				testInsReprReg(7, 7),
 			},
 			bounds: map[int]bounds{
-				0: {lower: 0, upper: 6},
+				0: {lower: 0, upper: 5},
 				1: {lower: 0, upper: 5},
 				2: {lower: 0, upper: 2},
 				3: {lower: 3, upper: 3},
-				4: {lower: 4, upper: 6},
-				5: {lower: 0, upper: 6},
-				6: {lower: 2, upper: 6},
+				4: {lower: 4, upper: 5},
+				5: {lower: 0, upper: 5},
+				6: {lower: 6, upper: 6},
 			},
 		},
 	}
@@ -111,9 +114,13 @@ func TestBlock_Bounds(t *testing.T) {
 				t.Logf("\tFwd true: %v\n", idxs(ins.i.trueDepsFwd))
 				t.Logf("\tFwd anti: %v\n", idxs(ins.i.antiDepsFwd))
 				t.Logf("\tFwd out: %v\n", idxs(ins.i.outputDepsFwd))
+				t.Logf("\tFwd control: %v\n", idxs(ins.i.controlDepsFwd))
+				t.Logf("\tFwd special: %v\n", idxs(ins.i.specialDepsFwd))
 				t.Logf("\tBack true: %v\n", idxs(ins.i.trueDepsBack))
 				t.Logf("\tBack anti: %v\n", idxs(ins.i.antiDepsBack))
 				t.Logf("\tBack out: %v\n", idxs(ins.i.outputDepsBack))
+				t.Logf("\tBack control: %v\n", idxs(ins.i.controlDepsBack))
+				t.Logf("\tBack special: %v\n", idxs(ins.i.specialDepsBack))
 
 				r.Equal(b.lower, l, "Lower bound doesn't match")
 				r.Equal(b.upper, u, "Upper bound doesn't match")

@@ -30,7 +30,7 @@ func run() error {
 		return fmt.Errorf("instruction parsing failed: %w", err)
 	}
 
-	model, err := deps.NewModel(ins.Instructions)
+	model, err := deps.NewProgram(ins.Instructions)
 	if err != nil {
 		return fmt.Errorf("cannot parse model: %w", err)
 	}

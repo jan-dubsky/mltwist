@@ -11,6 +11,7 @@ type Block struct {
 	end   model.Address
 	seq   []*instruction
 
+	// idx is zero-based index of the block in the program.
 	idx int
 }
 
@@ -28,6 +29,8 @@ func newBlock(idx int, seq []repr.Instruction) *Block {
 	processTrueDeps(instrs)
 	processAntiDeps(instrs)
 	processOutputDeps(instrs)
+	processControlDeps(instrs)
+	processSpecialDeps(instrs)
 
 	return &Block{
 		begin: seq[0].Address,
@@ -68,8 +71,9 @@ func (b *Block) Index(i int) Instruction { return b.seq[i].ptr() }
 
 // Move moves instruction in the block from index from to index to. All
 // instructions in between from and to are shifted one instruction back or
-// forward respectively. This method will fail in case the move violates
-// instruction dependency constraints.
+// forward respectively. This method will fail in case the move violates any
+// instruction dependency constraints or if either from or to are not valid
+// indices of an instruction in the block.
 func (b *Block) Move(from int, to int) error {
 	if err := b.checkMove(from, to); err != nil {
 		return fmt.Errorf("cannot move %d to %d: %w", from, to, err)
@@ -105,6 +109,8 @@ func (b *Block) moveBack(from int, to int) {
 	}
 }
 
+// validateIndex validates that variable called name with value value is valid
+// index in the block b.
 func (b *Block) validateIndex(name string, value int) error {
 	if value < 0 {
 		return fmt.Errorf("negative value of %q is not allowed: %d", name, value)
@@ -116,6 +122,8 @@ func (b *Block) validateIndex(name string, value int) error {
 	return nil
 }
 
+// checkMove asserts of move of instruction on index from to index to is valid
+// move in the block.
 func (b *Block) checkMove(from int, to int) error {
 	if err := b.validateIndex("from", from); err != nil {
 		return err
@@ -136,25 +144,18 @@ func (b *Block) checkMove(from int, to int) error {
 	return nil
 }
 
-func findOne(f func(int, int) bool, instrs insSet, idx int) int {
-	curr := idx
-	for ins := range instrs {
-		if curr < 0 || f(ins.blockIdx, curr) {
-			curr = ins.blockIdx
-		}
-	}
-
-	return curr
-}
-
 // findBound finds an instruction boundary (smallest or greatest instruction
-// index) in multiple sets of instructions. The f predicate is in the search
-// always used to evaluate if the new value of index is "better" than the
-// current (so far found) value.
-func findBound(f func(int, int) bool, sets ...insSet) int {
+// index) in multiple sets of instructions. The cmpF is a comparison predicate
+// used to evaluate if the new value of index is "better" than the current (so
+// far found) value.
+func findBound(cmpF func(first int, second int) bool, sets ...insSet) int {
 	var curr int = -1
 	for _, s := range sets {
-		curr = findOne(f, s, curr)
+		for ins := range s {
+			if curr < 0 || cmpF(ins.blockIdx, curr) {
+				curr = ins.blockIdx
+			}
+		}
 	}
 
 	return curr
@@ -170,6 +171,8 @@ func (*Block) lowerBound(i *instruction) int {
 		i.trueDepsBack,
 		i.antiDepsBack,
 		i.outputDepsBack,
+		i.controlDepsBack,
+		i.specialDepsBack,
 	)
 
 	if idx < 0 {
@@ -188,6 +191,8 @@ func (b *Block) upperBound(i *instruction) int {
 		i.trueDepsFwd,
 		i.antiDepsFwd,
 		i.outputDepsFwd,
+		i.controlDepsFwd,
+		i.specialDepsFwd,
 	)
 
 	if idx < 0 {

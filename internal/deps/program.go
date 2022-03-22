@@ -6,12 +6,12 @@ import (
 	"fmt"
 )
 
-type Model struct {
+type Program struct {
 	blocks   []*Block
 	instrCnt int
 }
 
-func NewModel(seq []repr.Instruction) (*Model, error) {
+func NewProgram(seq []repr.Instruction) (*Program, error) {
 	seqs, err := basicblock.Parse(seq)
 	if err != nil {
 		return nil, fmt.Errorf("cannot find basic blocks: %w", err)
@@ -27,13 +27,13 @@ func NewModel(seq []repr.Instruction) (*Model, error) {
 		instrCnt += b.Len()
 	}
 
-	return &Model{
+	return &Program{
 		blocks:   blocks,
 		instrCnt: instrCnt,
 	}, nil
 }
 
-func (m *Model) Blocks() []*Block   { return m.blocks }
-func (m *Model) Len() int           { return len(m.blocks) }
-func (m *Model) NumInstr() int      { return m.instrCnt }
-func (m *Model) Index(i int) *Block { return m.blocks[i] }
+func (m *Program) Blocks() []*Block   { return m.blocks }
+func (m *Program) Len() int           { return len(m.blocks) }
+func (m *Program) NumInstr() int      { return m.instrCnt }
+func (m *Program) Index(i int) *Block { return m.blocks[i] }

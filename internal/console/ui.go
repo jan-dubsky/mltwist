@@ -13,8 +13,8 @@ type UI struct {
 	control controller
 }
 
-func NewUI(m *deps.Model) *UI {
-	lines := lines.NewLines(m)
+func NewUI(p *deps.Program) *UI {
+	lines := lines.NewLines(p)
 	return &UI{
 		view:    view.New(lines),
 		control: control.New(lines),

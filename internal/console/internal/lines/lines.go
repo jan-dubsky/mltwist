@@ -11,15 +11,15 @@ type Lines struct {
 	lines       []Line
 	blockStarts []int
 
-	m *deps.Model
+	p *deps.Program
 }
 
-func NewLines(m *deps.Model) *Lines {
+func NewLines(p *deps.Program) *Lines {
 	// Each block will have a header and will be delimited by a blank line.
 	// Each instruction will be a single line.
-	lns := make([]Line, 0, 2*m.Len()+m.NumInstr()+1)
-	blockStarts := make([]int, m.Len())
-	for i, b := range m.Blocks() {
+	lns := make([]Line, 0, 2*p.Len()+p.NumInstr()+1)
+	blockStarts := make([]int, p.Len())
+	for i, b := range p.Blocks() {
 		if i != 0 {
 			lns = append(lns, newEmptyLine())
 		}
@@ -34,7 +34,7 @@ func NewLines(m *deps.Model) *Lines {
 		offset:      0,
 		lines:       lns,
 		blockStarts: blockStarts,
-		m:           m,
+		p:           p,
 	}
 }
 
@@ -123,7 +123,7 @@ func (l Lines) lineIndices(lineIdx int) (int, int) {
 }
 
 func (l *Lines) Reload(blockIdx int) {
-	newBlock := blockToLines(l.m.Index(blockIdx))
+	newBlock := blockToLines(l.p.Index(blockIdx))
 	lines := l.lines[l.blockStarts[blockIdx]:]
 	lines = lines[:len(newBlock)]
 	copy(lines, newBlock)
@@ -134,7 +134,7 @@ func (l Lines) Block(lineIdx int) (*deps.Block, bool) {
 	if blockIdx < 0 {
 		return nil, false
 	}
-	return l.m.Index(blockIdx), true
+	return l.p.Index(blockIdx), true
 }
 
 func (l Lines) Instruction(lineIdx int) (deps.Instruction, bool) {
@@ -142,7 +142,7 @@ func (l Lines) Instruction(lineIdx int) (deps.Instruction, bool) {
 	if line.instr < 0 {
 		return deps.Instruction{}, false
 	}
-	return l.m.Index(line.block).Index(line.instr), true
+	return l.p.Index(line.block).Index(line.instr), true
 }
 
 func (l Lines) Line(block *deps.Block, ins deps.Instruction) int {
