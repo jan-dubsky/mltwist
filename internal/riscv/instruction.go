@@ -27,12 +27,12 @@ func newInstruction(b []byte, opcode *instructionOpcode) Instruction {
 	}
 }
 
-func (i Instruction) inputRegs() map[model.Register]struct{} {
+func (i Instruction) inputRegs() model.Registers {
 	if i.opcode.inputRegCnt == 0 {
 		return nil
 	}
 
-	regs := make(map[model.Register]struct{}, i.opcode.inputRegCnt)
+	regs := make(model.Registers, i.opcode.inputRegCnt)
 
 	regs[model.Register(rs1.regNum(i.value))] = struct{}{}
 	if i.opcode.inputRegCnt > 1 {
@@ -42,36 +42,56 @@ func (i Instruction) inputRegs() map[model.Register]struct{} {
 	return regs
 }
 
-func (i Instruction) outputRegs() map[model.Register]struct{} {
+func (i Instruction) outputRegs() model.Registers {
 	if !i.opcode.hasOutputReg {
 		return nil
 	}
 
-	return map[model.Register]struct{}{
+	return model.Registers{
 		model.Register(rd.regNum(i.value)): {},
 	}
 }
 
-func (i Instruction) Value() uint32 { return i.value }
-func (i Instruction) Name() string  { return i.opcode.name }
+func (i Instruction) name() string { return i.opcode.name }
 
 func (i Instruction) String() string {
 	// Optimistic preallocation.
-	arguments := make([]string, 0, 3)
+	as := make([]string, 0, 3)
 
 	if i.opcode.hasOutputReg {
-		arguments = append(arguments, rd.regNum(i.value).String())
+		as = append(as, rd.regNum(i.value).String())
 	}
 	if i.opcode.inputRegCnt > 0 {
-		arguments = append(arguments, rs1.regNum(i.value).String())
+		as = append(as, rs1.regNum(i.value).String())
 	}
 	if i.opcode.inputRegCnt > 1 {
-		arguments = append(arguments, rs2.regNum(i.value).String())
+		as = append(as, rs2.regNum(i.value).String())
 	}
 
 	if imm, ok := i.opcode.immediate.parseValue(i.value); ok {
-		arguments = append(arguments, fmt.Sprintf("%d", imm))
+		immStr := fmt.Sprintf("%d", imm)
+
+		// Store instruction is written in order: `s[bhwd] <reg>
+		// <mem_addr>`, even though memory base register is r1 and the
+		// register written to memory is r2. Why not to make the
+		// assember irregular such that store is the only instruction
+		// where direction of data flow is from left operand to the
+		// right one. Long live irregularities! Intel celebrates, the
+		// rest of the world cries...
+		if i.opcode.storeBytes > 0 {
+			l := len(as)
+			as[l-1], as[l-2] = as[l-2], as[l-1]
+		}
+
+		// For some weird reason load and store instructions use
+		// different syntax then all other instructions - memory offset
+		// syntax.
+		if i.opcode.loadBytes > 0 || i.opcode.storeBytes > 0 {
+			as[len(as)-1] = fmt.Sprintf("%s(%s)", immStr, as[len(as)-1])
+		} else {
+			as = append(as, immStr)
+		}
 	}
 
-	return fmt.Sprintf("%s %s", i.opcode.name, strings.Join(arguments, ", "))
+	return fmt.Sprintf("%s %s", i.opcode.name, strings.Join(as, ", "))
 }

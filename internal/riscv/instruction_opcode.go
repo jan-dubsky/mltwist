@@ -77,10 +77,16 @@ func (i instructionOpcode) validate(xlenBytes uint8) error {
 	}
 
 	if i.loadBytes > 0 && i.storeBytes > 0 {
-		return fmt.Errorf("instruction can  be either load or store")
+		return fmt.Errorf("instruction can be either load or store")
 	}
 	if i.unsigned && (i.loadBytes == 0 || i.loadBytes == xlenBytes) {
 		return fmt.Errorf("unsigned is allowed for loads shorter than XLEN bytes")
+	}
+
+	if cnt := i.inputRegCnt; i.loadBytes > 0 && cnt != 1 {
+		return fmt.Errorf("load must have exactly one input register: %d", cnt)
+	} else if i.storeBytes > 0 && cnt != 2 {
+		return fmt.Errorf("store must have exactly two input registers: %d", cnt)
 	}
 
 	return nil

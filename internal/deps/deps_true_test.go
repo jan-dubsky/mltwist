@@ -35,7 +35,7 @@ func testInsReg(out model.Register, in ...model.Register) *instruction {
 }
 
 func testInsReprReg(out model.Register, in ...model.Register) repr.Instruction {
-	inRegs := make(map[model.Register]struct{}, len(in))
+	inRegs := make(model.Registers, len(in))
 	for _, r := range in {
 		if _, ok := inRegs[r]; ok {
 			panic(fmt.Sprintf("duplicit register: %d", r))
@@ -44,7 +44,7 @@ func testInsReprReg(out model.Register, in ...model.Register) repr.Instruction {
 		inRegs[r] = struct{}{}
 	}
 
-	outRegs := make(map[model.Register]struct{}, 1)
+	outRegs := make(model.Registers, 1)
 	if out != regInvalid {
 		outRegs[out] = struct{}{}
 	}

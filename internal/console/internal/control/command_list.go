@@ -4,7 +4,11 @@ import (
 	"decomp/internal/console/internal/lines"
 	"fmt"
 	"math"
+	"regexp"
 )
+
+// ErrQuit is returned by command in case UI termination is required.
+var ErrQuit = fmt.Errorf("app exit required")
 
 // commandsProxy is a helped variable containing the same array array (the very
 // same instance) as commands variable.
@@ -35,48 +39,48 @@ import (
 // performance, neither functional impact for the code.
 var commandsProxy []*command
 
-func init() { commandsProxy = commands }
+func init() { commandsProxy = commands() }
 
-var commands = []*command{
-	{
+func commands() []*command {
+	return []*command{{
 		keys: []string{"help", "h"},
 		help: "Print help of all commands",
 		action: func(c *Control, _ ...interface{}) error {
 			for _, cmd := range commandsProxy {
-				fmt.Printf("%s\n", cmd.keysString())
-				fmt.Printf("%s\n", format(cmd.help, 1, width))
+				fmt.Printf("%s\t(args: %d, additional_args: %t)\n",
+					cmd.keysString(),
+					len(cmd.args),
+					cmd.optionalArgs != nil,
+				)
+				fmt.Print(format(cmd.help, 1, width))
 				fmt.Printf("\n")
 			}
 
-			fmt.Printf("Press ENTER to continue\n")
-			if _, err := c.reader.readLine(); err != nil {
-				return fmt.Errorf("readline error: %w", err)
+			if err := c.errMsgf("\n"); err != nil {
+				return err
 			}
 
 			return nil
 		},
-	},
-	{
+	}, {
 		keys: []string{"down", "d"},
 		help: "Move line cursor <N> lines down.",
 		args: []argParseFunc{
 			parseNum(0, math.MaxInt),
 		},
 		action: func(c *Control, args ...interface{}) error {
-			return c.l.Shift(args[0].(int))
+			return c.c.Set(c.c.Value() + args[0].(int))
 		},
-	},
-	{
+	}, {
 		keys: []string{"up", "u"},
 		help: "Move line cursor <N> lines up.",
 		args: []argParseFunc{
 			parseNum(0, math.MaxInt),
 		},
 		action: func(c *Control, args ...interface{}) error {
-			return c.l.Shift(-args[0].(int))
+			return c.c.Set(c.c.Value() + -args[0].(int))
 		},
-	},
-	{
+	}, {
 		keys: []string{"move", "mv", "m"},
 		help: "Move instruction from line <N> to line <M>",
 		args: []argParseFunc{
@@ -110,8 +114,7 @@ var commands = []*command{
 
 			return nil
 		},
-	},
-	{
+	}, {
 		keys: []string{"bounds", "b"},
 		help: "Show bounds where a given instruction can be moved.",
 		args: []argParseFunc{
@@ -136,19 +139,93 @@ var commands = []*command{
 
 			return nil
 		},
-	},
-	{
+	}, {
+		keys: []string{"find", "f", "/"},
+		help: "Find row matching standard POSIX regex.",
+		args: []argParseFunc{
+			parseString,
+		},
+		optionalArgs: joinOptStrings,
+		action: func(c *Control, args ...interface{}) error {
+			r := args[0].(string)
+			if len(args) > 1 {
+				r = r + " " + args[1].(string)
+			}
+
+			regexp, err := regexp.CompilePOSIX(r)
+			if err != nil {
+				return fmt.Errorf("invalid regex %q: %w", r, err)
+			}
+
+			var line int = -1
+			offset := c.c.Value()
+			for i := offset + 1; i != offset; i = (i + 1) % c.l.Len() {
+				if regexp.MatchString(c.l.Index(i).String()) {
+					line = i
+					break
+				}
+			}
+
+			if line != -1 {
+				c.l.UnmarkAll()
+				c.c.Set(line)
+				c.l.SetMark(line, lines.MarkFound)
+			} else {
+				err := c.errMsgf("No line matching regex %q found.\n", r)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	}, {
+		keys: []string{"goto", "g"},
+		help: "Go to line number <N>.",
+		args: []argParseFunc{
+			parseNum(0, math.MaxInt),
+		},
+		action: func(c *Control, args ...interface{}) error {
+			n := args[0].(int)
+			if l := c.l.Len(); n > l {
+				return fmt.Errorf("line number too big: %d > %d", n, l)
+			}
+
+			if err := c.c.Set(n); err != nil {
+				return err
+			}
+
+			c.l.UnmarkAll()
+			c.l.SetMark(n, lines.MarkFound)
+			return nil
+		},
+	}, {
+		keys: []string{"alllines"},
+		help: "Prints all lines of the code into console. " +
+			"Ignores current cursor position.",
+		action: func(c *Control, args ...interface{}) error {
+			for i := 0; i < c.l.Len(); i++ {
+				fmt.Print(c.v.Format(i))
+			}
+
+			if err := c.errMsgf("\n"); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}, {
 		keys: []string{"quit", "q"},
 		help: "Quit the app.",
 		action: func(c *Control, args ...interface{}) error {
-			return nil
+			return ErrQuit
 		},
-	},
+	}}
 }
 
-var cmdMap = func() map[string]*command {
+func commandMap() map[string]*command {
 	m := make(map[string]*command)
-	for i, command := range commands {
+	for i, command := range commands() {
 		for _, k := range command.keys {
 			if _, ok := m[k]; ok {
 				panic(fmt.Sprintf("duplicate command key %q at position %d",
@@ -160,4 +237,4 @@ var cmdMap = func() map[string]*command {
 	}
 
 	return m
-}()
+}

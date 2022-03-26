@@ -1,6 +1,8 @@
 package model
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Instruction struct {
 	// Type is a set of instruction type categories the instruction belongs
@@ -19,11 +21,11 @@ type Instruction struct {
 
 	InputMemory []Address
 	// InputRegistry is a set if registers consumed by the instruction.
-	InputRegistry map[Register]struct{}
+	InputRegistry Registers
 
 	OutputMemory []Address
 	// OutputRegistry is a set if registers written by the instruction.
-	OutputRegistry map[Register]struct{}
+	OutputRegistry Registers
 
 	// Details provides additional platform specific properties of the
 	// instruction.

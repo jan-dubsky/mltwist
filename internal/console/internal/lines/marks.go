@@ -4,12 +4,14 @@ package lines
 // to set longer mark will result in panic.
 const MaxMarkLen = 3
 
-const (
-	MarkMovedFrom = "<"
-	MarkMovedTo   = ">"
-)
+type Mark string
 
 const (
-	MarkLowerBound = "vvv"
-	MarkUpperBound = "^^^"
+	MarkMovedFrom Mark = "<"
+	MarkMovedTo   Mark = ">"
+
+	MarkLowerBound Mark = "vvv"
+	MarkUpperBound Mark = "^^^"
+
+	MarkFound Mark = "-->"
 )

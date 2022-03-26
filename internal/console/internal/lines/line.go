@@ -9,7 +9,7 @@ var blockIndent = strings.Repeat(" ", 4)
 
 // Line represents a single line of the instruction visualization.
 type Line struct {
-	mark  string
+	mark  Mark
 	value string
 
 	// block is number of basic block in the model this line refers to.
@@ -30,12 +30,12 @@ func newEmptyLine() Line {
 }
 
 func (l Line) String() string { return l.value }
-func (l Line) Mark() string   { return l.mark }
+func (l Line) Mark() string   { return string(l.mark) }
 
-func (l *Line) setMark(s string) {
-	if l := len(s); l > MaxMarkLen {
+func (l *Line) setMark(m Mark) {
+	if l := len(m); l > MaxMarkLen {
 		panic(fmt.Sprintf("mark is too long: %d > %d", l, MaxMarkLen))
 	}
 
-	l.mark = s
+	l.mark = m
 }

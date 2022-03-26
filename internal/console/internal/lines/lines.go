@@ -60,49 +60,10 @@ func blockToLines(b *deps.Block) []Line {
 	return lines
 }
 
-func (l Lines) Offset() int { return l.offset }
-func (l Lines) Len() int    { return len(l.lines) }
+func (l Lines) Len() int         { return len(l.lines) }
+func (l Lines) Index(i int) Line { return l.lines[i] }
 
-func (l Lines) checkOffset(offset int) error {
-	if offset < 0 {
-		return fmt.Errorf("offset cannot be negative: %d", offset)
-	}
-	if l := len(l.lines); offset >= l {
-		return fmt.Errorf("offset is too high: %d > %d", offset, l)
-	}
-
-	return nil
-}
-
-func (l *Lines) Shift(o int) error {
-	newOffset := l.offset + o
-	if err := l.checkOffset(newOffset); err != nil {
-		return fmt.Errorf("new offset value is invalid: %w", err)
-	}
-
-	l.offset = newOffset
-	return nil
-}
-
-func (l *Lines) Lines(n int) []Line {
-	if n <= 0 {
-		return nil
-	}
-
-	ret := make([]Line, 0, n)
-	for i := 0; i < n; i++ {
-		j := l.offset + int(i)
-		if j >= len(l.lines) {
-			break
-		}
-
-		ret = append(ret, l.lines[j])
-	}
-
-	return ret
-}
-
-func (l *Lines) SetMark(lineIdx int, mark string) { l.lines[lineIdx].setMark(mark) }
+func (l *Lines) SetMark(lineIdx int, m Mark) { l.lines[lineIdx].setMark(m) }
 
 func (l *Lines) UnmarkAll() {
 	for i := range l.lines {

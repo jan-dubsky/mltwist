@@ -1,23 +1,32 @@
 package control
 
 import (
+	"decomp/internal/console/internal/cursor"
 	"decomp/internal/console/internal/lines"
+	"decomp/internal/console/internal/view"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 )
 
 type Control struct {
-	l        *lines.Lines
+	l *lines.Lines
+	c *cursor.Cursor
+	v *view.View
+
 	reader   *lineReader
 	commands map[string]*command
 }
 
-func New(l *lines.Lines) *Control {
+func New(l *lines.Lines, c *cursor.Cursor, v *view.View) *Control {
 	return &Control{
-		l:        l,
+		l: l,
+		c: c,
+		v: v,
+
 		reader:   newLineReader(os.Stdin),
-		commands: cmdMap,
+		commands: commandMap(),
 	}
 }
 
@@ -47,20 +56,15 @@ func (c *Control) parseCommand(str string) (*command, []interface{}, error) {
 	}
 
 	parts = parts[len(cmd.args):]
-	if l := len(cmd.optionalArgs); len(parts) > l {
-		return nil, nil, fmt.Errorf(
-			"too many arguments: command %q accepts at most %d optional args",
-			cmdStr, l)
+	if len(parts) == 0 {
+		return cmd, args, nil
 	}
 
-	for i, part := range parts {
-		val, err := cmd.optionalArgs[i](part)
-		if err != nil {
-			return nil, nil, fmt.Errorf("cannot parse argument %d: %w", i, err)
-		}
-
-		args = append(args, val)
+	vals, err := cmd.optionalArgs(parts)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot parse optional arguments: %w", err)
 	}
+	args = append(args, vals...)
 
 	return cmd, args, nil
 }
@@ -88,6 +92,10 @@ func (c *Control) Command() error {
 
 	err = cmd.action(c, args...)
 	if err != nil {
+		if errors.Is(err, ErrQuit) {
+			return err
+		}
+
 		fmt.Printf("error: %s\n", err.Error())
 		if _, err := c.reader.readLine(); err != nil {
 			return fmt.Errorf("readline error: %w", err)
@@ -95,5 +103,14 @@ func (c *Control) Command() error {
 		return nil
 	}
 
+	return nil
+}
+
+func (c *Control) errMsgf(pattern string, args ...interface{}) error {
+	fmt.Printf(pattern, args...)
+	fmt.Printf("Press ENTER to continue\n")
+	if _, err := c.reader.readLine(); err != nil {
+		return fmt.Errorf("readline error: %w", err)
+	}
 	return nil
 }

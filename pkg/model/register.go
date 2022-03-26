@@ -10,3 +10,6 @@ package model
 // Note that some architectures can have some special meaning associated with
 // some register numbers which cannot be depicted by this respresentation.
 type Register uint64
+
+// Registers represents a set of Register values.
+type Registers map[Register]struct{}

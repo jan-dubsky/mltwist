@@ -9,12 +9,13 @@ import (
 )
 
 type argParseFunc func(s string) (interface{}, error)
+type optArgParseFunc func(s []string) ([]interface{}, error)
 
 type command struct {
 	keys         []string
 	help         string
 	args         []argParseFunc
-	optionalArgs []argParseFunc
+	optionalArgs optArgParseFunc
 	action       func(c *Control, args ...interface{}) error
 }
 
@@ -25,22 +26,55 @@ func (c command) keysString() string { return strings.Join(c.keys, ", ") }
 // boundaries.
 func parseNum(min, max int) argParseFunc {
 	return func(s string) (interface{}, error) {
-		val, err := strconv.Atoi(s)
+		v, err := strconv.Atoi(s)
 		if err != nil {
 			return nil, fmt.Errorf("invalid integer value %q: %w", s, err)
 		}
 
-		if val < min {
-			return nil, fmt.Errorf("value is less than allowed minimum: %d < %d", val, min)
+		if v < min {
+			return nil, fmt.Errorf(
+				"value is less than allowed minimum: %d < %d", v, min)
 		}
-		if val > max {
-			return nil, fmt.Errorf("value is greater than allowed maximum: %d > %d", val, max)
+		if v > max {
+			return nil, fmt.Errorf(
+				"value is greater than allowed maximum: %d > %d", v, max)
 		}
 
-		return val, nil
+		return v, nil
 	}
 }
 
+func parseString(s string) (interface{}, error) {
+	return s, nil
+}
+
+// sequentialOptArgParseFunc is a helper optional argument parses which uses f
+// to parse every individual optional argument and returns an array with all
+// parsed values.
+func sequentialOptArgParseFunc(f argParseFunc) optArgParseFunc {
+	return func(strs []string) ([]interface{}, error) {
+		vals := make([]interface{}, len(strs))
+		for i, s := range strs {
+			v, err := f(s)
+			if err != nil {
+				return nil, fmt.Errorf("optional arg %d/%d: %w",
+					i, len(strs), err)
+			}
+
+			vals[i] = v
+		}
+
+		return vals, nil
+	}
+}
+
+func joinOptStrings(strs []string) ([]interface{}, error) {
+	return []interface{}{strings.Join(strs, "")}, nil
+}
+
+// insLine resurns basic-block and an instruction the line is referring. This
+// method failed with an error if line lineIdx in lines is not an instruction
+// line.
 func insLine(lines *lines.Lines, lineIdx int) (*deps.Block, deps.Instruction, error) {
 	block, ok := lines.Block(lineIdx)
 	if !ok {
