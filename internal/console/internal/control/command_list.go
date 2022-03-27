@@ -102,7 +102,7 @@ func commands() []*command {
 			if fromBlock != toBlock {
 				return fmt.Errorf("instructions cannot be moved in between blocks")
 			}
-			if err := fromBlock.Move(fromIns.Idx(), toIns.Idx()); err != nil {
+			if err := fromBlock.Move(fromIns, toIns); err != nil {
 				return err
 			}
 
@@ -128,8 +128,8 @@ func commands() []*command {
 
 			lower := block.LowerBound(ins)
 			upper := block.UpperBound(ins)
-			lowerLine := c.l.Line(block, block.Index(lower))
-			upperLine := c.l.Line(block, block.Index(upper))
+			lowerLine := c.l.Line(block, lower)
+			upperLine := c.l.Line(block, upper)
 
 			c.l.UnmarkAll()
 			// Lower and Upper indices are inclusive, but in

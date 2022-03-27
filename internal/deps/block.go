@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-type Block struct {
+type block struct {
 	begin model.Address
 	end   model.Address
 	seq   []*instruction
@@ -16,9 +16,9 @@ type Block struct {
 }
 
 // newBlock parses a non-empty sequence of instructions sorted by their
-// in-memory addresses into a Block and analyzes dependencies in between
+// in-memory addresses into a block and analyzes dependencies in between
 // instructions.
-func newBlock(idx int, seq []repr.Instruction) *Block {
+func newBlock(idx int, seq []repr.Instruction) *block {
 	var length model.Address
 	instrs := make([]*instruction, len(seq))
 	for i, ins := range seq {
@@ -32,7 +32,7 @@ func newBlock(idx int, seq []repr.Instruction) *Block {
 	processControlDeps(instrs)
 	processSpecialDeps(instrs)
 
-	return &Block{
+	return &block{
 		begin: seq[0].Address,
 		end:   seq[0].Address + length,
 		seq:   instrs,
@@ -42,101 +42,50 @@ func newBlock(idx int, seq []repr.Instruction) *Block {
 
 // Begin returns starting in-memory address of the block. The address relates to
 // the original address space of a binary.
-func (b *Block) Begin() model.Address { return b.begin }
+func (b *block) Begin() model.Address { return b.begin }
 
 // End returns in-memory address of the first byte behind the block. The address
 // relates to the original address space of a binary.
-func (b *Block) End() model.Address { return b.end }
+func (b *block) End() model.Address { return b.end }
 
 // Bytes returns number of bytes of all instructions in the block.
-func (b *Block) Bytes() model.Address { return b.end - b.begin }
+func (b *block) Bytes() model.Address { return b.end - b.begin }
 
 // Len returns number of instructions in b.
-func (b *Block) Len() int { return len(b.seq) }
+func (b *block) Len() int { return len(b.seq) }
 
 // Idx returns index of an instruction in list of basic blocks.
-func (b *Block) Idx() int { return b.idx }
+func (b *block) Idx() int { return b.idx }
 
-// Instructions lists all instructions in b.
-func (b *Block) Instructions() []Instruction {
-	seq := make([]Instruction, len(b.seq))
-	for i, ins := range b.seq {
-		seq[i] = ins.ptr()
-	}
-	return seq
-}
-
-// Index returns instruction at index i in b.
-func (b *Block) Index(i int) Instruction { return b.seq[i].ptr() }
+func (b *block) index(i int) *instruction { return b.seq[i] }
 
 // Move moves instruction in the block from index from to index to. All
 // instructions in between from and to are shifted one instruction back or
 // forward respectively. This method will fail in case the move violates any
 // instruction dependency constraints or if either from or to are not valid
 // indices of an instruction in the block.
-func (b *Block) Move(from int, to int) error {
+func (b *block) Move(from int, to int) error {
 	if err := b.checkMove(from, to); err != nil {
 		return fmt.Errorf("cannot move %d to %d: %w", from, to, err)
 	}
 
-	if from == to {
-		return nil
-	}
-
-	f := b.seq[from]
-	if from < to {
-		b.moveFwd(from, to)
-	} else {
-		b.moveBack(from, to)
-	}
-	b.seq[to] = f
-	f.blockIdx = to
-
-	return nil
-}
-
-func (b *Block) moveFwd(from int, to int) {
-	for i := from; i < to; i++ {
-		b.seq[i] = b.seq[i+1]
-		b.seq[i].blockIdx = i
-	}
-}
-
-func (b *Block) moveBack(from int, to int) {
-	for i := from; i > to; i-- {
-		b.seq[i] = b.seq[i-1]
-		b.seq[i].blockIdx = i
-	}
-}
-
-// validateIndex validates that variable called name with value value is valid
-// index in the block b.
-func (b *Block) validateIndex(name string, value int) error {
-	if value < 0 {
-		return fmt.Errorf("negative value of %q is not allowed: %d", name, value)
-	}
-	if l := len(b.seq); value >= l {
-		return fmt.Errorf("value of %q is above limit: %d >= %d", name, value, l)
-	}
-
+	move(b.seq, from, to)
 	return nil
 }
 
 // checkMove asserts of move of instruction on index from to index to is valid
 // move in the block.
-func (b *Block) checkMove(from int, to int) error {
-	if err := b.validateIndex("from", from); err != nil {
-		return err
-	} else if err := b.validateIndex("to", to); err != nil {
+func (b *block) checkMove(from int, to int) error {
+	if err := checkFromToIndex(from, to, len(b.seq)); err != nil {
 		return err
 	}
 
 	if from < to {
-		if u := b.upperBound(b.seq[from]); u < to {
+		if u := b.upperBound(from); u < to {
 			return fmt.Errorf("upper bound for move is: %d", u)
 		}
 	} else if from > to {
-		if l := b.lowerBound(b.seq[from]); l > to {
+		if l := b.lowerBound(from); l > to {
 			return fmt.Errorf("lower bound for move is: %d", l)
 		}
 	}
@@ -161,18 +110,17 @@ func findBound(cmpF func(first int, second int) bool, sets ...insSet) int {
 	return curr
 }
 
-// LowerBound finds the lowest possible value of index where i can be moved. If
+// lowerBound finds the lowest possible value of index where i can be moved. If
 // there is no such lower bound (i.e. i doesn't depend on any previous
 // instruction), this method returns zero index.
-func (b *Block) LowerBound(i Instruction) int { return b.lowerBound(i.i) }
-
-func (*Block) lowerBound(i *instruction) int {
+func (b *block) lowerBound(i int) int {
+	ins := b.index(i)
 	idx := findBound(func(i, j int) bool { return i > j },
-		i.trueDepsBack,
-		i.antiDepsBack,
-		i.outputDepsBack,
-		i.controlDepsBack,
-		i.specialDepsBack,
+		ins.trueDepsBack,
+		ins.antiDepsBack,
+		ins.outputDepsBack,
+		ins.controlDepsBack,
+		ins.specialDepsBack,
 	)
 
 	if idx < 0 {
@@ -181,18 +129,17 @@ func (*Block) lowerBound(i *instruction) int {
 	return idx + 1
 }
 
-// UpperBound finds the highest possible of index where i can be moved. If there
+// upperBound finds the highest possible of index where i can be moved. If there
 // is no such upper bound (i.e. i doesn't depend on any later instruction), this
 // method returns b.Len() - 1.
-func (b *Block) UpperBound(i Instruction) int { return b.upperBound(i.i) }
-
-func (b *Block) upperBound(i *instruction) int {
+func (b *block) upperBound(i int) int {
+	ins := b.index(i)
 	idx := findBound(func(i, j int) bool { return i < j },
-		i.trueDepsFwd,
-		i.antiDepsFwd,
-		i.outputDepsFwd,
-		i.controlDepsFwd,
-		i.specialDepsFwd,
+		ins.trueDepsFwd,
+		ins.antiDepsFwd,
+		ins.outputDepsFwd,
+		ins.controlDepsFwd,
+		ins.specialDepsFwd,
 	)
 
 	if idx < 0 {
@@ -200,3 +147,5 @@ func (b *Block) upperBound(i *instruction) int {
 	}
 	return idx - 1
 }
+
+func (b *block) setIndex(i int) { b.idx = i }

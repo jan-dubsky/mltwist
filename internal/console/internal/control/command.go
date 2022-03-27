@@ -75,18 +75,27 @@ func joinOptStrings(strs []string) ([]interface{}, error) {
 // insLine resurns basic-block and an instruction the line is referring. This
 // method failed with an error if line lineIdx in lines is not an instruction
 // line.
-func insLine(lines *lines.Lines, lineIdx int) (*deps.Block, deps.Instruction, error) {
-	block, ok := lines.Block(lineIdx)
-	if !ok {
-		err := fmt.Errorf("line %d doesn't belong to any block", lineIdx)
-		return nil, deps.Instruction{}, err
+func insLine(lines *lines.Lines, lineIdx int) (deps.Block, int, error) {
+	block, err := blockLine(lines, lineIdx)
+	if err != nil {
+		return deps.Block{}, -1, err
 	}
 
-	ins, ok := lines.Instruction(lineIdx)
+	ins, ok := lines.Index(lineIdx).Instruction()
 	if !ok {
 		err := fmt.Errorf("line %d is not an instruction", lineIdx)
-		return nil, deps.Instruction{}, err
+		return deps.Block{}, -1, err
 	}
 
 	return block, ins, nil
+}
+
+func blockLine(lines *lines.Lines, lineIdx int) (deps.Block, error) {
+	block, ok := lines.Block(lineIdx)
+	if !ok {
+		err := fmt.Errorf("line %d doesn't belong to any block", lineIdx)
+		return deps.Block{}, err
+	}
+
+	return block, nil
 }

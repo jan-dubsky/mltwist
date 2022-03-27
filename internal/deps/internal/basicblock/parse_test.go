@@ -1,7 +1,7 @@
 package basicblock_test
 
 import (
-	"decomp/internal/deps/basicblock"
+	"decomp/internal/deps/internal/basicblock"
 	"decomp/internal/repr"
 	"decomp/pkg/model"
 	"testing"

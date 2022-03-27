@@ -38,7 +38,7 @@ func NewLines(p *deps.Program) *Lines {
 	}
 }
 
-func blockToLines(b *deps.Block) []Line {
+func blockToLines(b deps.Block) []Line {
 	lines := make([]Line, 1, b.Len()+1)
 
 	lines[0] = Line{
@@ -90,24 +90,16 @@ func (l *Lines) Reload(blockIdx int) {
 	copy(lines, newBlock)
 }
 
-func (l Lines) Block(lineIdx int) (*deps.Block, bool) {
+func (l Lines) Block(lineIdx int) (deps.Block, bool) {
 	blockIdx := l.lines[lineIdx].block
 	if blockIdx < 0 {
-		return nil, false
+		return deps.Block{}, false
 	}
 	return l.p.Index(blockIdx), true
 }
 
-func (l Lines) Instruction(lineIdx int) (deps.Instruction, bool) {
-	line := l.lines[lineIdx]
-	if line.instr < 0 {
-		return deps.Instruction{}, false
-	}
-	return l.p.Index(line.block).Index(line.instr), true
-}
-
-func (l Lines) Line(block *deps.Block, ins deps.Instruction) int {
+func (l Lines) Line(block deps.Block, ins int) int {
 	blockLine := l.blockStarts[block.Idx()]
 	zerothInsLine := blockLine + 1
-	return zerothInsLine + ins.Idx()
+	return zerothInsLine + ins
 }

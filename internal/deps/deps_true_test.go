@@ -31,10 +31,10 @@ func testIns(ins repr.Instruction) *instruction {
 }
 
 func testInsReg(out model.Register, in ...model.Register) *instruction {
-	return testIns(testInsReprReg(out, in...))
+	return testIns(testReprReg(out, in...))
 }
 
-func testInsReprReg(out model.Register, in ...model.Register) repr.Instruction {
+func testReprReg(out model.Register, in ...model.Register) repr.Instruction {
 	inRegs := make(model.Registers, len(in))
 	for _, r := range in {
 		if _, ok := inRegs[r]; ok {

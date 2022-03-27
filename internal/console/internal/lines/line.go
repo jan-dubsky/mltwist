@@ -39,3 +39,6 @@ func (l *Line) setMark(m Mark) {
 
 	l.mark = m
 }
+
+func (l Line) Block() (int, bool)       { return l.block, l.block >= 0 }
+func (l Line) Instruction() (int, bool) { return l.instr, l.instr >= 0 }

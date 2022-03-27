@@ -62,7 +62,7 @@ func newInstruction(ins repr.Instruction, index int) *instruction {
 	}
 }
 
-func (i *instruction) ptr() Instruction { return Instruction{i: i} }
-
 // Idx returns index of an instruction in its basic block.
 func (i *instruction) Idx() int { return i.blockIdx }
+
+func (i *instruction) setIndex(idx int) { i.blockIdx = idx }
