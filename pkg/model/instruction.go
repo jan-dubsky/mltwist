@@ -1,6 +1,7 @@
 package model
 
 import (
+	"decomp/pkg/expr"
 	"fmt"
 )
 
@@ -10,6 +11,8 @@ type Instruction struct {
 	Type Type
 	// ByteLen is length if an instruction opcode in bytes.
 	ByteLen Address
+
+	Expr expr.Expr
 
 	// JumpTargets is list of known targets of a jump type instruction.
 	//

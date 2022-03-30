@@ -88,11 +88,11 @@ func (p Parser) Parse(addr model.Address, bytes []byte) (model.Instruction, erro
 	}
 
 	opcode := found.(*instructionOpcode)
-	instr := newInstruction(bytes, opcode)
+	instr := newInstruction(addr, bytes, opcode)
 
 	var jumpTargets []model.Address
 	if opcode.jumpTarget != nil {
-		jumpTargets = append(jumpTargets, opcode.jumpTarget(addr, instr))
+		jumpTargets = append(jumpTargets, opcode.jumpTarget(instr))
 	}
 
 	return model.Instruction{

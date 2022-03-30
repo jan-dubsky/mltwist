@@ -1,13 +1,18 @@
 package expr
 
+var _ Expr = Load{}
+
 type Load struct {
-	addr  Expr
-	width uint8
+	addr Expr
+	w    Width
 }
 
-func NewLoad(addr Expr, width uint8) Load {
+func NewLoad(addr Expr, w Width) Load {
 	return Load{
-		addr:  addr,
-		width: width,
+		addr: addr,
+		w:    w,
 	}
 }
+
+func (l Load) Width() Width { return l.w }
+func (Load) internal()      {}

@@ -2,6 +2,7 @@ package riscv
 
 import (
 	"decomp/internal/opcode"
+	"decomp/pkg/expr"
 	"decomp/pkg/model"
 	"fmt"
 )
@@ -42,7 +43,8 @@ type instructionOpcode struct {
 	// instrType is set of instruction types of an opcode.
 	instrType model.Type
 
-	jumpTarget func(a model.Address, instr Instruction) model.Address
+	jumpTarget func(i Instruction) model.Address
+	expr       func(i Instruction) expr.Expr
 }
 
 func (i instructionOpcode) Opcode() opcode.Opcode { return i.opcode }
@@ -91,6 +93,10 @@ func (i instructionOpcode) validate(xlenBytes uint8) error {
 		return fmt.Errorf("store must have exactly two input registers: %d", cnt)
 	}
 
+	if (i.expr != nil) != i.hasOutputReg {
+		return fmt.Errorf("expr must be set if and only if an instruction has output")
+	}
+
 	return nil
 }
 
@@ -108,49 +114,4 @@ func mergeInstructions(lists [][]*instructionOpcode) []*instructionOpcode {
 	}
 
 	return merged
-}
-
-// overrideInstructions applies XLEN-bit architecture instruction changes to a
-// previous version (typically XLEN/2-bit) of instructions based in instruction
-// names.
-//
-// Every XLEN-bit architecture extension has to define some new instructions,
-// but more importantly it has to redefine some previous instructions to fit
-// well to the new architecture with (typically) twice as wide registers. For
-// this reason, we need a way how to filter out instructions from the previous
-// architecture which has been redefined. We do so by filtering those
-// instructions from previous infrastructure which names match instructions in
-// the new architecture (an override list).
-//
-// Filtering based on instruction name is not ideal and works mostly because of
-// RISC]V convention where an instruction without prefix (i.e. add, sub, sll,
-// etc.) is used to operate on XLEN bits and there are defined new instructions
-// to operate XLEN/2 bit portions of XLEN bit long registers. We could also use
-// opcode-wise filtering. But as definition of opcode equivalence is not trivial
-// to even define and has some corner cases (for example slli, srli, and srai,
-// which encode more bits in the new architecture), we have decided to avoid
-// opcode code comparison. The logic would be more error prone then this simple
-// comparison based in instruction names.
-func overrideInstructions(
-	instrs []*instructionOpcode,
-	overrideInstrs []*instructionOpcode,
-) []*instructionOpcode {
-	overrides := make(map[string]*instructionOpcode, len(overrideInstrs))
-	for _, o := range overrideInstrs {
-		overrides[o.name] = o
-	}
-
-	// Preallocate the worst possible case - as there will be few filtered
-	// instructions, we are not waisting as much as in case of exponential
-	// growth of the buffer, which would most likely result in significantly
-	// bigger array.
-	replaced := make([]*instructionOpcode, 0, len(instrs)+len(overrides))
-	for _, instr := range instrs {
-		if _, ok := overrides[instr.name]; !ok {
-			replaced = append(replaced, instr)
-		}
-	}
-
-	replaced = append(replaced, overrideInstrs...)
-	return replaced
 }

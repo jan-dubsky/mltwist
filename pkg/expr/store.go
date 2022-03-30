@@ -1,15 +1,20 @@
 package expr
 
+var _ Expr = Store{}
+
 type Store struct {
 	value Expr
 	addr  Expr
-	width uint8
+	w     Width
 }
 
-func NewStore(v Expr, a Expr, width uint8) Store {
+func NewStore(v Expr, a Expr, w Width) Store {
 	return Store{
 		value: v,
 		addr:  a,
-		width: width,
+		w:     w,
 	}
 }
+
+func (s Store) Width() Width { return s.w }
+func (Store) internal()      {}
