@@ -1,34 +1,31 @@
 package expr
 
-import "decomp/pkg/expr/internal/value"
+type Expr interface{}
 
-type Expr interface {
-	value() (value.Value, bool)
+type Unary struct {
+	op  UnaryOp
+	arg Expr
 }
 
-func equalValue(e1 Expr, e2 Expr) bool {
-	v1, ok := e1.value()
-	if !ok {
-		return false
+func NewUnary(op UnaryOp, e Expr) Unary {
+	return Unary{
+		op:  op,
+		arg: e,
 	}
-
-	v2, ok := e2.value()
-	if !ok {
-		return false
-	}
-
-	return value.Equal(v1, v2)
 }
 
-func Equal(e1 Expr, e2 Expr) bool {
-	if e1 == e2 {
-		return true
-	}
+func (u Unary) Op() UnaryOp { return u.op }
 
-	if ok := equalValue(e1, e2); ok {
-		return true
-	}
+type Binary struct {
+	op   BinaryOp
+	arg1 Expr
+	arg2 Expr
+}
 
-	// TODO: Symbolic equality.
-	return false
+func NewBinary(op BinaryOp, e1 Expr, e2 Expr) Binary {
+	return Binary{
+		op:   op,
+		arg1: e1,
+		arg2: e2,
+	}
 }

@@ -1,26 +1,23 @@
 package expr
 
-import "decomp/pkg/expr/internal/value"
-
-var _ Expr = Const{}
+import (
+	"math/big"
+)
 
 var (
-	Zero = NewConst([]byte{0})
-	One  = NewConst([]byte{1})
+	Zero = NewConst(big.NewInt(0))
+	One  = NewConst(big.NewInt(1))
 )
 
 type Const struct {
-	v value.Value
+	v *big.Int
 }
 
-func NewConst(b []byte) Const {
-	bCopy := make([]byte, len(b))
-	copy(bCopy, b)
-
-	return Const{
-		v: value.New(bCopy),
-	}
+func NewConst(v *big.Int) Const {
+	return Const{v: v}
 }
 
-func (c Const) value() (value.Value, bool) { return value.Value{}, true }
-func (c Const) Value() []byte              { return c.v.Bytes() }
+func NewAddrConst(a uint64) Const {
+	var v big.Int
+	return NewConst(v.SetUint64(a))
+}
