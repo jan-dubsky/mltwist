@@ -75,7 +75,7 @@ func NewParser(v Variant, exts ...Extension) Parser {
 	}
 }
 
-func (p Parser) Parse(bytes []byte) (model.Instruction, error) {
+func (p Parser) Parse(addr model.Address, bytes []byte) (model.Instruction, error) {
 	if l := len(bytes); l < instructionLen {
 		return model.Instruction{}, fmt.Errorf(
 			"bytes are too short (%d) to represent an instruction opcode", l)
@@ -90,10 +90,16 @@ func (p Parser) Parse(bytes []byte) (model.Instruction, error) {
 	opcode := found.(*instructionOpcode)
 	instr := newInstruction(bytes, opcode)
 
+	var jumpTargets []model.Address
+	if opcode.jumpTarget != nil {
+		jumpTargets = append(jumpTargets, opcode.jumpTarget(addr, instr))
+	}
+
 	return model.Instruction{
 		Type:    opcode.instrType,
 		ByteLen: instructionLen,
 
+		JumpTargets:    jumpTargets,
 		InputRegistry:  instr.inputRegs(),
 		OutputRegistry: instr.outputRegs(),
 

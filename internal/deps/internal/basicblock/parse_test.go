@@ -69,10 +69,12 @@ func TestParse_Succ(t *testing.T) {
 				ins(92, model.TypeCJump, "11", 84),
 				ins(96, model.TypeAritm, "12"),
 				ins(100, model.TypeCJump, "13", 96),
+				ins(104, model.TypeCJump, "14", 54),
 			},
 			expected: [][]repr.Instruction{
 				{
 					ins(50, model.TypeAritm, "1"),
+				}, {
 					ins(54, model.TypeAritm, "2"),
 				}, {
 					ins(59, model.TypeJump, "3"),
@@ -91,6 +93,8 @@ func TestParse_Succ(t *testing.T) {
 				}, {
 					ins(96, model.TypeAritm, "12"),
 					ins(100, model.TypeCJump, "13", 96),
+				}, {
+					ins(104, model.TypeCJump, "14", 54),
 				},
 			},
 		},

@@ -155,6 +155,19 @@ func opcodeShiftImm(arithmetic bool, shiftBits uint8, mid byte, low byte) opcode
 	}
 }
 
+func addrAddOffset(a model.Address, imm int32) model.Address {
+	if imm >= 0 {
+		return a + model.Address(imm)
+	} else {
+		return a - model.Address(-imm)
+	}
+}
+
+func branchJumpTarget(a model.Address, instr Instruction) model.Address {
+	imm, _ := immTypeB.parseValue(instr.value)
+	return addrAddOffset(a, imm)
+}
+
 var integer32 = []*instructionOpcode{
 	{
 		name:         "lui",
@@ -177,6 +190,10 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeJ,
 		instrType:    model.TypeJump,
+		jumpTarget: func(a model.Address, instr Instruction) model.Address {
+			imm, _ := immTypeJ.parseValue(instr.value)
+			return addrAddOffset(a, imm)
+		},
 	}, {
 		name:         "jalr",
 		opcode:       opcode10(0b000, 0b1100111),
@@ -184,6 +201,7 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeJumpDyn,
+		// FIXME: Find a way how to represent those jump targets.
 	}, {
 		name:         "beq",
 		opcode:       opcode10(0b000, 0b1100011),
@@ -191,6 +209,7 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
+		jumpTarget:   branchJumpTarget,
 	}, {
 		name:         "bne",
 		opcode:       opcode10(0b001, 0b1100011),
@@ -198,6 +217,7 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
+		jumpTarget:   branchJumpTarget,
 	}, {
 		name:         "blt",
 		opcode:       opcode10(0b100, 0b1100011),
@@ -205,6 +225,7 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
+		jumpTarget:   branchJumpTarget,
 	}, {
 		name:         "bge",
 		opcode:       opcode10(0b101, 0b1100011),
@@ -212,6 +233,7 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
+		jumpTarget:   branchJumpTarget,
 	}, {
 		name:         "bltu",
 		opcode:       opcode10(0b110, 0b1100011),
@@ -219,6 +241,7 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
+		jumpTarget:   branchJumpTarget,
 	}, {
 		name:         "bgeu",
 		opcode:       opcode10(0b111, 0b1100011),
@@ -226,6 +249,7 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
+		jumpTarget:   branchJumpTarget,
 	}, {
 		name:         "lb",
 		opcode:       opcode10(0b000, 0b0000011),

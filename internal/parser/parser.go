@@ -23,7 +23,7 @@ func Parse(
 		for addr := block.Begin(); addr < block.End(); {
 			b := block.Addr(addr)
 
-			ins, err := s.Parse(b)
+			ins, err := s.Parse(addr, b)
 			if err != nil {
 				return Program{}, fmt.Errorf(
 					"cannot parse instruction at offset 0x%x: %w",

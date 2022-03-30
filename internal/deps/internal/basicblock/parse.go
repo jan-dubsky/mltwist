@@ -22,7 +22,7 @@ func Parse(instrs []repr.Instruction) ([][]repr.Instruction, error) {
 
 	sequences := make([][]repr.Instruction, len(blocks))
 	for i, b := range blocks {
-		sequences[i] = b.Seq
+		sequences[i] = b.seq
 	}
 
 	return sequences, nil
@@ -86,13 +86,12 @@ func splitByJumpTargets(bs []block) ([]block, error) {
 	}
 
 	for _, b := range bs {
-		for _, ins := range b.Seq {
+		for _, ins := range b.seq {
 			for _, j := range ins.JumpTargets {
 				err := blocks.split(j)
 				if err != nil {
 					return nil, fmt.Errorf(
-						"cannot split basic block: %w",
-						err)
+						"cannot split basic block: %w", err)
 				}
 			}
 		}

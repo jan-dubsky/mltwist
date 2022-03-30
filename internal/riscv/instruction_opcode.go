@@ -41,6 +41,8 @@ type instructionOpcode struct {
 
 	// instrType is set of instruction types of an opcode.
 	instrType model.Type
+
+	jumpTarget func(a model.Address, instr Instruction) model.Address
 }
 
 func (i instructionOpcode) Opcode() opcode.Opcode { return i.opcode }

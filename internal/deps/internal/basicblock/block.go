@@ -18,12 +18,12 @@ import (
 // basic block just because it't not possible to identify jump target of this
 // dynamic jump during the decompilation process.
 type block struct {
-	Seq    []repr.Instruction
+	seq    []repr.Instruction
 	length model.Address
 }
 
 func newBlock(seq []repr.Instruction) block {
-	return block{Seq: seq, length: seqBytes(seq)}
+	return block{seq: seq, length: seqBytes(seq)}
 }
 
 // seqBytes calculates sum of instruction lengths in a sequence.
@@ -36,7 +36,7 @@ func seqBytes(seq []repr.Instruction) model.Address {
 }
 
 // begin returns inclusive start address of b.
-func (b block) begin() model.Address { return b.Seq[0].Address }
+func (b block) begin() model.Address { return b.seq[0].Address }
 
 // end returns exclusive end address of b.
 func (b block) end() model.Address { return b.begin() + b.length }
@@ -60,13 +60,17 @@ func (b block) Split(addr model.Address) (block, block, error) {
 		return block{}, block{}, err
 	}
 
-	i := sort.Search(len(b.Seq), func(i int) bool { return b.Seq[i].Address >= addr })
-	if i == len(b.Seq) || b.Seq[i].Address != addr {
+	i := sort.Search(len(b.seq), func(i int) bool { return b.seq[i].Address >= addr })
+	if i == len(b.seq) {
+		err := fmt.Errorf("instruction at address 0x%x not found", addr)
+		return block{}, block{}, err
+	}
+	if b.seq[i].Address != addr {
 		err := fmt.Errorf("address 0x%x is not at instruction boundary", addr)
 		return block{}, block{}, err
 	}
 
-	return newBlock(b.Seq[:i]), newBlock(b.Seq[i:]), nil
+	return newBlock(b.seq[:i]), newBlock(b.seq[i:]), nil
 }
 
 // blocks is an ordered sequence of basic blocks which allows fast and efficient
@@ -79,7 +83,7 @@ type blocks []block
 // modifies blocks to contain both new blocks instead of the one splitted.
 func (bs *blocks) split(addr model.Address) error {
 	idx := sort.Search(len(*bs), func(i int) bool { return (*bs)[i].end() > addr })
-	if idx == len(*bs) {
+	if idx == len(*bs) || addr < (*bs)[idx].begin() {
 		return fmt.Errorf("no basic block with address 0x%x found", addr)
 	}
 
@@ -94,8 +98,8 @@ func (bs *blocks) split(addr model.Address) error {
 	}
 
 	*bs = append(*bs, block{})
-	for i := idx + 1; i < len(*bs)-1; i++ {
-		(*bs)[i+1] = (*bs)[i]
+	for i := len(*bs) - 1; i >= idx+2; i-- {
+		(*bs)[i] = (*bs)[i-1]
 	}
 
 	(*bs)[idx], (*bs)[idx+1] = b1, b2
