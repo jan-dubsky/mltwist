@@ -21,7 +21,7 @@ type View struct {
 func New(l *lines.Lines, c *cursor.Cursor) *View {
 	idFormat := fmt.Sprintf("%%%dd", numDigits(l.Len(), 10))
 	markFormat := fmt.Sprintf("%%%ds", lines.MaxMarkLen)
-	format := fmt.Sprintf("  %s  | %s | %%s\n", idFormat, markFormat)
+	format := fmt.Sprintf("%%1s %s  | %s | %%s\n", idFormat, markFormat)
 
 	return &View{
 		l: l,
@@ -47,7 +47,8 @@ func (v *View) Print() error {
 	}
 
 	offset := v.c.Value()
-	begin := offset - int(math.Ceil(float64(height)/(math.Phi+1)))
+	// Golden ratio calculation.
+	begin := offset - int(math.Floor(float64(height)/(math.Phi+1)))
 	if begin < 0 {
 		begin = 0
 	}
@@ -61,8 +62,13 @@ func (v *View) Print() error {
 }
 
 func (v *View) Format(i int) string {
+	var cursor string
+	if i == v.c.Value() {
+		cursor = ">"
+	}
+
 	l := v.l.Index(i)
-	return fmt.Sprintf(v.format, i, l.Mark(), l.String())
+	return fmt.Sprintf(v.format, cursor, i, l.Mark(), l.String())
 }
 
 func numDigits(num int, base int) int {

@@ -89,29 +89,17 @@ func commands() []*command {
 		},
 		action: func(c *Control, args ...interface{}) error {
 			from, to := args[0].(int), args[1].(int)
+			c.l.UnmarkAll()
 
-			fromBlock, fromIns, err := insLine(c.l, from)
+			err := c.l.Move(from, to)
 			if err != nil {
-				return fmt.Errorf("invalid from: %w", err)
-			}
-			toBlock, toIns, err := insLine(c.l, to)
-			if err != nil {
-				return fmt.Errorf("invalid to: %w", err)
-			}
-
-			if fromBlock != toBlock {
-				return fmt.Errorf("instructions cannot be moved in between blocks")
-			}
-			if err := fromBlock.Move(fromIns, toIns); err != nil {
+				c.l.SetMark(from, lines.MarkErrMovedFrom)
+				c.l.SetMark(to, lines.MarkErrMovedTo)
 				return err
 			}
 
-			c.l.Reload(fromBlock.Idx())
-
-			c.l.UnmarkAll()
 			c.l.SetMark(from, lines.MarkMovedFrom)
 			c.l.SetMark(to, lines.MarkMovedTo)
-
 			return nil
 		},
 	}, {
@@ -121,9 +109,19 @@ func commands() []*command {
 			parseNum(0, math.MaxInt),
 		},
 		action: func(c *Control, args ...interface{}) error {
-			block, ins, err := insLine(c.l, args[0].(int))
-			if err != nil {
-				return err
+			l := args[0].(int)
+			c.l.UnmarkAll()
+
+			block, ok := c.l.Block(l)
+			if !ok {
+				c.l.SetMark(l, lines.MarkErr)
+				return fmt.Errorf("line doesn't belong to a block: %d", l)
+			}
+
+			ins, ok := c.l.Index(l).Instruction()
+			if !ok {
+				c.l.SetMark(l, lines.MarkErr)
+				return fmt.Errorf("line is not an instruction: %d", l)
 			}
 
 			lower := block.LowerBound(ins)
@@ -131,7 +129,6 @@ func commands() []*command {
 			lowerLine := c.l.Line(block, lower)
 			upperLine := c.l.Line(block, upper)
 
-			c.l.UnmarkAll()
 			// Lower and Upper indices are inclusive, but in
 			// visualization we want to have exclusive indices.
 			c.l.SetMark(lowerLine-1, lines.MarkLowerBound)
@@ -166,17 +163,14 @@ func commands() []*command {
 				}
 			}
 
-			if line != -1 {
-				c.l.UnmarkAll()
-				c.c.Set(line)
-				c.l.SetMark(line, lines.MarkFound)
-			} else {
-				err := c.errMsgf("No line matching regex %q found.\n", r)
-				if err != nil {
-					return err
-				}
+			if line == -1 {
+				return c.errMsgf("No line matching regex %q found.\n", r)
 			}
 
+			err = c.c.Set(line)
+			if err != nil {
+				return err
+			}
 			return nil
 		},
 	}, {
@@ -195,8 +189,6 @@ func commands() []*command {
 				return err
 			}
 
-			c.l.UnmarkAll()
-			c.l.SetMark(n, lines.MarkFound)
 			return nil
 		},
 	}, {
@@ -218,6 +210,7 @@ func commands() []*command {
 		keys: []string{"quit", "q"},
 		help: "Quit the app.",
 		action: func(c *Control, args ...interface{}) error {
+			fmt.Printf("\n")
 			return ErrQuit
 		},
 	}}
@@ -228,8 +221,9 @@ func commandMap() map[string]*command {
 	for i, command := range commands() {
 		for _, k := range command.keys {
 			if _, ok := m[k]; ok {
-				panic(fmt.Sprintf("duplicate command key %q at position %d",
-					k, i))
+				panic(fmt.Sprintf(
+					"duplicate command key %q at position %d", k, i,
+				))
 			}
 
 			m[k] = command

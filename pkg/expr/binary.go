@@ -45,23 +45,22 @@ const (
 	// Sub subtracts second argument from the first one. As in case of Add,
 	// both signed and unsigned subtractions are identical.
 	Sub
-	// Lsh shifts first operand left second operand number of bits. Second
-	// operand is always understood as unsigned.
+	// Lsh (logically) shifts first operand left second operand number of
+	// bits. Second operand is always understood as unsigned.
 	//
 	// TODO: Rethink right extension of signed and unsigned values.
 	Lsh
-	// Rsh (arithmetically) shifts first operand left second operand number
-	// of bits. Second operand is always understood as unsigned.
-	//
-	// Arithmetical shift means that bits added to highest positions of the
-	// value are always zeros.
-	Rsh
-	// RshL (logically) shifts first operand left second operand number of
+	// Rsh (logically) shifts first operand left second operand number of
 	// bits. Second operand is always understood as unsigned.
 	//
-	// Logical shift means that bits added to the right of the value are
-	// copies of the original highest bit.
-	RshL
+	// Logical shift always inserts zeros to highest positions.
+	Rsh
+	// RshA (arithmetically) shifts first operand left second operand number
+	// of bits. Second operand is always understood as unsigned.
+	//
+	// Arithmetical shift adds copies if the original highest bit to high
+	// bit positions.
+	RshA
 
 	// Mul implements width bits unsigned multiplication of arguments.
 	//

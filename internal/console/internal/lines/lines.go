@@ -6,17 +6,17 @@ import (
 )
 
 type Lines struct {
-	offset int
+	lines []Line
+	p     *deps.Program
 
-	lines       []Line
 	blockStarts []int
-
-	p *deps.Program
+	marks       map[int]struct{}
 }
 
 func NewLines(p *deps.Program) *Lines {
 	// Each block will have a header and will be delimited by a blank line.
-	// Each instruction will be a single line.
+	// Each instruction will be a single line. In the end, there will be a
+	// single empty line.
 	lns := make([]Line, 0, 2*p.Len()+p.NumInstr()+1)
 	blockStarts := make([]int, p.Len())
 	for i, b := range p.Blocks() {
@@ -31,30 +31,19 @@ func NewLines(p *deps.Program) *Lines {
 	lns = append(lns, newEmptyLine())
 
 	return &Lines{
-		offset:      0,
 		lines:       lns,
-		blockStarts: blockStarts,
 		p:           p,
+		blockStarts: blockStarts,
+		marks:       make(map[int]struct{}, 2),
 	}
 }
 
 func blockToLines(b deps.Block) []Line {
 	lines := make([]Line, 1, b.Len()+1)
+	lines[0] = newBlockLine(b)
 
-	lines[0] = Line{
-		mark:  "",
-		value: fmt.Sprintf("Block %d: 0x%x", b.Idx()+1, b.Begin()),
-		block: b.Idx(),
-		instr: -1,
-	}
-
-	for j, ins := range b.Instructions() {
-		lines = append(lines, Line{
-			mark:  "",
-			value: fmt.Sprintf("%s %s", blockIndent, ins.String()),
-			block: b.Idx(),
-			instr: j,
-		})
+	for _, ins := range b.Instructions() {
+		lines = append(lines, newInstrLine(b, ins))
 	}
 
 	return lines
@@ -63,23 +52,15 @@ func blockToLines(b deps.Block) []Line {
 func (l Lines) Len() int         { return len(l.lines) }
 func (l Lines) Index(i int) Line { return l.lines[i] }
 
-func (l *Lines) SetMark(lineIdx int, m Mark) { l.lines[lineIdx].setMark(m) }
-
-func (l *Lines) UnmarkAll() {
-	for i := range l.lines {
-		l.lines[i].setMark("")
-	}
+func (l *Lines) SetMark(lineIdx int, m Mark) {
+	l.lines[lineIdx].setMark(m)
+	l.marks[lineIdx] = struct{}{}
 }
 
-func (l Lines) lineIndices(lineIdx int) (int, int) {
-	line := l.lines[lineIdx]
-	switch {
-	case line.block < 0:
-		return -1, -1
-	case line.instr < 0:
-		return line.block, -1
-	default:
-		return line.block, line.instr
+func (l *Lines) UnmarkAll() {
+	for i := range l.marks {
+		l.lines[i].setMark(MarkNone)
+		delete(l.marks, i)
 	}
 }
 
@@ -90,12 +71,63 @@ func (l *Lines) Reload(blockIdx int) {
 	copy(lines, newBlock)
 }
 
+func (l *Lines) reloadRange(from int, to int) {
+	if from > to {
+		from, to = to, from
+	}
+
+	for i := from; i <= to; i++ {
+		l.Reload(i)
+	}
+}
+
+func (l *Lines) Move(fromLine int, toLine int) error {
+	from, to := l.Index(fromLine), l.Index(toLine)
+
+	fromBlock, fromBlockOK := from.Block()
+	toBlock, toBlockOK := to.Block()
+	if !fromBlockOK {
+		return fmt.Errorf("from cannot be an empty line: %d", fromLine)
+	}
+	if !toBlockOK {
+		return fmt.Errorf("to cannot be an empty line: %d", toLine)
+	}
+
+	fromIns, fromInsOK := from.Instruction()
+	toIns, toInsOK := to.Instruction()
+	if fromInsOK != toInsOK {
+		return fmt.Errorf("cannot swap block and an instruction")
+	}
+
+	if !fromInsOK {
+		err := l.p.Move(fromBlock, toBlock)
+		if err != nil {
+			return fmt.Errorf("block move failed: %w", err)
+		}
+
+		l.reloadRange(fromBlock, toBlock)
+	} else {
+		if fromBlock != toBlock {
+			return fmt.Errorf("instructions cannot be moved among blocks")
+		}
+
+		err := l.p.Index(fromBlock).Move(fromIns, toIns)
+		if err != nil {
+			return fmt.Errorf("instruction move failed: %w", err)
+		}
+
+		l.Reload(fromBlock)
+	}
+
+	return nil
+}
+
 func (l Lines) Block(lineIdx int) (deps.Block, bool) {
-	blockIdx := l.lines[lineIdx].block
-	if blockIdx < 0 {
+	idx, ok := l.lines[lineIdx].Block()
+	if !ok {
 		return deps.Block{}, false
 	}
-	return l.p.Index(blockIdx), true
+	return l.p.Index(idx), true
 }
 
 func (l Lines) Line(block deps.Block, ins int) int {

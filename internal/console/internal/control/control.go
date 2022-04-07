@@ -30,8 +30,18 @@ func New(l *lines.Lines, c *cursor.Cursor, v *view.View) *Control {
 	}
 }
 
+func dropEmptyStrs(strs []string) []string {
+	filtered := make([]string, 0, len(strs))
+	for _, s := range strs {
+		if len(s) != 0 {
+			filtered = append(filtered, s)
+		}
+	}
+	return filtered
+}
+
 func (c *Control) parseCommand(str string) (*command, []interface{}, error) {
-	parts := strings.Split(str, " ")
+	parts := dropEmptyStrs(strings.Split(str, " "))
 	cmdStr := parts[0]
 	parts = parts[1:]
 
@@ -70,15 +80,14 @@ func (c *Control) parseCommand(str string) (*command, []interface{}, error) {
 }
 
 func (c *Control) Command() error {
-	var cmdStr string
-	for cmdStr == "" {
-		fmt.Printf("Enter command: ")
+	fmt.Printf("Enter command: ")
 
-		var err error
-		cmdStr, err = c.reader.readLine()
-		if err != nil {
-			return err
-		}
+	cmdStr, err := c.reader.readLine()
+	if err != nil {
+		return err
+	}
+	if cmdStr == "" {
+		return nil
 	}
 
 	cmd, args, err := c.parseCommand(cmdStr)

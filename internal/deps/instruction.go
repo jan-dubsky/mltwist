@@ -46,7 +46,7 @@ func newInstruction(ins repr.Instruction, index int) *instruction {
 		// instruction in forward direction - the jump/call instruction
 		// at the end of basic block.
 		controlDepsFwd: make(insSet, 1),
-		// Hele optimal size is the size of basic block which is not
+		// Here optimal size is the size of basic block which is not
 		// known to us for jump/call instruction at the end of the block
 		// and 0 for any non-jump instruction. As there is significantly
 		// more more non-jump than jump instructions, we use 0 not to

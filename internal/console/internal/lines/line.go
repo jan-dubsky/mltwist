@@ -1,16 +1,17 @@
 package lines
 
 import (
+	"decomp/internal/deps"
 	"fmt"
 	"strings"
 )
 
 var blockIndent = strings.Repeat(" ", 4)
 
-// Line represents a single line of the instruction visualization.
+// Line represents a single Line of the instruction visualization.
 type Line struct {
-	mark  Mark
 	value string
+	mark  Mark
 
 	// block is number of basic block in the model this line refers to.
 	// Negative value of block means that the line doesn't belong to any
@@ -29,8 +30,23 @@ func newEmptyLine() Line {
 	}
 }
 
-func (l Line) String() string { return l.value }
-func (l Line) Mark() string   { return string(l.mark) }
+func newBlockLine(b deps.Block) Line {
+	return Line{
+		// We number blocks from 1 as Block zero doesn't look good to
+		// humans.
+		value: fmt.Sprintf("Block %d: 0x%x", b.Idx()+1, b.Begin()),
+		block: b.Idx(),
+		instr: -1,
+	}
+}
+
+func newInstrLine(b deps.Block, ins deps.Instruction) Line {
+	return Line{
+		value: fmt.Sprintf("%s %s", blockIndent, ins.String()),
+		block: b.Idx(),
+		instr: ins.Idx(),
+	}
+}
 
 func (l *Line) setMark(m Mark) {
 	if l := len(m); l > MaxMarkLen {
@@ -40,5 +56,7 @@ func (l *Line) setMark(m Mark) {
 	l.mark = m
 }
 
+func (l Line) String() string           { return l.value }
+func (l Line) Mark() Mark               { return l.mark }
 func (l Line) Block() (int, bool)       { return l.block, l.block >= 0 }
 func (l Line) Instruction() (int, bool) { return l.instr, l.instr >= 0 }

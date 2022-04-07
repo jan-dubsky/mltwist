@@ -305,7 +305,7 @@ var integer32 = []*instructionOpcode{
 		additionalImmediate: addImmSh32,
 		instrType:           model.TypeAritm,
 		expr: func(i Instruction) expr.Expr {
-			return regImmShift(expr.RshL, i, 5, width32)
+			return regImmShift(expr.RshA, i, 5, width32)
 		},
 	}, {
 		name:         "add",
@@ -409,7 +409,7 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
 		expr: func(i Instruction) expr.Expr {
-			return maskedRegOp(expr.RshL, i, 5, width32)
+			return maskedRegOp(expr.RshA, i, 5, width32)
 		},
 	}, {
 		name: "fence",

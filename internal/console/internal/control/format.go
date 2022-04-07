@@ -37,7 +37,7 @@ func format(s string, indent int, width int) string {
 			sb.WriteByte('\t')
 		}
 
-		str := s[i:] // "abc abc a"
+		str := s[i:]
 		if len(str) > chars {
 			idx := findWordDelimSpace(str[:chars+1])
 			if idx == -1 {

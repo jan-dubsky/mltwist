@@ -343,7 +343,7 @@ var integer64 = []*instructionOpcode{
 		additionalImmediate: addImmSh64,
 		instrType:           model.TypeAritm,
 		expr: func(i Instruction) expr.Expr {
-			return regImmShift(expr.RshL, i, 6, width64)
+			return regImmShift(expr.RshA, i, 6, width64)
 		},
 	}, {
 		name:         "add",
@@ -447,7 +447,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
 		expr: func(i Instruction) expr.Expr {
-			return maskedRegOp(expr.RshL, i, 6, width64)
+			return maskedRegOp(expr.RshA, i, 6, width64)
 		},
 	}, { // Same definition as the 32bit version.
 		name: "fence",
@@ -526,7 +526,7 @@ var integer64 = []*instructionOpcode{
 		additionalImmediate: addImmSh32,
 		instrType:           model.TypeAritm,
 		expr: func(i Instruction) expr.Expr {
-			return sext32To64(regImmShift(expr.RshL, i, 5, width32))
+			return sext32To64(regImmShift(expr.RshA, i, 5, width32))
 		},
 	}, {
 		name:         "addw",
@@ -576,7 +576,7 @@ var integer64 = []*instructionOpcode{
 		immediate:    immTypeR,
 		instrType:    model.TypeAritm,
 		expr: func(i Instruction) expr.Expr {
-			return sext32To64(maskedRegOp(expr.RshL, i, 5, width32))
+			return sext32To64(maskedRegOp(expr.RshA, i, 5, width32))
 		},
 	},
 }
