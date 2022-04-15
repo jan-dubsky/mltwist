@@ -33,7 +33,7 @@ func (b Binary) Arg2() Expr { return b.arg2 }
 
 // Width returns width of this operation.
 func (b Binary) Width() Width { return b.w }
-func (Binary) internal()      {}
+func (Binary) internalExpr()  {}
 
 // BinaryOp represent any binary operation the virtual CPU supports.
 type BinaryOp uint8

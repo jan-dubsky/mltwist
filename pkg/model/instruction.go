@@ -12,7 +12,7 @@ type Instruction struct {
 	// ByteLen is length if an instruction opcode in bytes.
 	ByteLen Address
 
-	Expr expr.Expr
+	Effects []expr.Effect
 
 	// JumpTargets is list of known targets of a jump type instruction.
 	//

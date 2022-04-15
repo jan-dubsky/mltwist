@@ -44,7 +44,7 @@ type instructionOpcode struct {
 	instrType model.Type
 
 	jumpTarget func(i Instruction) model.Address
-	expr       func(i Instruction) expr.Expr
+	effects    func(i Instruction) []expr.Effect
 }
 
 func (i instructionOpcode) Opcode() opcode.Opcode { return i.opcode }
@@ -93,8 +93,8 @@ func (i instructionOpcode) validate(xlenBytes uint8) error {
 		return fmt.Errorf("store must have exactly two input registers: %d", cnt)
 	}
 
-	if (i.expr != nil) != i.hasOutputReg {
-		return fmt.Errorf("expr must be set if and only if an instruction has output")
+	if i.effects == nil {
+		return fmt.Errorf("effects function must be always set")
 	}
 
 	return nil

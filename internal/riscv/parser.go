@@ -99,6 +99,8 @@ func (p Parser) Parse(addr model.Address, bytes []byte) (model.Instruction, erro
 		Type:    opcode.instrType,
 		ByteLen: instructionLen,
 
+		Effects: opcode.effects(instr),
+
 		JumpTargets:    jumpTargets,
 		InputRegistry:  instr.inputRegs(),
 		OutputRegistry: instr.outputRegs(),

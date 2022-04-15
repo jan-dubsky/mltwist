@@ -28,4 +28,4 @@ func NewConstInt[T ~int8 | ~int16 | ~int32 | ~int64](val T, w Width) Const {
 }
 
 func (c Const) Width() Width { return c.w }
-func (Const) internal()      {}
+func (Const) internalExpr()  {}

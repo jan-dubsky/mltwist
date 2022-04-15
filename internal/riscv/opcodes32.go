@@ -15,9 +15,10 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeU,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
 			imm, _ := immTypeU.parseValue(i.value)
-			return expr.NewConstInt(imm, width32)
+			val := expr.NewConstInt(imm, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "auipc",
@@ -26,9 +27,10 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeU,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
 			imm, _ := immTypeU.parseValue(i.value)
-			return expr.NewConstUint(addrAddImm(i.address, imm), width32)
+			val := expr.NewConstUint(addrAddImm(i.address, imm), width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "jal",
@@ -41,9 +43,14 @@ var integer32 = []*instructionOpcode{
 			imm, _ := immTypeJ.parseValue(i.value)
 			return addrAddImm(i.address, imm)
 		},
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
+			target := addrImmConst(immTypeJ, i, width32)
 			// Address of following instruction.
-			return expr.NewConstUint(uint64(i.address+4), width32)
+			following := expr.NewConstUint(uint64(i.address+4), width32)
+			return []expr.Effect{
+				expr.NewRegStore(target, expr.IPKey, width32),
+				regStore(following, i, width32),
+			}
 		},
 	}, {
 		name:         "jalr",
@@ -53,9 +60,14 @@ var integer32 = []*instructionOpcode{
 		immediate:    immTypeI,
 		instrType:    model.TypeJumpDyn,
 		// FIXME: Find a way how to represent those jump targets.
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
+			target := regImmOp(expr.Add, immTypeI, i, width32)
 			// Address of following instruction.
-			return expr.NewConstUint(uint64(i.address+4), width32)
+			following := expr.NewConstUint(uint32(i.address+4), width32)
+			return []expr.Effect{
+				expr.NewRegStore(target, expr.IPKey, width32),
+				regStore(following, i, width32),
+			}
 		},
 	}, {
 		name:         "beq",
@@ -65,6 +77,9 @@ var integer32 = []*instructionOpcode{
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
 		jumpTarget:   branchJumpTarget,
+		effects: func(i Instruction) []expr.Effect {
+			return []expr.Effect{branchCmp(expr.Eq, true, i, width32)}
+		},
 	}, {
 		name:         "bne",
 		opcode:       opcode10(0b001, 0b1100011),
@@ -73,6 +88,9 @@ var integer32 = []*instructionOpcode{
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
 		jumpTarget:   branchJumpTarget,
+		effects: func(i Instruction) []expr.Effect {
+			return []expr.Effect{branchCmp(expr.Eq, false, i, width32)}
+		},
 	}, {
 		name:         "blt",
 		opcode:       opcode10(0b100, 0b1100011),
@@ -81,6 +99,9 @@ var integer32 = []*instructionOpcode{
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
 		jumpTarget:   branchJumpTarget,
+		effects: func(i Instruction) []expr.Effect {
+			return []expr.Effect{branchCmp(expr.Lt, true, i, width32)}
+		},
 	}, {
 		name:         "bge",
 		opcode:       opcode10(0b101, 0b1100011),
@@ -89,6 +110,9 @@ var integer32 = []*instructionOpcode{
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
 		jumpTarget:   branchJumpTarget,
+		effects: func(i Instruction) []expr.Effect {
+			return []expr.Effect{branchCmp(expr.Lt, false, i, width32)}
+		},
 	}, {
 		name:         "bltu",
 		opcode:       opcode10(0b110, 0b1100011),
@@ -97,6 +121,9 @@ var integer32 = []*instructionOpcode{
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
 		jumpTarget:   branchJumpTarget,
+		effects: func(i Instruction) []expr.Effect {
+			return []expr.Effect{branchCmp(expr.Ltu, true, i, width32)}
+		},
 	}, {
 		name:         "bgeu",
 		opcode:       opcode10(0b111, 0b1100011),
@@ -105,6 +132,9 @@ var integer32 = []*instructionOpcode{
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
 		jumpTarget:   branchJumpTarget,
+		effects: func(i Instruction) []expr.Effect {
+			return []expr.Effect{branchCmp(expr.Ltu, false, i, width32)}
+		},
 	}, {
 		name:         "lb",
 		opcode:       opcode10(0b000, 0b0000011),
@@ -113,9 +143,10 @@ var integer32 = []*instructionOpcode{
 		loadBytes:    1,
 		immediate:    immTypeI,
 		instrType:    model.TypeLoad,
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width32)
-			return sext(expr.NewLoad(addr, width8), 7, width32)
+			val := sext(memLoad(addr, width8), 7, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "lh",
@@ -125,9 +156,10 @@ var integer32 = []*instructionOpcode{
 		loadBytes:    2,
 		immediate:    immTypeI,
 		instrType:    model.TypeLoad,
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width32)
-			return sext(expr.NewLoad(addr, width16), 15, width32)
+			val := sext(memLoad(addr, width16), 15, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "lw",
@@ -137,9 +169,10 @@ var integer32 = []*instructionOpcode{
 		loadBytes:    4,
 		immediate:    immTypeI,
 		instrType:    model.TypeLoad,
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width32)
-			return expr.NewLoad(addr, width32)
+			val := memLoad(addr, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "lbu",
@@ -150,9 +183,10 @@ var integer32 = []*instructionOpcode{
 		unsigned:     true,
 		immediate:    immTypeI,
 		instrType:    model.TypeLoad,
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width32)
-			return exprtools.Crop(expr.NewLoad(addr, width8), width32)
+			val := exprtools.Crop(memLoad(addr, width8), width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "lhu",
@@ -163,9 +197,10 @@ var integer32 = []*instructionOpcode{
 		unsigned:     true,
 		immediate:    immTypeI,
 		instrType:    model.TypeLoad,
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width32)
-			return exprtools.Crop(expr.NewLoad(addr, width16), width32)
+			val := exprtools.Crop(memLoad(addr, width16), width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "sb",
@@ -175,9 +210,10 @@ var integer32 = []*instructionOpcode{
 		storeBytes:   1,
 		immediate:    immTypeS,
 		instrType:    model.TypeStore,
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
+			val := regLoad(rs2, i, width32)
 			addr := regImmOp(expr.Add, immTypeS, i, width32)
-			return expr.NewStore(regExpr(rs2, i, width32), addr, width8)
+			return []expr.Effect{memStore(val, addr, width8)}
 		},
 	}, {
 		name:         "sh",
@@ -187,9 +223,10 @@ var integer32 = []*instructionOpcode{
 		storeBytes:   2,
 		immediate:    immTypeS,
 		instrType:    model.TypeStore,
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
+			val := regLoad(rs2, i, width32)
 			addr := regImmOp(expr.Add, immTypeS, i, width32)
-			return expr.NewStore(regExpr(rs2, i, width32), addr, width16)
+			return []expr.Effect{memStore(val, addr, width16)}
 		},
 	}, {
 		name:         "sw",
@@ -199,9 +236,10 @@ var integer32 = []*instructionOpcode{
 		storeBytes:   4,
 		immediate:    immTypeS,
 		instrType:    model.TypeStore,
-		expr: func(i Instruction) expr.Expr {
+		effects: func(i Instruction) []expr.Effect {
+			val := regLoad(rs2, i, width32)
 			addr := regImmOp(expr.Add, immTypeS, i, width32)
-			return expr.NewStore(regExpr(rs2, i, width32), addr, width32)
+			return []expr.Effect{memStore(val, addr, width32)}
 		},
 	}, {
 		name:         "addi",
@@ -210,8 +248,9 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return regImmOp(expr.Add, immTypeI, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := regImmOp(expr.Add, immTypeI, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "slti",
@@ -220,15 +259,16 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return expr.NewCond(
+		effects: func(i Instruction) []expr.Effect {
+			val := expr.NewCond(
 				expr.Lt,
-				regExpr(rs1, i, width32),
+				regLoad(rs1, i, width32),
 				immConst(immTypeI, i),
 				expr.One,
 				expr.Zero,
 				width32,
 			)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "sltiu",
@@ -237,15 +277,16 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return expr.NewCond(
+		effects: func(i Instruction) []expr.Effect {
+			val := expr.NewCond(
 				expr.Ltu,
-				regExpr(rs1, i, width32),
+				regLoad(rs1, i, width32),
 				immConst(immTypeI, i),
 				expr.One,
 				expr.Zero,
 				width32,
 			)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "xori",
@@ -254,8 +295,9 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return regImmOp(expr.Xor, immTypeI, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := regImmOp(expr.Xor, immTypeI, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "ori",
@@ -264,8 +306,9 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return regImmOp(expr.Or, immTypeI, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := regImmOp(expr.Or, immTypeI, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "andi",
@@ -274,8 +317,9 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return regImmOp(expr.And, immTypeI, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := regImmOp(expr.And, immTypeI, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:                "slli",
@@ -284,8 +328,9 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg:        true,
 		additionalImmediate: addImmSh32,
 		instrType:           model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return regImmShift(expr.Lsh, i, 5, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := regImmShift(expr.Lsh, i, 5, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:                "srli",
@@ -294,8 +339,9 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg:        true,
 		additionalImmediate: addImmSh32,
 		instrType:           model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return regImmShift(expr.Rsh, i, 5, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := regImmShift(expr.Rsh, i, 5, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:                "srai",
@@ -304,8 +350,9 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg:        true,
 		additionalImmediate: addImmSh32,
 		instrType:           model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return regImmShift(expr.RshA, i, 5, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := regImmShift(expr.RshA, i, 5, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "add",
@@ -313,8 +360,9 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return reg2Op(expr.Add, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := reg2Op(expr.Add, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "sub",
@@ -322,8 +370,9 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return reg2Op(expr.Sub, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := reg2Op(expr.Sub, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "slt",
@@ -331,15 +380,16 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return expr.NewCond(
+		effects: func(i Instruction) []expr.Effect {
+			val := expr.NewCond(
 				expr.Lt,
-				regExpr(rs1, i, width32),
-				regExpr(rs2, i, width32),
+				regLoad(rs1, i, width32),
+				regLoad(rs2, i, width32),
 				expr.One,
 				expr.Zero,
 				width32,
 			)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "sltu",
@@ -347,15 +397,16 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return expr.NewCond(
+		effects: func(i Instruction) []expr.Effect {
+			val := expr.NewCond(
 				expr.Ltu,
-				regExpr(rs1, i, width32),
-				regExpr(rs2, i, width32),
+				regLoad(rs1, i, width32),
+				regLoad(rs2, i, width32),
 				expr.One,
 				expr.Zero,
 				width32,
 			)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "or",
@@ -363,8 +414,9 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return reg2Op(expr.Or, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := reg2Op(expr.Or, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "and",
@@ -372,8 +424,9 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return reg2Op(expr.And, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := reg2Op(expr.And, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "xor",
@@ -381,8 +434,9 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return reg2Op(expr.Xor, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := reg2Op(expr.Xor, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "sll",
@@ -390,8 +444,9 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return maskedRegOp(expr.Lsh, i, 5, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := maskedRegOp(expr.Lsh, i, 5, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "srl",
@@ -399,8 +454,9 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return maskedRegOp(expr.Rsh, i, 5, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := maskedRegOp(expr.Rsh, i, 5, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "sra",
@@ -408,8 +464,9 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return maskedRegOp(expr.RshA, i, 5, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := maskedRegOp(expr.RshA, i, 5, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name: "fence",
@@ -420,6 +477,8 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: false,
 		instrType:    model.TypeMemOrder,
+		// FIXME: How to represent memory order?
+		effects: func(i Instruction) []expr.Effect { return nil },
 	}, {
 		name: "fence.i",
 		opcode: opcode.Opcode{
@@ -429,6 +488,8 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: false,
 		instrType:    model.TypeMemOrder,
+		// FIXME: How to represent memory order?
+		effects: func(i Instruction) []expr.Effect { return nil },
 	}, {
 		name: "ecall",
 		opcode: opcode.Opcode{
@@ -438,6 +499,8 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: false,
 		instrType:    model.TypeSyscall,
+		// FIXME: How to represent syscall?
+		effects: func(i Instruction) []expr.Effect { return nil },
 	}, {
 		name: "ebreak",
 		opcode: opcode.Opcode{
@@ -447,6 +510,8 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: false,
 		instrType:    model.TypeSyscall,
+		// FIXME: How to represent syscall?
+		effects: func(i Instruction) []expr.Effect { return nil },
 	},
 
 	// TODO: Find a way how to represent CSR instructions.
@@ -512,8 +577,9 @@ var mul32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return reg2Op(expr.Mul, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := reg2Op(expr.Mul, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "mulh",
@@ -522,12 +588,13 @@ var mul32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			r1, r2 := regExpr(rs1, i, width32), regExpr(rs2, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			mul := exprtools.SignedMul(r1, r2, width32)
 			shift := expr.NewConstUint(uint8(32), width8)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
-			return exprtools.Crop(shifted, width32)
+			val := exprtools.Crop(shifted, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "mulhu",
@@ -536,12 +603,13 @@ var mul32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			r1, r2 := regExpr(rs1, i, width32), regExpr(rs2, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			mul := expr.NewBinary(expr.Mul, r1, r2, width64)
 			shift := expr.NewConstUint(uint8(32), width8)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
-			return exprtools.Crop(shifted, width32)
+			val := exprtools.Crop(shifted, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "mulhsu",
@@ -550,13 +618,13 @@ var mul32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			r1, r2 := regExpr(rs1, i, width32), regExpr(rs2, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			r1Abs := exprtools.Abs(r1, width32)
 			mul := expr.NewBinary(expr.Mul, r1Abs, r2, width64)
 			shift := expr.NewConstUint(uint8(32), width8)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
-			return expr.NewCond(
+			val := expr.NewCond(
 				expr.Eq,
 				r1,
 				r1Abs,
@@ -564,6 +632,7 @@ var mul32 = []*instructionOpcode{
 				exprtools.Negate(shifted, width32),
 				width32,
 			)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "div",
@@ -572,9 +641,10 @@ var mul32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			r1, r2 := regExpr(rs1, i, width32), regExpr(rs2, i, width32)
-			return exprtools.SignedDiv(r1, r2, width32)
+		effects: func(i Instruction) []expr.Effect {
+			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
+			val := exprtools.SignedDiv(r1, r2, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "divu",
@@ -583,8 +653,9 @@ var mul32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return reg2Op(expr.Div, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := reg2Op(expr.Div, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "rem",
@@ -593,9 +664,10 @@ var mul32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			r1, r2 := regExpr(rs1, i, width32), regExpr(rs2, i, width32)
-			return exprtools.SignedMod(r1, r2, width32)
+		effects: func(i Instruction) []expr.Effect {
+			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
+			val := exprtools.SignedMod(r1, r2, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
 		name:         "remu",
@@ -604,8 +676,9 @@ var mul32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		instrType:    model.TypeAritm,
-		expr: func(i Instruction) expr.Expr {
-			return reg2Op(expr.Mod, i, width32)
+		effects: func(i Instruction) []expr.Effect {
+			val := reg2Op(expr.Mod, i, width32)
+			return []expr.Effect{regStore(val, i, width32)}
 		},
 	},
 }

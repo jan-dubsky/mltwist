@@ -8,6 +8,9 @@ import (
 	"fmt"
 )
 
+// memoryKey is identifier of CPU memory address space.
+const memoryKey = expr.Key("memory")
+
 const (
 	// low7Bits is a byte (mask) with bottom 7 bits set and last bit unset.
 	low7Bits byte = 0x7F
@@ -190,40 +193,90 @@ func immShift(shiftBits uint8, i Instruction) expr.Const {
 	return expr.NewConstInt(imm&mask, expr.Width32)
 }
 
-func regExpr(r reg, i Instruction, w expr.Width) expr.Expr {
+func regLoad(r reg, i Instruction, w expr.Width) expr.Expr {
 	num := r.regNum(i.value)
 	if num == 0 {
 		return expr.Zero
 	}
-	return expr.NewRef(num.String(), w)
+	return expr.NewRegLoad(expr.Key(num.String()), w)
 }
 
-func regImmOp(op expr.BinaryOp, it immType, i Instruction, w expr.Width) expr.Expr {
-	return expr.NewBinary(op, regExpr(rs1, i, w), immConst(it, i), w)
+func regImmOp(op expr.BinaryOp, t immType, i Instruction, w expr.Width) expr.Expr {
+	return expr.NewBinary(op, regLoad(rs1, i, w), immConst(t, i), w)
+}
+
+func addrImmConst(t immType, i Instruction, w expr.Width) expr.Const {
+	imm, ok := t.parseValue(i.value)
+	if !ok {
+		panic(fmt.Sprintf("immediate encoding %d has no value", t))
+	}
+	return expr.NewConstUint(addrAddImm(i.address, imm), w)
 }
 
 func reg2Op(op expr.BinaryOp, i Instruction, w expr.Width) expr.Expr {
-	return expr.NewBinary(op, regExpr(rs1, i, w), regExpr(rs2, i, w), w)
+	return expr.NewBinary(op, regLoad(rs1, i, w), regLoad(rs2, i, w), w)
 }
 
 func maskedRegOp(op expr.BinaryOp, i Instruction, bits uint8, w expr.Width) expr.Expr {
-	mask := exprtools.MaskBits(regExpr(rs2, i, w), uint16(bits), w)
-	return expr.NewBinary(op, regExpr(rs1, i, w), mask, w)
+	mask := exprtools.MaskBits(regLoad(rs2, i, w), uint16(bits), w)
+	return expr.NewBinary(op, regLoad(rs1, i, w), mask, w)
 }
 
 func regImmShift(op expr.BinaryOp, i Instruction, bits uint8, w expr.Width) expr.Expr {
-	return expr.NewBinary(op, regExpr(rs1, i, w), immShift(bits, i), w)
+	return expr.NewBinary(op, regLoad(rs1, i, w), immShift(bits, i), w)
 }
 
 func sext(e expr.Expr, signBit uint8, w expr.Width) expr.Expr {
 	signBitExpr := expr.NewConstUint(signBit, expr.Width8)
-	return expr.NewSignExtend(e, signBitExpr, w)
+	return exprtools.SignExtend(e, signBitExpr, w)
 }
 
 func sext32To64(e expr.Expr) expr.Expr { return sext(e, 31, expr.Width64) }
 
 func unsignedReg(r reg, i Instruction, w expr.Width) expr.Expr {
-	return exprtools.MaskBits(regExpr(r, i, w), w.Bits()-1, w)
+	return exprtools.MaskBits(regLoad(r, i, w), w.Bits()-1, w)
+}
+
+func memLoad(addr expr.Expr, w expr.Width) expr.Expr {
+	return expr.NewMemLoad(memoryKey, addr, w)
+}
+
+func memStore(e expr.Expr, addr expr.Expr, w expr.Width) expr.Effect {
+	return expr.NewMemStore(e, memoryKey, addr, w)
+}
+
+func regStore(e expr.Expr, i Instruction, w expr.Width) expr.Effect {
+	num := rd.regNum(i.value)
+	if num == 0 {
+		return nil
+	}
+	return expr.NewRegStore(e, expr.Key(num.String()), w)
+}
+
+func branchCmp(
+	cond expr.Condition,
+	branchIfTrue bool,
+	i Instruction,
+	w expr.Width,
+) expr.Effect {
+	jumpTarget := addrImmConst(immTypeB, i, w)
+	nextInstr := expr.NewConstUint(i.address+instructionLen, w)
+
+	condTrue, condFalse := jumpTarget, nextInstr
+	if !branchIfTrue {
+		condTrue, condFalse = nextInstr, jumpTarget
+	}
+
+	ip := expr.NewCond(
+		cond,
+		regLoad(rs1, i, w),
+		regLoad(rs2, i, w),
+		condTrue,
+		condFalse,
+		w,
+	)
+
+	return expr.NewRegStore(ip, expr.IPKey, w)
 }
 
 var instructions = map[Variant]map[Extension][]*instructionOpcode{

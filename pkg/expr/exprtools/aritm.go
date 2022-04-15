@@ -85,3 +85,28 @@ func SignedDiv(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
 func SignedMod(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
 	return signedOp(expr.Mod, e1, e2, w)
 }
+
+// Ones returns expression of width w filled with all ones.
+func Ones(w expr.Width) expr.Expr {
+	return expr.NewBinary(expr.Sub, expr.Zero, expr.One, 2)
+}
+
+// SignExtend implements sign extension of e, where bit at position signBit is
+// understood as sign bit. The resulting expression has width w. The result is
+// undefined if signBit is higher than width of resulting expression.
+func SignExtend(e expr.Expr, signBit expr.Expr, w expr.Width) expr.Expr {
+	signMask := expr.NewBinary(expr.Lsh, expr.One, signBit, w)
+
+	validBitMask := expr.NewBinary(expr.Sub, signMask, expr.One, w)
+	validBits := expr.NewBinary(expr.And, e, validBitMask, w)
+
+	signBitMask := expr.NewBinary(expr.Xor, Ones(w), validBitMask, w)
+	negative := expr.NewBinary(expr.Or, validBits, signBitMask, w)
+
+	return BoolCond(
+		expr.NewBinary(expr.And, e, signMask, w),
+		negative,
+		validBits, // positive number,
+		w,
+	)
+}
