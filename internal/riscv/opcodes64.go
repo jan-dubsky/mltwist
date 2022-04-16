@@ -29,8 +29,7 @@ var integer64 = []*instructionOpcode{
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			imm, _ := immTypeU.parseValue(i.value)
-			res32 := expr.NewConstUint(addrAddImm(i.address, imm), width32)
-			val := sext32To64(res32)
+			val := expr.NewConstUint(addrAddImm(i.address, imm), width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -47,7 +46,7 @@ var integer64 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			target := addrImmConst(immTypeJ, i, width64)
 			// Address of following instruction.
-			following := expr.NewConstUint(uint64(i.address+4), width64)
+			following := expr.NewConstUint(i.address+4, width64)
 			return []expr.Effect{
 				expr.NewRegStore(target, expr.IPKey, width64),
 				regStore(following, i, width64),
@@ -64,7 +63,7 @@ var integer64 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			target := regImmOp(expr.Add, immTypeI, i, width64)
 			// Address of following instruction.
-			following := expr.NewConstUint(uint32(i.address+4), width64)
+			following := expr.NewConstUint(i.address+4, width64)
 			return []expr.Effect{
 				expr.NewRegStore(target, expr.IPKey, width64),
 				regStore(following, i, width64),
@@ -684,7 +683,7 @@ var mul64 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			mul := exprtools.SignedMul(r1, r2, width64)
-			shift := expr.NewConstUint(uint8(64), width8)
+			shift := expr.NewConstUint[uint8](64, width8)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width128)
 			val := exprtools.Crop(shifted, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -699,7 +698,7 @@ var mul64 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			mul := expr.NewBinary(expr.Mul, r1, r2, width128)
-			shift := expr.NewConstUint(uint8(64), width8)
+			shift := expr.NewConstUint[uint8](64, width8)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width128)
 			val := exprtools.Crop(shifted, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -715,7 +714,7 @@ var mul64 = []*instructionOpcode{
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			r1Abs := exprtools.Abs(r1, width64)
 			mul := expr.NewBinary(expr.Mul, r1Abs, r2, width128)
-			shift := expr.NewConstUint(uint8(64), width8)
+			shift := expr.NewConstUint[uint8](64, width8)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width128)
 			val := expr.NewCond(
 				expr.Eq,

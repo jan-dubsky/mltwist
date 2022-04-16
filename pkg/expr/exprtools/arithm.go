@@ -87,6 +87,8 @@ func SignedMod(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
 }
 
 // Ones returns expression of width w filled with all ones.
+//
+// This function can be used to represent signed -1 value of any width w.
 func Ones(w expr.Width) expr.Expr {
 	return expr.NewBinary(expr.Sub, expr.Zero, expr.One, 2)
 }
@@ -114,14 +116,14 @@ func SignExtend(e expr.Expr, signBit expr.Expr, w expr.Width) expr.Expr {
 func RshA(e expr.Expr, shift expr.Expr, w expr.Width) expr.Expr {
 	rsh := expr.NewBinary(expr.Rsh, e, shift, w)
 
-	signBitOrigPos := expr.NewConstUint(uint64(w)*8-1, w) // last bit in W bit number.
+	signBitOrigPos := expr.NewConstUint(w.Bits()-1, w) // last bit in W bit number.
 	signBitShiftedPos := expr.NewBinary(expr.Sub, signBitOrigPos, shift, w)
 	sextRsh := SignExtend(rsh, signBitShiftedPos, w)
 
 	negativeRsh := expr.NewCond(
 		expr.Leu,
 		shift,
-		expr.NewConstUint(uint64(w)*8, w),
+		expr.NewConstUint(w.Bits(), w),
 		sextRsh,
 		Ones(w),
 		w,

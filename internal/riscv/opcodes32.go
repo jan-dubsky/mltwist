@@ -593,7 +593,7 @@ var mul32 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			mul := exprtools.SignedMul(r1, r2, width32)
-			shift := expr.NewConstUint(uint8(32), width8)
+			shift := expr.NewConstUint[uint8](32, width8)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
 			val := exprtools.Crop(shifted, width32)
 			return []expr.Effect{regStore(val, i, width32)}
@@ -608,7 +608,7 @@ var mul32 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			mul := expr.NewBinary(expr.Mul, r1, r2, width64)
-			shift := expr.NewConstUint(uint8(32), width8)
+			shift := expr.NewConstUint[uint8](32, width8)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
 			val := exprtools.Crop(shifted, width32)
 			return []expr.Effect{regStore(val, i, width32)}
@@ -624,7 +624,7 @@ var mul32 = []*instructionOpcode{
 			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			r1Abs := exprtools.Abs(r1, width32)
 			mul := expr.NewBinary(expr.Mul, r1Abs, r2, width64)
-			shift := expr.NewConstUint(uint8(32), width8)
+			shift := expr.NewConstUint[uint8](32, width8)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
 			val := expr.NewCond(
 				expr.Eq,
