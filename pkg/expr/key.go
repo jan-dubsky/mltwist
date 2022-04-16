@@ -3,17 +3,17 @@ package expr
 import "fmt"
 
 const (
-	// IPKey identifises instruction pointer registers. Writes to this
+	// IPKey identifies instruction pointer registers. Writes to this
 	// register will be interpreted as jumps.
-	IPKey Key = "#r:IP"
+	IPKey Key = "#r:ip"
 )
 
 // Key represents an arbitrary memory or register key used to identify memory
 // address space or register.
 //
 // Value of key startinf with hash (#) are reserved to be defined by this
-// package. Usage of different keys startinf with # might result in undefined
-// behaviour. Empty key is also invalid.
+// package. Usage of keys starting with # which are not defined by this package
+// might result in undefined behaviour. Empty key is invalid as well.
 //
 // For reserved keys starting with #, it's highly recommended to use constants
 // defined by this package. Values of reserved strings might vary in between

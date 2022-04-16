@@ -14,6 +14,8 @@ type MemLoad struct {
 }
 
 func NewMemLoad(key Key, addr Expr, w Width) MemLoad {
+	key.assertValid()
+
 	return MemLoad{
 		key:  key,
 		addr: addr,
@@ -40,6 +42,8 @@ type MemStore struct {
 }
 
 func NewMemStore(value Expr, key Key, addr Expr, w Width) MemStore {
+	key.assertValid()
+
 	return MemStore{
 		value: value,
 		key:   key,

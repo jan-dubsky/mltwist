@@ -14,7 +14,7 @@ func Negate(e expr.Expr, w expr.Width) expr.Expr {
 // Abs returns an absolute value of e with width w.
 func Abs(e expr.Expr, w expr.Width) expr.Expr {
 	return expr.NewCond(
-		expr.Le,
+		expr.Les,
 		expr.Zero,
 		e,
 		e,
@@ -107,6 +107,32 @@ func SignExtend(e expr.Expr, signBit expr.Expr, w expr.Width) expr.Expr {
 		expr.NewBinary(expr.And, e, signMask, w),
 		negative,
 		validBits, // positive number,
+		w,
+	)
+}
+
+func RshA(e expr.Expr, shift expr.Expr, w expr.Width) expr.Expr {
+	rsh := expr.NewBinary(expr.Rsh, e, shift, w)
+
+	signBitOrigPos := expr.NewConstUint(uint64(w)*8-1, w) // last bit in W bit number.
+	signBitShiftedPos := expr.NewBinary(expr.Sub, signBitOrigPos, shift, w)
+	sextRsh := SignExtend(rsh, signBitShiftedPos, w)
+
+	negativeRsh := expr.NewCond(
+		expr.Leu,
+		shift,
+		expr.NewConstUint(uint64(w)*8, w),
+		sextRsh,
+		Ones(w),
+		w,
+	)
+
+	return expr.NewCond(
+		expr.Lts,
+		e,
+		expr.Zero,
+		negativeRsh,
+		rsh,
 		w,
 	)
 }

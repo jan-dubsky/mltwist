@@ -12,6 +12,8 @@ type RegLoad struct {
 }
 
 func NewRegLoad(key Key, w Width) RegLoad {
+	key.assertValid()
+
 	return RegLoad{
 		key: key,
 		w:   w,
@@ -32,6 +34,8 @@ type RegStore struct {
 }
 
 func NewRegStore(value Expr, key Key, w Width) RegStore {
+	key.assertValid()
+
 	return RegStore{
 		value: value,
 		key:   key,

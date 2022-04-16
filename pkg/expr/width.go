@@ -33,8 +33,12 @@ const (
 	Width32
 	Width64
 	Width128
+	width256
+	width512
+	width1024
 )
 
+// MaxWidth is maximal allowed width value.
 const MaxWidth Width = math.MaxUint8
 
 func (w Width) Bits() uint16 { return uint16(w) * 8 }

@@ -55,9 +55,18 @@ func (Cond) internalExpr()  {}
 type Condition uint8
 
 const (
-	Lt Condition = iota + 1
-	Le
-	Eq
+	// Eq performes equality (==) comparison of 2 arguments.
+	Eq Condition = iota + 1
+	// Ltu performs unsigned less-then (<) comparison of the first and
+	// second argument.
 	Ltu
+	// Leu performs unsigned less-then-or-equal (<=) comparison of the first
+	// and second argument.
 	Leu
+	// Lts perform signed less-then (<) comparison of the first and second
+	// argument.
+	Lts
+	// Les performs signed less-then-or-equal (<=) comparison of the first
+	// and second argument.
+	Les
 )

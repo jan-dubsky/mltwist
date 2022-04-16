@@ -47,20 +47,12 @@ const (
 	Sub
 	// Lsh (logically) shifts first operand left second operand number of
 	// bits. Second operand is always understood as unsigned.
-	//
-	// TODO: Rethink right extension of signed and unsigned values.
 	Lsh
 	// Rsh (logically) shifts first operand left second operand number of
 	// bits. Second operand is always understood as unsigned.
 	//
 	// Logical shift always inserts zeros to highest positions.
 	Rsh
-	// RshA (arithmetically) shifts first operand left second operand number
-	// of bits. Second operand is always understood as unsigned.
-	//
-	// Arithmetical shift adds copies if the original highest bit to high
-	// bit positions.
-	RshA
 
 	// Mul implements width bits unsigned multiplication of arguments.
 	//
@@ -73,6 +65,10 @@ const (
 	Mul
 	// Div implements width bits unsigned division of the first argument by
 	// the second argument.
+	//
+	// Division by zero doesn't cause any error, but produces result of
+	// width w with all bits set. In other words, the resulting unsigned
+	// value is maximal possible value of width w.
 	//
 	// Signed division can be implemented using unsigned division followed
 	// by sign resolution logic.

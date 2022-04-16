@@ -101,7 +101,7 @@ var integer64 = []*instructionOpcode{
 		instrType:    model.TypeCJump,
 		jumpTarget:   branchJumpTarget,
 		effects: func(i Instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(expr.Lt, true, i, width64)}
+			return []expr.Effect{branchCmp(expr.Lts, true, i, width64)}
 		},
 	}, {
 		name:         "bge",
@@ -112,7 +112,7 @@ var integer64 = []*instructionOpcode{
 		instrType:    model.TypeCJump,
 		jumpTarget:   branchJumpTarget,
 		effects: func(i Instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(expr.Lt, false, i, width64)}
+			return []expr.Effect{branchCmp(expr.Lts, false, i, width64)}
 		},
 	}, {
 		name:         "bltu",
@@ -302,7 +302,7 @@ var integer64 = []*instructionOpcode{
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := expr.NewCond(
-				expr.Lt,
+				expr.Lts,
 				regLoad(rs1, i, width64),
 				immConst(immTypeI, i),
 				expr.One,
@@ -392,7 +392,8 @@ var integer64 = []*instructionOpcode{
 		additionalImmediate: addImmSh64,
 		instrType:           model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
-			val := regImmShift(expr.RshA, i, 6, width64)
+			reg := regLoad(rs1, i, width64)
+			val := exprtools.RshA(reg, immShift(6, i), width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -423,7 +424,7 @@ var integer64 = []*instructionOpcode{
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := expr.NewCond(
-				expr.Lt,
+				expr.Lts,
 				regLoad(rs1, i, width64),
 				regLoad(rs2, i, width64),
 				expr.One,
@@ -506,7 +507,8 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
-			val := maskedRegOp(expr.RshA, i, 6, width64)
+			shift := exprtools.MaskBits(regLoad(rs2, i, width64), 6, width64)
+			val := exprtools.RshA(regLoad(rs1, i, width64), shift, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, { // Same definition as the 32bit version.
@@ -597,7 +599,8 @@ var integer64 = []*instructionOpcode{
 		additionalImmediate: addImmSh32,
 		instrType:           model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
-			val := sext32To64(regImmShift(expr.RshA, i, 5, width32))
+			reg := regLoad(rs1, i, width32)
+			val := sext32To64(exprtools.RshA(reg, immShift(5, i), width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -652,8 +655,9 @@ var integer64 = []*instructionOpcode{
 		immediate:    immTypeR,
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
-			val := sext32To64(maskedRegOp(expr.RshA, i, 5, width32))
-			return []expr.Effect{regStore(val, i, width64)}
+			shift := exprtools.MaskBits(regLoad(rs2, i, width32), 5, width32)
+			val32 := exprtools.RshA(regLoad(rs1, i, width32), shift, width32)
+			return []expr.Effect{regStore(sext32To64(val32), i, width64)}
 		},
 	},
 }

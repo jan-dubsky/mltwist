@@ -100,7 +100,7 @@ var integer32 = []*instructionOpcode{
 		instrType:    model.TypeCJump,
 		jumpTarget:   branchJumpTarget,
 		effects: func(i Instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(expr.Lt, true, i, width32)}
+			return []expr.Effect{branchCmp(expr.Lts, true, i, width32)}
 		},
 	}, {
 		name:         "bge",
@@ -111,7 +111,7 @@ var integer32 = []*instructionOpcode{
 		instrType:    model.TypeCJump,
 		jumpTarget:   branchJumpTarget,
 		effects: func(i Instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(expr.Lt, false, i, width32)}
+			return []expr.Effect{branchCmp(expr.Lts, false, i, width32)}
 		},
 	}, {
 		name:         "bltu",
@@ -261,7 +261,7 @@ var integer32 = []*instructionOpcode{
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := expr.NewCond(
-				expr.Lt,
+				expr.Lts,
 				regLoad(rs1, i, width32),
 				immConst(immTypeI, i),
 				expr.One,
@@ -351,7 +351,8 @@ var integer32 = []*instructionOpcode{
 		additionalImmediate: addImmSh32,
 		instrType:           model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
-			val := regImmShift(expr.RshA, i, 5, width32)
+			reg := regLoad(rs1, i, width32)
+			val := exprtools.RshA(reg, immShift(5, i), width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -382,7 +383,7 @@ var integer32 = []*instructionOpcode{
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := expr.NewCond(
-				expr.Lt,
+				expr.Lts,
 				regLoad(rs1, i, width32),
 				regLoad(rs2, i, width32),
 				expr.One,
@@ -465,7 +466,8 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
-			val := maskedRegOp(expr.RshA, i, 5, width32)
+			shift := exprtools.MaskBits(regLoad(rs2, i, width32), 5, width32)
+			val := exprtools.RshA(regLoad(rs1, i, width32), shift, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
