@@ -1,7 +1,7 @@
 package riscv
 
 import (
-	"decomp/internal/opcode"
+	"mltwist/internal/opcode"
 	"fmt"
 	"strings"
 	"testing"

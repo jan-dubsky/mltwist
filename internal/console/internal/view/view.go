@@ -1,8 +1,8 @@
 package view
 
 import (
-	"decomp/internal/console/internal/cursor"
-	"decomp/internal/console/internal/lines"
+	"mltwist/internal/console/internal/cursor"
+	"mltwist/internal/console/internal/lines"
 	"fmt"
 	"math"
 

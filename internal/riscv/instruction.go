@@ -1,7 +1,7 @@
 package riscv
 
 import (
-	"decomp/pkg/model"
+	"mltwist/pkg/model"
 	"fmt"
 	"strings"
 )

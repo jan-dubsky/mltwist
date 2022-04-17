@@ -1,7 +1,7 @@
 package deps
 
 import (
-	"decomp/internal/repr"
+	"mltwist/internal/repr"
 	"fmt"
 	"math"
 	"strconv"

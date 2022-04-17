@@ -1,8 +1,8 @@
 package deps
 
 import (
-	"decomp/internal/deps/internal/basicblock"
-	"decomp/internal/repr"
+	"mltwist/internal/deps/internal/basicblock"
+	"mltwist/internal/repr"
 	"fmt"
 )
 

@@ -1,7 +1,7 @@
 package expr_test
 
 import (
-	"decomp/pkg/expr"
+	"mltwist/pkg/expr"
 	"encoding/binary"
 	"testing"
 

@@ -1,7 +1,7 @@
 package basicblock
 
 import (
-	"decomp/internal/repr"
+	"mltwist/internal/repr"
 )
 
 type splitFunc func(seq []repr.Instruction) [][]repr.Instruction

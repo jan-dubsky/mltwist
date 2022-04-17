@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"decomp/internal/memory"
-	"decomp/internal/repr"
-	"decomp/pkg/model"
+	"mltwist/internal/memory"
+	"mltwist/internal/repr"
+	"mltwist/pkg/model"
 	"fmt"
 )
 

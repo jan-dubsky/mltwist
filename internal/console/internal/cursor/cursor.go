@@ -1,7 +1,7 @@
 package cursor
 
 import (
-	"decomp/internal/console/internal/lines"
+	"mltwist/internal/console/internal/lines"
 	"fmt"
 )
 

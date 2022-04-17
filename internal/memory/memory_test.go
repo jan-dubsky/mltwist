@@ -1,8 +1,8 @@
 package memory_test
 
 import (
-	"decomp/internal/memory"
-	"decomp/pkg/model"
+	"mltwist/internal/memory"
+	"mltwist/pkg/model"
 	"sort"
 	"testing"
 

@@ -1,8 +1,8 @@
 package basicblock
 
 import (
-	"decomp/internal/repr"
-	"decomp/pkg/model"
+	"mltwist/internal/repr"
+	"mltwist/pkg/model"
 	"fmt"
 	"sort"
 )

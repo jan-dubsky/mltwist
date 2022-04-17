@@ -1,7 +1,7 @@
 package model
 
 import (
-	"decomp/pkg/expr"
+	"mltwist/pkg/expr"
 	"fmt"
 )
 

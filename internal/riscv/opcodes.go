@@ -1,10 +1,10 @@
 package riscv
 
 import (
-	"decomp/internal/opcode"
-	"decomp/pkg/expr"
-	"decomp/pkg/expr/exprtools"
-	"decomp/pkg/model"
+	"mltwist/internal/opcode"
+	"mltwist/pkg/expr"
+	"mltwist/pkg/expr/exprtools"
+	"mltwist/pkg/model"
 	"fmt"
 )
 

@@ -1,8 +1,8 @@
 package deps
 
 import (
-	"decomp/internal/repr"
-	"decomp/pkg/model"
+	"mltwist/internal/repr"
+	"mltwist/pkg/model"
 )
 
 type insSet map[*instruction]struct{}

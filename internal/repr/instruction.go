@@ -1,8 +1,8 @@
 package repr
 
 import (
-	"decomp/pkg/expr"
-	"decomp/pkg/model"
+	"mltwist/pkg/expr"
+	"mltwist/pkg/model"
 )
 
 type Instruction struct {

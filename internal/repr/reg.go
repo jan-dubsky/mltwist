@@ -1,8 +1,8 @@
 package repr
 
 import (
-	"decomp/internal/exprwalk"
-	"decomp/pkg/expr"
+	"mltwist/internal/exprwalk"
+	"mltwist/pkg/expr"
 )
 
 type RegSet map[string]struct{}

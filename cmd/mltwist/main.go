@@ -1,12 +1,12 @@
 package main
 
 import (
-	"decomp/internal/console"
-	"decomp/internal/deps"
-	"decomp/internal/executable"
-	"decomp/internal/parser"
-	"decomp/internal/riscv"
 	"fmt"
+	"mltwist/internal/console"
+	"mltwist/internal/deps"
+	"mltwist/internal/executable"
+	"mltwist/internal/parser"
+	"mltwist/internal/riscv"
 	"os"
 )
 
@@ -34,19 +34,6 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("cannot parse model: %w", err)
 	}
-
-	/*
-		for i, b := range model.Blocks() {
-			if i > 0 {
-				fmt.Printf("\n")
-			}
-			fmt.Printf("Basic block %d:\n", i)
-
-			for j, in := range b.Instructions() {
-				fmt.Printf("\t%00d (0x%x): %s\n", j, in.Address(), in.String())
-			}
-		}
-	*/
 
 	ui := console.NewUI(model)
 	return ui.Run()

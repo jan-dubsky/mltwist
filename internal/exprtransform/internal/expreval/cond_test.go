@@ -1,8 +1,8 @@
 package expreval_test
 
 import (
-	"decomp/internal/exprtransform/internal/expreval"
-	"decomp/pkg/expr"
+	"mltwist/internal/exprtransform/internal/expreval"
+	"mltwist/pkg/expr"
 	"testing"
 
 	"github.com/stretchr/testify/require"

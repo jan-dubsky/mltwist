@@ -1,11 +1,11 @@
 package console
 
 import (
-	"decomp/internal/console/internal/control"
-	"decomp/internal/console/internal/cursor"
-	"decomp/internal/console/internal/lines"
-	"decomp/internal/console/internal/view"
-	"decomp/internal/deps"
+	"mltwist/internal/console/internal/control"
+	"mltwist/internal/console/internal/cursor"
+	"mltwist/internal/console/internal/lines"
+	"mltwist/internal/console/internal/view"
+	"mltwist/internal/deps"
 	"errors"
 	"fmt"
 )

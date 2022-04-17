@@ -1,8 +1,8 @@
 package exprtransform
 
 import (
-	"decomp/internal/exprtransform/internal/expreval"
-	"decomp/pkg/expr"
+	"mltwist/internal/exprtransform/internal/expreval"
+	"mltwist/pkg/expr"
 	"fmt"
 )
 

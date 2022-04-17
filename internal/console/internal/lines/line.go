@@ -1,7 +1,7 @@
 package lines
 
 import (
-	"decomp/internal/deps"
+	"mltwist/internal/deps"
 	"fmt"
 	"strings"
 )

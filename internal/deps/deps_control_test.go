@@ -1,7 +1,7 @@
 package deps
 
 import (
-	"decomp/pkg/model"
+	"mltwist/pkg/model"
 	"testing"
 )
 

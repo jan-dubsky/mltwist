@@ -1,6 +1,6 @@
 package exprwalk
 
-import "decomp/pkg/expr"
+import "mltwist/pkg/expr"
 
 type constFinder struct {
 	EmptyExprWalker

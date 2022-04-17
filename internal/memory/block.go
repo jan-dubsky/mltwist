@@ -1,6 +1,6 @@
 package memory
 
-import "decomp/pkg/model"
+import "mltwist/pkg/model"
 
 // Block represents a continuous sequence of bytes in a program (user-space)
 // address space.

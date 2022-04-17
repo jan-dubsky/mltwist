@@ -1,9 +1,9 @@
 package basicblock_test
 
 import (
-	"decomp/internal/deps/internal/basicblock"
-	"decomp/internal/repr"
-	"decomp/pkg/model"
+	"mltwist/internal/deps/internal/basicblock"
+	"mltwist/internal/repr"
+	"mltwist/pkg/model"
 	"testing"
 
 	"github.com/stretchr/testify/require"

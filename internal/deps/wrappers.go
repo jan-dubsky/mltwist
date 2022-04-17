@@ -1,6 +1,6 @@
 package deps
 
-import "decomp/pkg/model"
+import "mltwist/pkg/model"
 
 type Instruction struct {
 	*instruction

@@ -1,7 +1,7 @@
 package exprtools
 
 import (
-	"decomp/pkg/expr"
+	"mltwist/pkg/expr"
 )
 
 // bitMask returns an expression of wirth w which mas ones in positions

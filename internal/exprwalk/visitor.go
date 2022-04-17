@@ -1,6 +1,6 @@
 package exprwalk
 
-import "decomp/pkg/expr"
+import "mltwist/pkg/expr"
 
 type ExprWalker interface {
 	Binary(e expr.Binary) error

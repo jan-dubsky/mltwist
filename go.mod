@@ -1,4 +1,4 @@
-module decomp
+module mltwist
 
 go 1.18
 

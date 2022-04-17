@@ -2,8 +2,8 @@ package executable
 
 import (
 	"debug/elf"
-	"decomp/internal/memory"
-	"decomp/pkg/model"
+	"mltwist/internal/memory"
+	"mltwist/pkg/model"
 	"fmt"
 	"io"
 )

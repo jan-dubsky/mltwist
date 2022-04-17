@@ -1,6 +1,6 @@
 package deps
 
-import "decomp/pkg/model"
+import "mltwist/pkg/model"
 
 func controlFlowInstruction(t model.Type) bool {
 	return t.Jump() || t.CJump() || t.JumpDyn()

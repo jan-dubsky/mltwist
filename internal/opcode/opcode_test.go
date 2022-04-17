@@ -1,7 +1,7 @@
 package opcode_test
 
 import (
-	"decomp/internal/opcode"
+	"mltwist/internal/opcode"
 	"testing"
 
 	"github.com/stretchr/testify/require"

@@ -1,6 +1,6 @@
 package parser
 
-import "decomp/pkg/model"
+import "mltwist/pkg/model"
 
 // Parser is a platform specific object responsible for instruction parsing.
 type Parser interface {

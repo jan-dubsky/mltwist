@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"decomp/pkg/model"
+	"mltwist/pkg/model"
 	"fmt"
 	"sort"
 )

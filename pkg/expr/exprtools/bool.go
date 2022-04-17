@@ -1,6 +1,6 @@
 package exprtools
 
-import "decomp/pkg/expr"
+import "mltwist/pkg/expr"
 
 // Bool converts any nonzero expression e into expression with value 1. If e is
 // zero, value of zero is returned. The return value has always width 1.
