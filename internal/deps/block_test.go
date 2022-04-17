@@ -121,9 +121,9 @@ func TestBlock_Bounds(t *testing.T) {
 				4: {lower: 3, upper: 7},
 				5: {lower: 4, upper: 6},
 				6: {lower: 2, upper: 6},
-				7: {lower: 7, upper: 8},
-				8: {lower: 7, upper: 8},
-				9: {lower: 9, upper: 9},
+				7: {lower: 7, upper: 9},
+				8: {lower: 7, upper: 9},
+				9: {lower: 0, upper: 9},
 			},
 		},
 		{
@@ -138,13 +138,13 @@ func TestBlock_Bounds(t *testing.T) {
 				testReprReg(7, 7),
 			},
 			bounds: map[int]bounds{
-				0: {lower: 0, upper: 5},
+				0: {lower: 0, upper: 6},
 				1: {lower: 0, upper: 5},
 				2: {lower: 0, upper: 2},
 				3: {lower: 3, upper: 3},
-				4: {lower: 4, upper: 5},
-				5: {lower: 0, upper: 5},
-				6: {lower: 6, upper: 6},
+				4: {lower: 4, upper: 6},
+				5: {lower: 0, upper: 6},
+				6: {lower: 2, upper: 6},
 			},
 		},
 	}
@@ -186,8 +186,8 @@ func TestBlock_Bounds(t *testing.T) {
 				t.Logf("\tBack control: %v\n", idxs(ins.controlDepsBack))
 				t.Logf("\tBack special: %v\n", idxs(ins.specialDepsBack))
 
-				r.Equal(b.lower, l, "Lower bound doesn't match")
-				r.Equal(b.upper, u, "Upper bound doesn't match")
+				r.Equal(b.lower, l, "Lower bound doesn't match for %d", i)
+				r.Equal(b.upper, u, "Upper bound doesn't match for %d", i)
 			}
 		})
 	}

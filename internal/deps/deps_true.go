@@ -1,7 +1,5 @@
 package deps
 
-import "decomp/pkg/model"
-
 // numRegs is expected number of registers in a platform.
 //
 // The purpose of this value is to allow optimistic pre-allocation of maps and
@@ -11,14 +9,14 @@ import "decomp/pkg/model"
 const numRegs = 32
 
 type trueDepProcessor struct {
-	regs map[model.Register]*instruction
+	regs map[string]*instruction
 
 	memory *instruction
 }
 
 func processTrueDeps(instrs []*instruction) {
 	p := trueDepProcessor{
-		regs: make(map[model.Register]*instruction, numRegs),
+		regs: make(map[string]*instruction, numRegs),
 	}
 
 	for _, ins := range instrs {

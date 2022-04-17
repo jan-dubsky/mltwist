@@ -1,16 +1,14 @@
 package deps
 
-import "decomp/pkg/model"
-
 type antiDepProcessor struct {
-	regs map[model.Register]*instruction
+	regs map[string]*instruction
 
 	memory *instruction
 }
 
 func processAntiDeps(instrs []*instruction) {
 	p := antiDepProcessor{
-		regs: make(map[model.Register]*instruction, numRegs),
+		regs: make(map[string]*instruction, numRegs),
 	}
 
 	for i := len(instrs) - 1; i >= 0; i-- {

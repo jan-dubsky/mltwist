@@ -2,15 +2,15 @@ package deps
 
 import (
 	"decomp/internal/repr"
-	"decomp/pkg/model"
 	"fmt"
 	"math"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-const regInvalid model.Register = math.MaxUint64
+const regInvalid uint64 = math.MaxUint64
 
 func testIns(ins repr.Instruction) *instruction {
 	return &instruction{
@@ -30,30 +30,29 @@ func testIns(ins repr.Instruction) *instruction {
 	}
 }
 
-func testInsReg(out model.Register, in ...model.Register) *instruction {
+func testInsReg(out uint64, in ...uint64) *instruction {
 	return testIns(testReprReg(out, in...))
 }
 
-func testReprReg(out model.Register, in ...model.Register) repr.Instruction {
-	inRegs := make(model.Registers, len(in))
+func testReprReg(out uint64, in ...uint64) repr.Instruction {
+	inRegs := make(map[string]struct{}, len(in))
 	for _, r := range in {
-		if _, ok := inRegs[r]; ok {
+		rStr := strconv.FormatUint(r, 10)
+		if _, ok := inRegs[rStr]; ok {
 			panic(fmt.Sprintf("duplicit register: %d", r))
 		}
 
-		inRegs[r] = struct{}{}
+		inRegs[rStr] = struct{}{}
 	}
 
-	outRegs := make(model.Registers, 1)
+	outRegs := make(map[string]struct{}, 1)
 	if out != regInvalid {
-		outRegs[out] = struct{}{}
+		outRegs[strconv.FormatUint(out, 10)] = struct{}{}
 	}
 
 	return repr.Instruction{
-		Instruction: model.Instruction{
-			InputRegistry:  inRegs,
-			OutputRegistry: outRegs,
-		},
+		InputRegistry:  inRegs,
+		OutputRegistry: outRegs,
 	}
 }
 

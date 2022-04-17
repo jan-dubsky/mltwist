@@ -29,31 +29,6 @@ func newInstruction(a model.Address, b []byte, opcode *instructionOpcode) Instru
 	}
 }
 
-func (i Instruction) inputRegs() model.Registers {
-	if i.opcode.inputRegCnt == 0 {
-		return nil
-	}
-
-	regs := make(model.Registers, i.opcode.inputRegCnt)
-
-	regs[model.Register(rs1.regNum(i.value))] = struct{}{}
-	if i.opcode.inputRegCnt > 1 {
-		regs[model.Register(rs2.regNum(i.value))] = struct{}{}
-	}
-
-	return regs
-}
-
-func (i Instruction) outputRegs() model.Registers {
-	if !i.opcode.hasOutputReg {
-		return nil
-	}
-
-	return model.Registers{
-		model.Register(rd.regNum(i.value)): {},
-	}
-}
-
 func (i Instruction) name() string { return i.opcode.name }
 
 func (i Instruction) String() string {

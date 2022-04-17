@@ -1,16 +1,14 @@
 package deps
 
-import "decomp/pkg/model"
-
 type outputDepProcessor struct {
-	regs map[model.Register]*instruction
+	regs map[string]*instruction
 
 	memory []*instruction
 }
 
 func processOutputDeps(instrs []*instruction) {
 	p := outputDepProcessor{
-		regs: make(map[model.Register]*instruction, numRegs),
+		regs: make(map[string]*instruction, numRegs),
 	}
 
 	for i := len(instrs) - 1; i >= 0; i-- {

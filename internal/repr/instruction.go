@@ -11,8 +11,8 @@ type Instruction struct {
 	Address model.Address
 	Bytes   []byte
 
-	InputRegs  RegSet
-	OutputRegs RegSet
+	InputRegistry  RegSet
+	OutputRegistry RegSet
 
 	jumpTargets []expr.Expr
 }
@@ -24,8 +24,8 @@ func NewInstruction(ins model.Instruction, addr model.Address, bytes []byte) Ins
 		Address:     addr,
 		Bytes:       bytes,
 
-		InputRegs:  inRegs,
-		OutputRegs: outRegs,
+		InputRegistry:  inRegs,
+		OutputRegistry: outRegs,
 
 		jumpTargets: jumps(ins.Effects),
 	}

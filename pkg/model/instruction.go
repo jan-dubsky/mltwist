@@ -23,12 +23,8 @@ type Instruction struct {
 	JumpTargets []Address
 
 	InputMemory []Address
-	// InputRegistry is a set if registers consumed by the instruction.
-	InputRegistry Registers
 
 	OutputMemory []Address
-	// OutputRegistry is a set if registers written by the instruction.
-	OutputRegistry Registers
 
 	// Details provides additional platform specific properties of the
 	// instruction.
