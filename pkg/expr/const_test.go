@@ -16,7 +16,7 @@ func TestConst(t *testing.T) {
 	r.Equal(bs, c.Bytes())
 	r.Equal(expr.Width32, c.Width())
 	bs[0] = 55
-	r.Equal(bs, c.Bytes())
+	r.Equal([]byte{5, 6, 7, 8}, c.Bytes())
 }
 
 func TestConstUint(t *testing.T) {

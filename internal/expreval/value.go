@@ -7,7 +7,9 @@ import (
 
 type value []byte
 
-func valFromBigInt(i *big.Int) value {
+func parseValueConst(c expr.Const) value { return value(c.Bytes()).setWidth(c.Width()) }
+
+func parseValueBigInt(i *big.Int) value {
 	v := value(i.Bytes())
 	revertBytes(v)
 	return v
@@ -50,4 +52,8 @@ func (v value) bigInt(w expr.Width) *big.Int {
 	revertBytes(vBig)
 
 	return (&big.Int{}).SetBytes(vBig)
+}
+
+func (v value) castConst(w expr.Width) expr.Const {
+	return expr.NewConst(v, expr.Width(len(v)))
 }

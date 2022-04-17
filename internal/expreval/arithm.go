@@ -147,7 +147,7 @@ func rsh(val1 value, val2 value, w expr.Width) value {
 func mul(val1 value, val2 value, w expr.Width) value {
 	val1Int, val2Int := val1.bigInt(w), val2.bigInt(w)
 	product := (&big.Int{}).Mul(val1Int, val2Int)
-	return valFromBigInt(product).setWidth(w)
+	return parseValueBigInt(product).setWidth(w)
 }
 
 func div(val1 value, val2 value, w expr.Width) value {
@@ -163,7 +163,7 @@ func div(val1 value, val2 value, w expr.Width) value {
 	}
 
 	div := (&big.Int{}).Div(val1.bigInt(w), val2Int)
-	return valFromBigInt(div).setWidth(w)
+	return parseValueBigInt(div).setWidth(w)
 }
 
 func mod(val1 value, val2 value, w expr.Width) value {
@@ -175,7 +175,7 @@ func mod(val1 value, val2 value, w expr.Width) value {
 	}
 
 	mod := (&big.Int{}).Mod(val1.bigInt(w), val2Int)
-	return valFromBigInt(mod).setWidth(w)
+	return parseValueBigInt(mod).setWidth(w)
 }
 
 func bitOp(

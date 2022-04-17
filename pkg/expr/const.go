@@ -6,29 +6,31 @@ import (
 
 var (
 	// Zero is constant value representing zero.
-	Zero = NewConst([]byte{0}, Width8)
+	Zero = newConst([]byte{0})
 	// One is constant value representing one.
-	One = NewConst([]byte{1}, Width8)
+	One = newConst([]byte{1})
 )
 
 var _ Expr = Const{}
 
 type Const struct {
 	b []byte
-	w Width
+}
+
+func newConst(b []byte) Const {
+	return Const{
+		b: b,
+	}
 }
 
 // NewConst creates constant of width w out of bytes b.
 //
-// Bytes in b are not copied. Instead, the ownership of b is taken over.
-// Consequently the caller is not allowed to use b for the whole lifetime of
-// produced Const value. The caller can take copy of b in advance in case the
-// original buffer has to be reused.
+// Value of b is copied into an internal buffer. Consequently user is free to
+// use b once call to this function is completed.
 func NewConst(b []byte, w Width) Const {
-	return Const{
-		b: b,
-		w: w,
-	}
+	bCopy := make([]byte, w)
+	copy(bCopy, b)
+	return newConst(bCopy)
 }
 
 // NewConstUint converts any uint value into Const of width w.
@@ -50,7 +52,7 @@ func NewConstUint[T ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uint](val T, w Width
 			val, w, valCopy))
 	}
 
-	return NewConst(bs, w)
+	return newConst(bs)
 }
 
 // NewConstInt converts any int value into Const of width w.
@@ -72,9 +74,9 @@ func NewConstInt[T ~int8 | ~int16 | ~int32 | ~int64](val T, w Width) Const {
 			val, w, valCopy))
 	}
 
-	return NewConst(bs, w)
+	return newConst(bs)
 }
 
 func (c Const) Bytes() []byte { return c.b }
-func (c Const) Width() Width  { return c.w }
+func (c Const) Width() Width  { return Width(len(c.b)) }
 func (Const) internalExpr()   {}

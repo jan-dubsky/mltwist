@@ -2,6 +2,7 @@ package riscv
 
 import (
 	"decomp/internal/opcode"
+	"decomp/pkg/expr"
 	"decomp/pkg/model"
 	"fmt"
 )
@@ -95,11 +96,23 @@ func (p Parser) Parse(addr model.Address, bytes []byte) (model.Instruction, erro
 		jumpTargets = append(jumpTargets, opcode.jumpTarget(instr))
 	}
 
+	opcodeEffects := opcode.effects(instr)
+
+	var effects []expr.Effect
+	if l := len(opcodeEffects); l > 0 {
+		effects = make([]expr.Effect, 0, l)
+		for _, e := range opcodeEffects {
+			if e != nil {
+				effects = append(effects, e)
+			}
+		}
+	}
+
 	return model.Instruction{
 		Type:    opcode.instrType,
 		ByteLen: instructionLen,
 
-		Effects: opcode.effects(instr),
+		Effects: effects,
 
 		JumpTargets:    jumpTargets,
 		InputRegistry:  instr.inputRegs(),

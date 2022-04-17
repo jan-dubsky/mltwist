@@ -58,6 +58,12 @@ func (i *Instruction) Validate() error {
 		return fmt.Errorf("zero ByteLen makes no sense for an instruction")
 	}
 
+	for i, effect := range i.Effects {
+		if effect == nil {
+			return fmt.Errorf("nil effect at position %d", i)
+		}
+	}
+
 	isJump := i.Type.Jump() || i.Type.CJump() || i.Type.JumpDyn()
 	if !isJump && len(i.JumpTargets) > 0 {
 		return fmt.Errorf("jump targets list must be empty for non-jump instructions")
