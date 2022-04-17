@@ -16,21 +16,19 @@ type Program struct {
 func Parse(
 	entrypoint model.Address,
 	m *memory.Memory,
-	s Parser,
+	p Parser,
 ) (Program, error) {
-	instrs := make([]repr.Instruction, 0)
+	instrs := make([]repr.Instruction, 0, len(m.Blocks))
 	for _, block := range m.Blocks {
 		for addr := block.Begin(); addr < block.End(); {
-			b := block.Addr(addr)
-
-			ins, err := s.Parse(addr, b)
+			ins, err := parseIns(p, block, addr)
 			if err != nil {
 				return Program{}, fmt.Errorf(
-					"cannot parse instruction at offset 0x%x: %w",
+					"cannot parse instruction at address 0x%x: %w",
 					addr, err)
 			}
 
-			instrs = append(instrs, instrRepr(ins, addr, b))
+			instrs = append(instrs, ins)
 			addr += model.Address(ins.ByteLen)
 		}
 	}
@@ -42,15 +40,22 @@ func Parse(
 	}, nil
 }
 
-func instrRepr(
-	ins model.Instruction,
+func parseIns(
+	p Parser,
+	block memory.Block,
 	addr model.Address,
-	b []byte,
-) repr.Instruction {
-	return repr.Instruction{
-		Instruction: ins,
+) (repr.Instruction, error) {
+	b := block.Addr(addr)
 
-		Address: addr,
-		Bytes:   b[:ins.ByteLen],
+	ins, err := p.Parse(addr, b)
+	if err != nil {
+		return repr.Instruction{}, fmt.Errorf("parsing error: %w", err)
 	}
+
+	if err := ins.Validate(); err != nil {
+		err = fmt.Errorf("invalid instruction model produced: %w", err)
+		return repr.Instruction{}, err
+	}
+
+	return repr.NewInstruction(ins, addr, b), nil
 }
