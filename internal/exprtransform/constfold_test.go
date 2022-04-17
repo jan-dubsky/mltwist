@@ -1,4 +1,4 @@
-package expreval
+package exprtransform
 
 import (
 	"decomp/pkg/expr"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEval(t *testing.T) {
+func TestConstFold(t *testing.T) {
 	tests := []struct {
 		name string
 		e    expr.Expr
@@ -183,7 +183,7 @@ func TestEval(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			res := EvalConst(tt.e)
+			res := ConstFold(tt.e)
 			require.Equal(t, tt.exp, res)
 		})
 	}

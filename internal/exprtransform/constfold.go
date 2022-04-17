@@ -1,32 +1,36 @@
-package expreval
+package exprtransform
 
 import (
+	"decomp/internal/exprtransform/internal/expreval"
 	"decomp/pkg/expr"
 	"fmt"
 )
 
-func binaryEvalFunc(op expr.BinaryOp) func(v1 value, v2 value, w expr.Width) value {
+type binaryFunc func(v1 expreval.Value, v2 expreval.Value, w expr.Width) expreval.Value
+type condFunc func(v1 expreval.Value, v2 expreval.Value, w expr.Width) bool
+
+func binaryEvalFunc(op expr.BinaryOp) binaryFunc {
 	switch op {
 	case expr.Add:
-		return add
+		return expreval.Add
 	case expr.Sub:
-		return sub
+		return expreval.Sub
 	case expr.Lsh:
-		return lsh
+		return expreval.Lsh
 	case expr.Rsh:
-		return rsh
+		return expreval.Rsh
 	case expr.Mul:
-		return mul
+		return expreval.Mul
 	case expr.Div:
-		return div
+		return expreval.Div
 	case expr.Mod:
-		return mod
+		return expreval.Mod
 	case expr.And:
-		return and
+		return expreval.And
 	case expr.Or:
-		return or
+		return expreval.Or
 	case expr.Xor:
-		return xor
+		return expreval.Xor
 	default:
 		panic(fmt.Sprintf("unknown binary operation: %v", op))
 	}
@@ -35,22 +39,22 @@ func binaryEvalFunc(op expr.BinaryOp) func(v1 value, v2 value, w expr.Width) val
 func binaryEval(op expr.BinaryOp, c1 expr.Const, c2 expr.Const, w expr.Width) expr.Const {
 	f := binaryEvalFunc(op)
 
-	v1, v2 := parseValueConst(c1), parseValueConst(c2)
-	return f(v1, v2, w).castConst(w)
+	v1, v2 := expreval.ParseConst(c1), expreval.ParseConst(c2)
+	return f(v1, v2, w).Const(w)
 }
 
-func condEvalFunc(c expr.Condition) func(v1 value, v2 value, w expr.Width) bool {
+func condEvalFunc(c expr.Condition) condFunc {
 	switch c {
 	case expr.Eq:
-		return eq
+		return expreval.Eq
 	case expr.Ltu:
-		return ltu
+		return expreval.Ltu
 	case expr.Leu:
-		return leu
+		return expreval.Leu
 	case expr.Lts:
-		return lts
+		return expreval.Lts
 	case expr.Les:
-		return les
+		return expreval.Les
 	default:
 		panic(fmt.Sprintf("unknown condition type: %v", c))
 	}
@@ -59,7 +63,7 @@ func condEvalFunc(c expr.Condition) func(v1 value, v2 value, w expr.Width) bool 
 func condEval(c expr.Condition, c1 expr.Const, c2 expr.Const, w expr.Width) bool {
 	f := condEvalFunc(c)
 
-	v1, v2 := parseValueConst(c1), parseValueConst(c2)
+	v1, v2 := expreval.ParseConst(c1), expreval.ParseConst(c2)
 	return f(v1, v2, w)
 }
 
@@ -75,10 +79,10 @@ func setExprWidth(e expr.Expr, w expr.Width) expr.Expr {
 	return expr.NewBinary(expr.Add, e, expr.Zero, w)
 }
 
-func EvalConst(ex expr.Expr) expr.Expr {
+func ConstFold(ex expr.Expr) expr.Expr {
 	switch e := ex.(type) {
 	case expr.Binary:
-		arg1, arg2 := EvalConst(e.Arg1()), EvalConst(e.Arg2())
+		arg1, arg2 := ConstFold(e.Arg1()), ConstFold(e.Arg2())
 		c1, ok1 := arg1.(expr.Const)
 		c2, ok2 := arg2.(expr.Const)
 		if !ok1 || !ok2 {
@@ -87,19 +91,19 @@ func EvalConst(ex expr.Expr) expr.Expr {
 
 		return binaryEval(e.Op(), c1, c2, e.Width())
 	case expr.Cond:
-		arg1, arg2 := EvalConst(e.Arg1()), EvalConst(e.Arg2())
+		arg1, arg2 := ConstFold(e.Arg1()), ConstFold(e.Arg2())
 		c1, ok1 := arg1.(expr.Const)
 		c2, ok2 := arg2.(expr.Const)
 		if !ok1 || !ok2 {
-			t, f := EvalConst(e.ExprTrue()), EvalConst(e.ExprFalse())
+			t, f := ConstFold(e.ExprTrue()), ConstFold(e.ExprFalse())
 			return expr.NewCond(e.Condition(), arg1, arg2, t, f, e.Width())
 		}
 
 		var res expr.Expr
 		if condEval(e.Condition(), c1, c2, e.Width()) {
-			res = EvalConst(e.ExprTrue())
+			res = ConstFold(e.ExprTrue())
 		} else {
-			res = EvalConst(e.ExprFalse())
+			res = ConstFold(e.ExprFalse())
 		}
 
 		return setExprWidth(res, e.Width())

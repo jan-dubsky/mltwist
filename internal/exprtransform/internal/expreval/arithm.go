@@ -23,9 +23,9 @@ func init() {
 	}
 }
 
-func add(val1 value, val2 value, w expr.Width) value {
-	sum := make(value, w)
-	val1Ext, val2Ext := val1.setWidth(w), val2.setWidth(w)
+func Add(val1 Value, val2 Value, w expr.Width) Value {
+	sum := make(Value, w)
+	val1Ext, val2Ext := val1.SetWidth(w), val2.SetWidth(w)
 
 	var carry bool
 	for i := range sum {
@@ -44,9 +44,9 @@ func add(val1 value, val2 value, w expr.Width) value {
 	return sum
 }
 
-func sub(val1 value, val2 value, w expr.Width) value {
-	diff := make(value, w)
-	val1Ext, val2Ext := val1.setWidth(w), val2.setWidth(w)
+func Sub(val1 Value, val2 Value, w expr.Width) Value {
+	diff := make(Value, w)
+	val1Ext, val2Ext := val1.SetWidth(w), val2.SetWidth(w)
 
 	var carry bool
 	for i := range diff {
@@ -65,7 +65,7 @@ func sub(val1 value, val2 value, w expr.Width) value {
 	return diff
 }
 
-func shiftUint64(v value, w expr.Width) (uint64, uint8, bool) {
+func shiftUint64(v Value, w expr.Width) (uint64, uint8, bool) {
 	vInt := v.bigInt(w)
 	if !vInt.IsUint64() {
 		return 0, 0, false
@@ -81,7 +81,7 @@ func shiftUint64(v value, w expr.Width) (uint64, uint8, bool) {
 	return byteShift, uint8(rawShift % 8), true
 }
 
-func bitLsh(val value, shift uint8) {
+func bitLsh(val Value, shift uint8) {
 	if shift >= 8 || shift == 0 {
 		panic(fmt.Sprintf("invalid bit shift: %d", shift))
 	}
@@ -94,14 +94,14 @@ func bitLsh(val value, shift uint8) {
 	}
 }
 
-func lsh(val1 value, val2 value, w expr.Width) value {
+func Lsh(val1 Value, val2 Value, w expr.Width) Value {
 	byteShift, bitShift, ok := shiftUint64(val2, w)
 	if !ok {
-		return value{}.setWidth(w)
+		return Value{}.SetWidth(w)
 	}
 
-	val1Ext := val1.setWidth(w)
-	shifted := make(value, w)
+	val1Ext := val1.SetWidth(w)
+	shifted := make(Value, w)
 	for i := 0; i < int(w-expr.Width(byteShift)); i++ {
 		shifted[i+int(byteShift)] = val1Ext[i]
 	}
@@ -113,7 +113,7 @@ func lsh(val1 value, val2 value, w expr.Width) value {
 	return shifted
 }
 
-func bitRsh(val value, shift uint8) {
+func bitRsh(val Value, shift uint8) {
 	if shift >= 8 || shift == 0 {
 		panic(fmt.Sprintf("invalid bit shift: %d", shift))
 	}
@@ -126,14 +126,14 @@ func bitRsh(val value, shift uint8) {
 	}
 }
 
-func rsh(val1 value, val2 value, w expr.Width) value {
+func Rsh(val1 Value, val2 Value, w expr.Width) Value {
 	byteShift, bitShift, ok := shiftUint64(val2, w)
 	if !ok {
-		return value{}.setWidth(w)
+		return Value{}.SetWidth(w)
 	}
 
-	val1Ext := val1.setWidth(w)
-	shifted := make(value, w-expr.Width(byteShift))
+	val1Ext := val1.SetWidth(w)
+	shifted := make(Value, w-expr.Width(byteShift))
 	for i := range shifted {
 		shifted[i] = val1Ext[i+int(byteShift)]
 	}
@@ -141,21 +141,21 @@ func rsh(val1 value, val2 value, w expr.Width) value {
 	if bitShift != 0 {
 		bitRsh(shifted, bitShift)
 	}
-	return shifted.setWidth(w)
+	return shifted.SetWidth(w)
 }
 
-func mul(val1 value, val2 value, w expr.Width) value {
+func Mul(val1 Value, val2 Value, w expr.Width) Value {
 	val1Int, val2Int := val1.bigInt(w), val2.bigInt(w)
 	product := (&big.Int{}).Mul(val1Int, val2Int)
-	return parseValueBigInt(product).setWidth(w)
+	return parseBigInt(product).SetWidth(w)
 }
 
-func div(val1 value, val2 value, w expr.Width) value {
+func Div(val1 Value, val2 Value, w expr.Width) Value {
 	val2Int := val2.bigInt(w)
 
 	// Special-case division by zero.
 	if val2Int.Cmp(&big.Int{}) == 0 {
-		div := make(value, w)
+		div := make(Value, w)
 		for i := range div {
 			div[i] = math.MaxUint8
 		}
@@ -163,29 +163,29 @@ func div(val1 value, val2 value, w expr.Width) value {
 	}
 
 	div := (&big.Int{}).Div(val1.bigInt(w), val2Int)
-	return parseValueBigInt(div).setWidth(w)
+	return parseBigInt(div).SetWidth(w)
 }
 
-func mod(val1 value, val2 value, w expr.Width) value {
+func Mod(val1 Value, val2 Value, w expr.Width) Value {
 	val2Int := val2.bigInt(w)
 
 	// Special-case division by zero.
 	if val2Int.Cmp(&big.Int{}) == 0 {
-		return val1.setWidth(w)
+		return val1.SetWidth(w)
 	}
 
 	mod := (&big.Int{}).Mod(val1.bigInt(w), val2Int)
-	return parseValueBigInt(mod).setWidth(w)
+	return parseBigInt(mod).SetWidth(w)
 }
 
 func bitOp(
-	val1 value,
-	val2 value,
+	val1 Value,
+	val2 Value,
 	w expr.Width,
 	byteFunc func(v1 byte, v2 byte) byte,
-) value {
-	result := make(value, w)
-	val1Ext, val2Ext := val1.setWidth(w), val2.setWidth(w)
+) Value {
+	result := make(Value, w)
+	val1Ext, val2Ext := val1.SetWidth(w), val2.SetWidth(w)
 
 	for i := range result {
 		result[i] = byteFunc(val1Ext[i], val2Ext[i])
@@ -194,14 +194,14 @@ func bitOp(
 	return result
 }
 
-func and(val1 value, val2 value, w expr.Width) value {
+func And(val1 Value, val2 Value, w expr.Width) Value {
 	return bitOp(val1, val2, w, func(v1, v2 byte) byte { return v1 & v2 })
 }
 
-func or(val1 value, val2 value, w expr.Width) value {
+func Or(val1 Value, val2 Value, w expr.Width) Value {
 	return bitOp(val1, val2, w, func(v1, v2 byte) byte { return v1 | v2 })
 }
 
-func xor(val1 value, val2 value, w expr.Width) value {
+func Xor(val1 Value, val2 Value, w expr.Width) Value {
 	return bitOp(val1, val2, w, func(v1, v2 byte) byte { return v1 ^ v2 })
 }

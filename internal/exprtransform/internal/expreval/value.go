@@ -5,47 +5,44 @@ import (
 	"math/big"
 )
 
-type value []byte
+type Value []byte
 
-func parseValueConst(c expr.Const) value { return value(c.Bytes()).setWidth(c.Width()) }
+func ParseConst(e expr.Const) Value { return Value(e.Bytes()) }
 
-func parseValueBigInt(i *big.Int) value {
-	v := value(i.Bytes())
+func parseBigInt(i *big.Int) Value {
+	v := Value(i.Bytes())
 	revertBytes(v)
 	return v
 }
 
-func (v value) setWidth(w expr.Width) value {
+func (v Value) SetWidth(w expr.Width) Value {
 	if int(w) <= len(v) {
 		return v[:w]
 	}
 
 	extended := make([]byte, w)
-	for i, b := range v {
-		extended[i] = b
-	}
-
+	copy(extended, v)
 	return extended
 }
 
-func revertBytes(v value) {
+func revertBytes(v Value) {
 	for i := 0; i < len(v)/2; i++ {
 		v[i], v[len(v)-1-i] = v[len(v)-1-i], v[i]
 	}
 }
 
-func (v value) clone() value {
-	val := make(value, len(v))
+func (v Value) clone() Value {
+	val := make(Value, len(v))
 	for i, b := range v {
 		val[i] = b
 	}
 	return val
 }
 
-func (v value) bigInt(w expr.Width) *big.Int {
+func (v Value) bigInt(w expr.Width) *big.Int {
 	vCut := v
 	if int(w) < len(v) {
-		vCut = v.setWidth(w)
+		vCut = v.SetWidth(w)
 	}
 
 	vBig := vCut.clone()
@@ -54,6 +51,6 @@ func (v value) bigInt(w expr.Width) *big.Int {
 	return (&big.Int{}).SetBytes(vBig)
 }
 
-func (v value) castConst(w expr.Width) expr.Const {
+func (v Value) Const(w expr.Width) expr.Const {
 	return expr.NewConst(v, expr.Width(len(v)))
 }

@@ -1,6 +1,7 @@
-package expreval
+package expreval_test
 
 import (
+	"decomp/internal/exprtransform/internal/expreval"
 	"decomp/pkg/expr"
 	"encoding/binary"
 	"testing"
@@ -8,36 +9,36 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func valUint(v uint64, w expr.Width) value {
+func valUint(v uint64, w expr.Width) expreval.Value {
 	bs := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bs, v)
-	return value(bs).setWidth(w)
+	return expreval.Value(bs).SetWidth(w)
 }
 
 func TestValue_SetWidth(t *testing.T) {
 	tests := []struct {
 		name string
-		v    value
+		v    expreval.Value
 		w    expr.Width
-		exp  value
+		exp  expreval.Value
 	}{
 		{
 			name: "same_size",
-			v:    value{1, 2, 3, 4},
+			v:    expreval.Value{1, 2, 3, 4},
 			w:    expr.Width32,
-			exp:  value{1, 2, 3, 4},
+			exp:  expreval.Value{1, 2, 3, 4},
 		},
 		{
 			name: "cut_size",
-			v:    value{1, 2, 3, 4},
+			v:    expreval.Value{1, 2, 3, 4},
 			w:    expr.Width16,
-			exp:  value{1, 2},
+			exp:  expreval.Value{1, 2},
 		},
 		{
 			name: "zero_extend",
-			v:    value{1, 2, 3, 4},
+			v:    expreval.Value{1, 2, 3, 4},
 			w:    expr.Width64,
-			exp:  value{1, 2, 3, 4, 0, 0, 0, 0},
+			exp:  expreval.Value{1, 2, 3, 4, 0, 0, 0, 0},
 		},
 	}
 
@@ -46,7 +47,7 @@ func TestValue_SetWidth(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			r.Equal(tt.exp, tt.v.setWidth(tt.w))
+			r.Equal(tt.exp, tt.v.SetWidth(tt.w))
 		})
 	}
 }
