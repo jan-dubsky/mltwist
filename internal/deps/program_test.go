@@ -24,9 +24,8 @@ func testReprIns(
 	return repr.Instruction{
 		Address: address,
 		Instruction: model.Instruction{
-			Type:        tp,
-			ByteLen:     bytes,
-			JumpTargets: jmps,
+			Type:    tp,
+			ByteLen: bytes,
 		},
 		JumpTargets: jmpExprs,
 	}

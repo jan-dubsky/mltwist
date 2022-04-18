@@ -39,10 +39,6 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeJ,
 		instrType:    model.TypeJump,
-		jumpTarget: func(i Instruction) model.Address {
-			imm, _ := immTypeJ.parseValue(i.value)
-			return addrAddImm(i.address, imm)
-		},
 		effects: func(i Instruction) []expr.Effect {
 			target := addrImmConst(immTypeJ, i, width32)
 			// Address of following instruction.
@@ -76,7 +72,6 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
-		jumpTarget:   branchJumpTarget,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Eq, true, i, width32)}
 		},
@@ -87,7 +82,6 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
-		jumpTarget:   branchJumpTarget,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Eq, false, i, width32)}
 		},
@@ -98,7 +92,6 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
-		jumpTarget:   branchJumpTarget,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Lts, true, i, width32)}
 		},
@@ -109,7 +102,6 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
-		jumpTarget:   branchJumpTarget,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Lts, false, i, width32)}
 		},
@@ -120,7 +112,6 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
-		jumpTarget:   branchJumpTarget,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Ltu, true, i, width32)}
 		},
@@ -131,7 +122,6 @@ var integer32 = []*instructionOpcode{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		instrType:    model.TypeCJump,
-		jumpTarget:   branchJumpTarget,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Ltu, false, i, width32)}
 		},

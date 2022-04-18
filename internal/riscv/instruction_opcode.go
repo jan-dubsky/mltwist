@@ -1,10 +1,10 @@
 package riscv
 
 import (
+	"fmt"
 	"mltwist/internal/opcode"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
-	"fmt"
 )
 
 // instructionLen is length of RISC V opcode in bytes.
@@ -43,8 +43,7 @@ type instructionOpcode struct {
 	// instrType is set of instruction types of an opcode.
 	instrType model.Type
 
-	jumpTarget func(i Instruction) model.Address
-	effects    func(i Instruction) []expr.Effect
+	effects func(i Instruction) []expr.Effect
 }
 
 func (i instructionOpcode) Opcode() opcode.Opcode { return i.opcode }

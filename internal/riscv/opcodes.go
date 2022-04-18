@@ -1,11 +1,11 @@
 package riscv
 
 import (
+	"fmt"
 	"mltwist/internal/opcode"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/expr/exprtools"
 	"mltwist/pkg/model"
-	"fmt"
 )
 
 // memoryKey is identifier of CPU memory address space.
@@ -169,11 +169,6 @@ func addrAddImm(a model.Address, imm int32) model.Address {
 	} else {
 		return a - model.Address(-imm)
 	}
-}
-
-func branchJumpTarget(i Instruction) model.Address {
-	imm, _ := immTypeB.parseValue(i.value)
-	return addrAddImm(i.address, imm)
 }
 
 func immConst(t immType, i Instruction) expr.Const {

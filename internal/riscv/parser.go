@@ -1,10 +1,10 @@
 package riscv
 
 import (
+	"fmt"
 	"mltwist/internal/opcode"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
-	"fmt"
 )
 
 // Variant represents a RISC-V .
@@ -90,12 +90,6 @@ func (p Parser) Parse(addr model.Address, bytes []byte) (model.Instruction, erro
 
 	opcode := found.(*instructionOpcode)
 	instr := newInstruction(addr, bytes, opcode)
-
-	var jumpTargets []model.Address
-	if opcode.jumpTarget != nil {
-		jumpTargets = append(jumpTargets, opcode.jumpTarget(instr))
-	}
-
 	opcodeEffects := opcode.effects(instr)
 
 	var effects []expr.Effect
@@ -112,8 +106,7 @@ func (p Parser) Parse(addr model.Address, bytes []byte) (model.Instruction, erro
 		Type:    opcode.instrType,
 		ByteLen: instructionLen,
 
-		Effects:     effects,
-		JumpTargets: jumpTargets,
+		Effects: effects,
 
 		Details: instr,
 	}, nil
