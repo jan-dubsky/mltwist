@@ -1,9 +1,9 @@
 package exprtransform
 
 import (
+	"fmt"
 	"mltwist/internal/exprtransform/internal/expreval"
 	"mltwist/pkg/expr"
-	"fmt"
 )
 
 type binaryFunc func(v1 expreval.Value, v2 expreval.Value, w expr.Width) expreval.Value
@@ -67,22 +67,14 @@ func condEval(c expr.Condition, c1 expr.Const, c2 expr.Const, w expr.Width) bool
 	return f(v1, v2, w)
 }
 
-func setExprWidth(e expr.Expr, w expr.Width) expr.Expr {
-	if e.Width() == w {
-		return e
-	}
-
-	if c, ok := e.(expr.Const); ok {
-		return expr.NewConst(c.Bytes(), w)
-	}
-
-	return expr.NewBinary(expr.Add, e, expr.Zero, w)
+func ConstFold(ex expr.Expr) expr.Expr {
+	return purgeWidthGadgets(constFold(ex))
 }
 
-func ConstFold(ex expr.Expr) expr.Expr {
+func constFold(ex expr.Expr) expr.Expr {
 	switch e := ex.(type) {
 	case expr.Binary:
-		arg1, arg2 := ConstFold(e.Arg1()), ConstFold(e.Arg2())
+		arg1, arg2 := constFold(e.Arg1()), constFold(e.Arg2())
 		c1, ok1 := arg1.(expr.Const)
 		c2, ok2 := arg2.(expr.Const)
 		if !ok1 || !ok2 {
@@ -91,22 +83,22 @@ func ConstFold(ex expr.Expr) expr.Expr {
 
 		return binaryEval(e.Op(), c1, c2, e.Width())
 	case expr.Cond:
-		arg1, arg2 := ConstFold(e.Arg1()), ConstFold(e.Arg2())
+		arg1, arg2 := constFold(e.Arg1()), constFold(e.Arg2())
 		c1, ok1 := arg1.(expr.Const)
 		c2, ok2 := arg2.(expr.Const)
 		if !ok1 || !ok2 {
-			t, f := ConstFold(e.ExprTrue()), ConstFold(e.ExprFalse())
+			t, f := constFold(e.ExprTrue()), constFold(e.ExprFalse())
 			return expr.NewCond(e.Condition(), arg1, arg2, t, f, e.Width())
 		}
 
 		var res expr.Expr
 		if condEval(e.Condition(), c1, c2, e.Width()) {
-			res = ConstFold(e.ExprTrue())
+			res = constFold(e.ExprTrue())
 		} else {
-			res = ConstFold(e.ExprFalse())
+			res = constFold(e.ExprFalse())
 		}
 
-		return setExprWidth(res, e.Width())
+		return setWidth(res, e.Width())
 	case expr.Const:
 		return e
 	case expr.MemLoad:

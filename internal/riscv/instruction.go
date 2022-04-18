@@ -1,8 +1,8 @@
 package riscv
 
 import (
-	"mltwist/pkg/model"
 	"fmt"
+	"mltwist/pkg/model"
 	"strings"
 )
 
@@ -29,7 +29,7 @@ func newInstruction(a model.Address, b []byte, opcode *instructionOpcode) Instru
 	}
 }
 
-func (i Instruction) name() string { return i.opcode.name }
+func (i Instruction) Name() string { return i.opcode.name }
 
 func (i Instruction) String() string {
 	// Optimistic preallocation.

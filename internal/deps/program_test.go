@@ -1,9 +1,10 @@
 package deps
 
 import (
-	"mltwist/internal/repr"
-	"mltwist/pkg/model"
 	"fmt"
+	"mltwist/internal/repr"
+	"mltwist/pkg/expr"
+	"mltwist/pkg/model"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,15 +14,21 @@ func testReprIns(
 	tp model.Type,
 	address model.Address,
 	bytes model.Address,
-	jmp ...model.Address,
+	jmps ...model.Address,
 ) repr.Instruction {
+	jmpExprs := make([]expr.Expr, len(jmps))
+	for i, j := range jmps {
+		jmpExprs[i] = model.AddressExpr(j)
+	}
+
 	return repr.Instruction{
 		Address: address,
 		Instruction: model.Instruction{
 			Type:        tp,
 			ByteLen:     bytes,
-			JumpTargets: jmp,
+			JumpTargets: jmps,
 		},
+		JumpTargets: jmpExprs,
 	}
 }
 

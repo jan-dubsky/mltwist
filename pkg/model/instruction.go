@@ -1,8 +1,8 @@
 package model
 
 import (
-	"mltwist/pkg/expr"
 	"fmt"
+	"mltwist/pkg/expr"
 )
 
 type Instruction struct {
@@ -34,13 +34,16 @@ type Instruction struct {
 // PlatformDetails is a platform-specific type providing additional information
 // about an Instruction.
 type PlatformDetails interface {
+	// Name returns name of an instruction in assembler code.
+	Name() string
+
 	// String returns a full string representation of an instruction in
 	// assembler code.
 	//
-	// The representation contains not just the instruction, but also all
-	// the registers and memory addresses. Text returned by this method
-	// should follow platform-specific notation of instructions operands and
-	// immediate.
+	// Compared to Name method, the representation doesn't contain just an
+	// instruction name, but also all instruction operands. Text returned by
+	// this method should follow platform-specific notation of instructions
+	// operands used in the specific platform.
 	String() string
 }
 

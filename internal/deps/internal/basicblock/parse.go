@@ -1,9 +1,10 @@
 package basicblock
 
 import (
-	"mltwist/internal/repr"
-	"mltwist/pkg/model"
 	"fmt"
+	"mltwist/internal/repr"
+	"mltwist/pkg/expr"
+	"mltwist/pkg/model"
 	"sort"
 )
 
@@ -87,8 +88,18 @@ func splitByJumpTargets(bs []block) ([]block, error) {
 
 	for _, b := range bs {
 		for _, ins := range b.seq {
-			for _, j := range ins.JumpTargets {
-				err := blocks.split(j)
+			for _, jumpExpr := range ins.JumpTargets {
+				c, ok := jumpExpr.(expr.Const)
+				if !ok {
+					continue
+				}
+
+				addr, ok := expr.ConstUint[model.Address](c)
+				if !ok {
+					continue
+				}
+
+				err := blocks.split(addr)
 				if err != nil {
 					return nil, fmt.Errorf(
 						"cannot split basic block: %w", err)

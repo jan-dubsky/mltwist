@@ -3,6 +3,7 @@ package basicblock_test
 import (
 	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/internal/repr"
+	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 	"testing"
 
@@ -13,22 +14,28 @@ const instrLen = 4
 
 type detail string
 
+func (d detail) Name() string   { return string(d) }
 func (d detail) String() string { return string(d) }
 
 func ins(
 	addr model.Address,
 	tp model.Type,
 	desc string,
-	jmp ...model.Address,
+	jmps ...model.Address,
 ) repr.Instruction {
+	jmpExprs := make([]expr.Expr, len(jmps))
+	for i, j := range jmps {
+		jmpExprs[i] = model.AddressExpr(j)
+	}
+
 	return repr.Instruction{
 		Address: addr,
 		Instruction: model.Instruction{
-			Type:        tp,
-			ByteLen:     instrLen,
-			Details:     detail(desc),
-			JumpTargets: jmp,
+			Type:    tp,
+			ByteLen: instrLen,
+			Details: detail(desc),
 		},
+		JumpTargets: jmpExprs,
 	}
 }
 

@@ -1,6 +1,7 @@
 package repr
 
 import (
+	"mltwist/internal/exprtransform"
 	"mltwist/internal/exprwalk"
 	"mltwist/pkg/expr"
 )
@@ -38,7 +39,7 @@ func regs(effects []expr.Effect) (RegSet, RegSet) {
 }
 
 func jumps(effects []expr.Effect) []expr.Expr {
-	var exprs []expr.Expr
+	var jumpAddrs []expr.Expr
 	for _, ef := range effects {
 		e, ok := ef.(expr.RegStore)
 		if !ok {
@@ -49,8 +50,9 @@ func jumps(effects []expr.Effect) []expr.Expr {
 			continue
 		}
 
-		exprs = append(exprs, e.Value())
+		addrs := exprtransform.JumpAddrs(e.Value())
+		jumpAddrs = append(jumpAddrs, addrs...)
 	}
 
-	return exprs
+	return jumpAddrs
 }

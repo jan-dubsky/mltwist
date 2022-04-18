@@ -1,6 +1,10 @@
 package model
 
-import "math"
+import (
+	"math"
+	"mltwist/pkg/expr"
+	"unsafe"
+)
 
 // Address represents an arbitrary memory address in a program (user-space)
 // address space.
@@ -20,3 +24,9 @@ const (
 	// MaxAddress is the biggest value Address is able to represent.
 	MaxAddress Address = math.MaxUint64
 )
+
+// AddressExpr is a helper function creating expr.Const with width of Address
+// type and value of a.
+func AddressExpr(a Address) expr.Const {
+	return expr.NewConstUint(a, expr.Width(unsafe.Sizeof(a)))
+}

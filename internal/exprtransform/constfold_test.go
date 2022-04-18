@@ -1,6 +1,7 @@
-package exprtransform
+package exprtransform_test
 
 import (
+	"mltwist/internal/exprtransform"
 	"mltwist/pkg/expr"
 	"testing"
 
@@ -183,7 +184,7 @@ func TestConstFold(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			res := ConstFold(tt.e)
+			res := exprtransform.ConstFold(tt.e)
 			require.Equal(t, tt.exp, res)
 		})
 	}

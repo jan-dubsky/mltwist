@@ -14,7 +14,7 @@ type Instruction struct {
 	InputRegistry  RegSet
 	OutputRegistry RegSet
 
-	jumpTargets []expr.Expr
+	JumpTargets []expr.Expr
 }
 
 func NewInstruction(ins model.Instruction, addr model.Address, bytes []byte) Instruction {
@@ -27,6 +27,6 @@ func NewInstruction(ins model.Instruction, addr model.Address, bytes []byte) Ins
 		InputRegistry:  inRegs,
 		OutputRegistry: outRegs,
 
-		jumpTargets: jumps(ins.Effects),
+		JumpTargets: jumps(ins.Effects),
 	}
 }
