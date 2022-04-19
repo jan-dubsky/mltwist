@@ -1,6 +1,7 @@
 package expr
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"unsafe"
@@ -89,7 +90,10 @@ func NewConstInt[T ints](val T, w Width) Const {
 
 func (c Const) Bytes() []byte { return c.b }
 func (c Const) Width() Width  { return Width(len(c.b)) }
-func (Const) internalExpr()   {}
+
+// Equal checks constant equality.
+func (c1 Const) Equal(c2 Const) bool { return bytes.Equal(c1.b, c2.b) }
+func (Const) internalExpr()          {}
 
 func nonzeroUpperIdx(b []byte) int {
 	for i := len(b) - 1; i >= 0; i-- {

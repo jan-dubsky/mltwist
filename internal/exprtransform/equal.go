@@ -1,7 +1,6 @@
 package exprtransform
 
 import (
-	"bytes"
 	"fmt"
 	"mltwist/pkg/expr"
 )
@@ -38,7 +37,7 @@ func Equal(ex1 expr.Expr, ex2 expr.Expr) bool {
 			return false
 		}
 
-		return bytes.Equal(e1.Bytes(), e2.Bytes())
+		return e1.Equal(e2)
 	case expr.MemLoad:
 		e2, ok := ex2.(expr.MemLoad)
 		if !ok {
@@ -53,7 +52,7 @@ func Equal(ex1 expr.Expr, ex2 expr.Expr) bool {
 			return false
 		}
 
-		return e1.Key() == e2.Key()
+		return e1.Equal(e2)
 	default:
 		panic(fmt.Sprintf("unknown expr.Expr type: %T", ex1))
 	}
