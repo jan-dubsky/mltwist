@@ -1,8 +1,8 @@
 package expr_test
 
 import (
-	"mltwist/pkg/expr"
 	"encoding/binary"
+	"mltwist/pkg/expr"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -61,6 +61,10 @@ func TestConstInt(t *testing.T) {
 	c := expr.NewConstInt[int8](-1, expr.Width32)
 	r.Equal([]byte{0xff, 0xff, 0xff, 0xff}, c.Bytes())
 	r.Equal(expr.Width32, c.Width())
+
+	c = expr.NewConstInt[int8](-57, expr.Width64)
+	r.Equal([]byte{0xff - 56, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, c.Bytes())
+	r.Equal(expr.Width64, c.Width())
 
 	const bigNegNum int64 = -39293939384848383
 	expectedBytes := make([]byte, 8)

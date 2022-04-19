@@ -4,8 +4,8 @@ import (
 	"mltwist/pkg/expr"
 )
 
-// bitMask returns an expression of wirth w which mas ones in positions
-// [0..bits] and zeros in all positions above.
+// bitMask returns an expression of width w which has ones in positions
+// [0..bits) and zeros in position bits and all bits above.
 func bitMask(bits uint16, w expr.Width) expr.Expr {
 	// Optimization for those masks we are able to calculate using
 	// in-language features to make the description simpler and possible
@@ -42,15 +42,10 @@ func signBitMask(w expr.Width) expr.Expr {
 // bits, the value returned is zero.
 //
 // To make the expression tree as simple as possible, we don't guarantee the
-// expression to be one in case of e being a negative signed integer, but we
-// only guarantee to be nonzero. This allows the implementation to use a single
-// AND operation in a sign bit. In case a 0/1 result is required, this
-// expression can be trivially chained with Bool function.
+// returned value to be one in case of e being a negative signed integer, but we
+// only guarantee it to be nonzero. This allows the implementation to use a
+// single AND operation in a sign bit. In case a 0/1 result is required, this
+// helper can be trivially chained with Bool function.
 func IntNegative(e expr.Expr, w expr.Width) expr.Expr {
 	return expr.NewBinary(expr.And, e, signBitMask(w), w)
-}
-
-// Crop changes width of e to w.
-func Crop(e expr.Expr, w expr.Width) expr.Expr {
-	return expr.NewBinary(expr.Add, e, expr.Zero, w)
 }

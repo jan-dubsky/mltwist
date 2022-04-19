@@ -5,28 +5,34 @@ import "mltwist/pkg/expr"
 // Bool converts any nonzero expression e into expression with value 1. If e is
 // zero, value of zero is returned. The return value has always width 1.
 func Bool(e expr.Expr) expr.Expr {
-	return expr.NewCond(
-		expr.Eq,
-		e,
-		expr.Zero,
-		expr.Zero,
-		expr.One,
+	return NewWidthGadget(
+		expr.NewCond(
+			expr.Eq,
+			e,
+			expr.Zero,
+			expr.Zero,
+			expr.One,
+			e.Width(),
+		),
 		expr.Width8,
 	)
 }
 
 // Not implements C-like boolean not operation.
 //
-// If e is nonzero, this function return zero expression with width w. Otherwise
-// it returns expression with value one and width w.
-func Not(e expr.Expr, w expr.Width) expr.Expr {
-	return expr.NewCond(
-		expr.Eq,
-		e,
-		expr.Zero,
-		expr.One,
-		expr.Zero,
-		w,
+// If e is nonzero, this function return zero expression. Otherwise it returns
+// expression with value one. Width of returned expression is always 1.
+func Not(e expr.Expr) expr.Expr {
+	return NewWidthGadget(
+		expr.NewCond(
+			expr.Eq,
+			e,
+			expr.Zero,
+			expr.One,
+			expr.Zero,
+			e.Width(),
+		),
+		expr.Width8,
 	)
 }
 
@@ -38,7 +44,7 @@ func BoolCond(boolExpr expr.Expr, trueExpr, falseExpr expr.Expr, w expr.Width) e
 	// so we have to swap true and false expression.
 	return expr.NewCond(
 		expr.Eq,
-		boolExpr,
+		Bool(boolExpr),
 		expr.Zero,
 		falseExpr,
 		trueExpr,

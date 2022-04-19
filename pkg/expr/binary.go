@@ -76,6 +76,9 @@ const (
 	// Mod returns width bits unsigned division reminder of the first
 	// argument divided by the second argument.
 	//
+	// Module by zero doesn't cause any error, but produces result of
+	// width w with value of first argument.
+	//
 	// Signed module can be implemented using unsigned module followed by
 	// sign resolution logic.
 	Mod

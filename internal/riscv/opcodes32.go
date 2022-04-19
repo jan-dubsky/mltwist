@@ -175,7 +175,7 @@ var integer32 = []*instructionOpcode{
 		instrType:    model.TypeLoad,
 		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width32)
-			val := exprtools.Crop(memLoad(addr, width8), width32)
+			val := exprtools.NewWidthGadget(memLoad(addr, width8), width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -189,7 +189,7 @@ var integer32 = []*instructionOpcode{
 		instrType:    model.TypeLoad,
 		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width32)
-			val := exprtools.Crop(memLoad(addr, width16), width32)
+			val := exprtools.NewWidthGadget(memLoad(addr, width16), width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -585,7 +585,7 @@ var mul32 = []*instructionOpcode{
 			mul := exprtools.SignedMul(r1, r2, width32)
 			shift := expr.NewConstUint[uint8](32, width8)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
-			val := exprtools.Crop(shifted, width32)
+			val := exprtools.NewWidthGadget(shifted, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -600,7 +600,7 @@ var mul32 = []*instructionOpcode{
 			mul := expr.NewBinary(expr.Mul, r1, r2, width64)
 			shift := expr.NewConstUint[uint8](32, width8)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
-			val := exprtools.Crop(shifted, width32)
+			val := exprtools.NewWidthGadget(shifted, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {

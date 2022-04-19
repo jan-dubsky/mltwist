@@ -1,8 +1,8 @@
 package exprtools
 
 import (
-	"mltwist/pkg/expr"
 	"fmt"
+	"mltwist/pkg/expr"
 )
 
 // Negate returns negative (multiplied by -1) integer value of an expression e
@@ -23,6 +23,13 @@ func Abs(e expr.Expr, w expr.Width) expr.Expr {
 	)
 }
 
+// Ones returns expression of width w filled with all ones.
+//
+// This function can be used to represent signed -1 value of any width w.
+func Ones(w expr.Width) expr.Expr {
+	return expr.NewBinary(expr.Sub, expr.Zero, expr.One, w)
+}
+
 // negativeSignJoin extracts signs out of 2 signed integer expressions and
 // returns sign of their integer produce.
 //
@@ -30,15 +37,15 @@ func Abs(e expr.Expr, w expr.Width) expr.Expr {
 // returned. The return value is a boolean expression - i.e. its width is always
 // one.
 func negativeSignJoin(e1 expr.Expr, e2 expr.Expr) expr.Expr {
-	w1, w2 := e1.Width(), e2.Width()
-	sign1, sign2 := Bool(IntNegative(e1, w1)), Bool(IntNegative(e2, w2))
+	sign1 := Bool(IntNegative(e1, e1.Width()))
+	sign2 := Bool(IntNegative(e2, e2.Width()))
 	return expr.NewBinary(expr.Xor, sign1, sign2, expr.Width8)
 }
 
 // SignedMul performs a signed multiplication of 2 signed integer numbers of
 // width w. The width of result is 2*w.
 //
-// Both signed and unsigned multiplication of 2 b bit numbers always result in
+// Both signed and unsigned multiplication of 2*b bit numbers always result in
 // equal lowest b bits of the result. Because of this, there is no reason to
 // implement signed multiplication on w width only as then it could be altered
 // by unsigned multiplication. The only case when signed and unsigned
@@ -55,11 +62,11 @@ func SignedMul(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
 		panic(fmt.Errorf("too big signed multiplication width: %d", w))
 	}
 
-	mul := expr.NewBinary(expr.Mul, Abs(e1, w), Abs(e2, w), 2*w)
+	product := expr.NewBinary(expr.Mul, Abs(e1, w), Abs(e2, w), 2*w)
 	return BoolCond(
 		negativeSignJoin(e1, e2),
-		Negate(mul, 2*w),
-		mul,
+		Negate(product, 2*w),
+		product,
 		2*w,
 	)
 }
@@ -76,21 +83,31 @@ func signedOp(op expr.BinaryOp, e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.E
 
 // SignedDiv implement signed division of 2 w wide values. The result is as well
 // w wide.
+//
+// Division by zero will result in an expression of width w filled with ones
+// (i.e. signed -1).
+//
+// An overflow can happen of e1 is maximal negative number representable in w
+// and e2 is -1. In such a case the result is the same value as e1.
 func SignedDiv(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
-	return signedOp(expr.Div, e1, e2, w)
+	return BoolCond(
+		e2,
+		signedOp(expr.Div, e1, e2, w),
+		Ones(w),
+		w,
+	)
 }
 
 // SignedDiv implement signed module operation for 2 w wide values. The result
 // is as well w wide.
+//
+// Modulo by zero will result in an expression of width w with the same value
+// as e1 (potentially cropped to w bytes).
+//
+// An overflow can happen of e1 is maximal negative number representable in w
+// and e2 is -1. In such a case the result is zero.
 func SignedMod(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
 	return signedOp(expr.Mod, e1, e2, w)
-}
-
-// Ones returns expression of width w filled with all ones.
-//
-// This function can be used to represent signed -1 value of any width w.
-func Ones(w expr.Width) expr.Expr {
-	return expr.NewBinary(expr.Sub, expr.Zero, expr.One, 2)
 }
 
 // SignExtend implements sign extension of e, where bit at position signBit is
@@ -116,7 +133,8 @@ func SignExtend(e expr.Expr, signBit expr.Expr, w expr.Width) expr.Expr {
 func RshA(e expr.Expr, shift expr.Expr, w expr.Width) expr.Expr {
 	rsh := expr.NewBinary(expr.Rsh, e, shift, w)
 
-	signBitOrigPos := expr.NewConstUint(w.Bits()-1, w) // last bit in W bit number.
+	// Last bit in W bit number.
+	signBitOrigPos := expr.NewConstUint(w.Bits()-1, w)
 	signBitShiftedPos := expr.NewBinary(expr.Sub, signBitOrigPos, shift, w)
 	sextRsh := SignExtend(rsh, signBitShiftedPos, w)
 
