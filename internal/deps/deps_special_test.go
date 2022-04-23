@@ -1,13 +1,13 @@
 package deps
 
 import (
-	"mltwist/internal/repr"
+	"mltwist/internal/parser"
 	"mltwist/pkg/model"
 	"testing"
 )
 
 func testTypeIns(t model.Type) *instruction {
-	return testIns(repr.Instruction{
+	return testIns(parser.Instruction{
 		Instruction: model.Instruction{
 			Type: t,
 		},

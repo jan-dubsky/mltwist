@@ -1,10 +1,10 @@
 package basicblock
 
 import (
-	"mltwist/internal/repr"
+	"mltwist/internal/parser"
 )
 
-type splitFunc func(seq []repr.Instruction) [][]repr.Instruction
+type splitFunc func(seq []parser.Instruction) [][]parser.Instruction
 
 type splitPipeline struct {
 	fs []splitFunc
@@ -15,13 +15,13 @@ func newPipeline(fs ...splitFunc) *splitPipeline {
 }
 
 func (p *splitPipeline) apply(
-	seqs ...[]repr.Instruction,
-) [][]repr.Instruction {
+	seqs ...[]parser.Instruction,
+) [][]parser.Instruction {
 	for _, f := range p.fs {
 		// We have no clue how many new blocks will this stage create,
 		// but we know the lower bound, so we pre-allocate the lower
 		// bound.
-		newSeqs := make([][]repr.Instruction, 0, len(seqs))
+		newSeqs := make([][]parser.Instruction, 0, len(seqs))
 		for _, b := range seqs {
 			newSeqs = append(newSeqs, f(b)...)
 		}

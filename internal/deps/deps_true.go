@@ -26,23 +26,23 @@ func processTrueDeps(instrs []*instruction) {
 }
 
 func (p *trueDepProcessor) processRegDeps(ins *instruction) {
-	for r := range ins.Instr.InputRegistry {
+	for r := range ins.inRegs {
 		if dep, ok := p.regs[r]; ok {
 			p.link(dep, ins)
 		}
 	}
 
-	for r := range ins.Instr.OutputRegistry {
+	for r := range ins.outRegs {
 		p.regs[r] = ins
 	}
 }
 
 func (p *trueDepProcessor) processMemDeps(ins *instruction) {
-	if p.memory != nil && ins.Instr.Type.Load() {
+	if p.memory != nil && len(ins.loads) > 0 {
 		p.link(p.memory, ins)
 	}
 
-	if ins.Instr.Type.Store() {
+	if len(ins.stores) > 0 {
 		p.memory = ins
 	}
 }

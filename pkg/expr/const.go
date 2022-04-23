@@ -2,7 +2,6 @@ package expr
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 	"unsafe"
 )
@@ -109,21 +108,18 @@ func nonzeroUpperIdx(b []byte) int {
 // value indicates if conversion was successful or Const value doesn't fit T. In
 // the latter case, the value of returned uint is undefined.
 func ConstUint[T uints](c Const) (T, bool) {
-	var dummy T
-	TSize := unsafe.Sizeof(dummy)
+	var val T
+	TSize := unsafe.Sizeof(val)
 
-	if uintptr(c.Width()) > TSize {
+	idx := nonzeroUpperIdx(c.Bytes())
+	if uintptr(idx) >= TSize {
 		return 0, false
 	}
 
-	idx := int(c.Width())
-	if uintptr(idx) > TSize {
-		idx = nonzeroUpperIdx(c.Bytes())
-		if uintptr(idx) > TSize {
-			return 0, false
-		}
+	for i := idx; i >= 0; i-- {
+		val <<= 8
+		val |= T(c.Bytes()[i])
 	}
 
-	val := binary.LittleEndian.Uint64(c.Bytes())
-	return T(val), true
+	return val, true
 }

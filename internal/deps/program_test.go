@@ -2,7 +2,7 @@ package deps
 
 import (
 	"fmt"
-	"mltwist/internal/repr"
+	"mltwist/internal/parser"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 	"testing"
@@ -10,21 +10,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testReprIns(
-	tp model.Type,
+func testInputInsJump(
 	address model.Addr,
 	bytes model.Addr,
 	jmps ...model.Addr,
-) repr.Instruction {
+) parser.Instruction {
 	jmpExprs := make([]expr.Expr, len(jmps))
 	for i, j := range jmps {
 		jmpExprs[i] = model.AddrExpr(j)
 	}
 
-	return repr.Instruction{
+	return parser.Instruction{
 		Address: address,
 		Instruction: model.Instruction{
-			Type:    tp,
 			ByteLen: bytes,
 		},
 		JumpTargets: jmpExprs,
@@ -34,32 +32,32 @@ func testReprIns(
 func TestProgram_New(t *testing.T) {
 	tests := []struct {
 		name   string
-		seq    []repr.Instruction
+		seq    []parser.Instruction
 		blocks []int
 	}{
 		{
 			name: "single_block",
-			seq: []repr.Instruction{
-				testReprIns(model.TypeAritm, 58, 2),
-				testReprIns(model.TypeAritm, 60, 3),
-				testReprIns(model.TypeAritm, 63, 4),
+			seq: []parser.Instruction{
+				testInputInsJump(58, 2),
+				testInputInsJump(60, 3),
+				testInputInsJump(63, 4),
 			},
 			blocks: []int{3},
 		},
 		{
 			name: "multiple_blocks",
-			seq: []repr.Instruction{
-				testReprIns(model.TypeAritm, 128, 4),
-				testReprIns(model.TypeAritm, 132, 4),
-				testReprIns(model.TypeJump, 136, 4, 140),
+			seq: []parser.Instruction{
+				testInputInsJump(128, 4),
+				testInputInsJump(132, 4),
+				testInputInsJump(136, 4, 140),
 
-				testReprIns(model.TypeAritm, 140, 2),
-				testReprIns(model.TypeAritm, 142, 2),
-				testReprIns(model.TypeAritm, 144, 2),
-				testReprIns(model.TypeAritm, 146, 8),
+				testInputInsJump(140, 2),
+				testInputInsJump(142, 2),
+				testInputInsJump(144, 2),
+				testInputInsJump(146, 8),
 
-				testReprIns(model.TypeAritm, 154, 2),
-				testReprIns(model.TypeCJump, 156, 4, 154),
+				testInputInsJump(154, 2),
+				testInputInsJump(156, 4, 154),
 			},
 			blocks: []int{3, 4, 2},
 		},
@@ -127,12 +125,8 @@ func TestProgram_Move(t *testing.T) {
 		t.Run(fmt.Sprintf("move_%d", i), func(t *testing.T) {
 			blocks := make([]*block, numBlocks)
 			for i := range blocks {
-				ins := testReprIns(
-					model.TypeAritm,
-					model.Addr(i),
-					1,
-				)
-				blocks[i] = newBlock(i, []repr.Instruction{ins})
+				ins := testInputInsJump(model.Addr(i), 1)
+				blocks[i] = newBlock(i, []parser.Instruction{ins})
 			}
 
 			r := require.New(t)

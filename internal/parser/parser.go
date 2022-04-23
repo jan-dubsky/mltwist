@@ -2,15 +2,15 @@ package parser
 
 import (
 	"fmt"
+	"mltwist/internal/exprtransform"
 	"mltwist/internal/memory"
-	"mltwist/internal/repr"
 	"mltwist/pkg/model"
 )
 
 type Program struct {
 	Entrypoint   model.Addr
 	Memory       *memory.Memory
-	Instructions []repr.Instruction
+	Instructions []Instruction
 }
 
 func Parse(
@@ -18,7 +18,7 @@ func Parse(
 	m *memory.Memory,
 	p Parser,
 ) (Program, error) {
-	instrs := make([]repr.Instruction, 0, len(m.Blocks))
+	instrs := make([]Instruction, 0, len(m.Blocks))
 	for _, block := range m.Blocks {
 		for addr := block.Begin(); addr < block.End(); {
 			ins, err := parseIns(p, block, addr)
@@ -44,18 +44,20 @@ func parseIns(
 	p Parser,
 	block memory.Block,
 	addr model.Addr,
-) (repr.Instruction, error) {
+) (Instruction, error) {
 	b := block.Addr(addr)
 
 	ins, err := p.Parse(addr, b)
 	if err != nil {
-		return repr.Instruction{}, fmt.Errorf("parsing error: %w", err)
+		return Instruction{}, fmt.Errorf("parsing error: %w", err)
 	}
 
 	if err := ins.Validate(); err != nil {
 		err = fmt.Errorf("invalid instruction model produced: %w", err)
-		return repr.Instruction{}, err
+		return Instruction{}, err
 	}
 
-	return repr.NewInstruction(ins, addr, b), nil
+	ins.Effects = exprtransform.EffectsApply(ins.Effects, exprtransform.ConstFold)
+
+	return newInstruction(ins, addr, b), nil
 }

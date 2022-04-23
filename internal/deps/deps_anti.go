@@ -19,11 +19,11 @@ func processAntiDeps(instrs []*instruction) {
 }
 
 func (p *antiDepProcessor) processRegDeps(ins *instruction) {
-	for r := range ins.Instr.OutputRegistry {
+	for r := range ins.outRegs {
 		p.regs[r] = ins
 	}
 
-	for r := range ins.Instr.InputRegistry {
+	for r := range ins.inRegs {
 		i, ok := p.regs[r]
 		if !ok {
 			continue
@@ -41,7 +41,7 @@ func (p *antiDepProcessor) processRegDeps(ins *instruction) {
 }
 
 func (p *antiDepProcessor) processMemDeps(ins *instruction) {
-	if ins.Instr.Type.Store() {
+	if len(ins.stores) > 0 {
 		p.memory = ins
 	}
 
@@ -51,7 +51,7 @@ func (p *antiDepProcessor) processMemDeps(ins *instruction) {
 
 	// The instruction might read memory before it writes it. In such a case
 	// we don't want the instruction to be dependent on itself.
-	if ins.Instr.Type.Load() && p.memory != ins {
+	if (len(ins.loads) > 0) && p.memory != ins {
 		p.link(ins, p.memory)
 	}
 }

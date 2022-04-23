@@ -84,7 +84,14 @@ func setWidth(ex expr.Expr, w expr.Width) (expr.Expr, bool) {
 // This function performs context-based analysis of an expression which allows
 // it to remove unnecessary width gadgets.
 func PurgeWidthGadgets(ex expr.Expr) expr.Expr {
-	e, _ := purgeWidthGadgets(ex)
+	e, _ := purgeWidthGadgetsKeepWidth(ex)
+	return e
+}
+
+func purgeWidthGadgetsKeepWidth(ex expr.Expr) (expr.Expr, bool) {
+	e, nestedPurged := purgeWidthGadgets(ex)
+
+	var changed bool
 	for {
 		arg, ok := exprtools.WidthGadgetArg(e)
 		if !ok || arg.Width() != e.Width() {
@@ -92,8 +99,10 @@ func PurgeWidthGadgets(ex expr.Expr) expr.Expr {
 		}
 
 		e = arg
+		changed = true
 	}
-	return e
+
+	return e, changed || nestedPurged
 }
 
 func purgeWidthGadgets(ex expr.Expr) (expr.Expr, bool) {
@@ -101,8 +110,8 @@ func purgeWidthGadgets(ex expr.Expr) (expr.Expr, bool) {
 	case expr.Binary:
 		e1, changedArg1 := purgeWidthGadgets(e.Arg1())
 		e2, changedArg2 := purgeWidthGadgets(e.Arg2())
-		e1, prunedArg1 := dropUselessWidthGadgets(e1, e.Width())
-		e2, prunedArg2 := dropUselessWidthGadgets(e2, e.Width())
+		e1, prunedArg1 := pruneUselessWidthGadgets(e1, e.Width())
+		e2, prunedArg2 := pruneUselessWidthGadgets(e2, e.Width())
 
 		// Performance (allocation) optimization.
 		if !(changedArg1 || changedArg2 || prunedArg1 || prunedArg2) {
@@ -116,24 +125,34 @@ func purgeWidthGadgets(ex expr.Expr) (expr.Expr, bool) {
 		ef, changedFalse := purgeWidthGadgets(e.ExprFalse())
 		changed := changedArg1 || changedArg2 || changedTrue || changedFalse
 
-		c1, prunedArg1 := dropUselessWidthGadgets(c1, e.Width())
-		c2, prunedArg2 := dropUselessWidthGadgets(c2, e.Width())
-		et, prunedTrue := dropUselessWidthGadgets(et, e.Width())
-		ef, prunedFalse := dropUselessWidthGadgets(ef, e.Width())
+		c1, prunedArg1 := pruneUselessWidthGadgets(c1, e.Width())
+		c2, prunedArg2 := pruneUselessWidthGadgets(c2, e.Width())
+		et, prunedTrue := pruneUselessWidthGadgets(et, e.Width())
+		ef, prunedFalse := pruneUselessWidthGadgets(ef, e.Width())
 
 		// Performance (allocation) optimization.
 		if !(changed || prunedArg1 || prunedArg2 || prunedTrue || prunedFalse) {
 			return ex, false
 		}
 		return expr.NewCond(e.Condition(), c1, c2, et, ef, e.Width()), true
-	case expr.Const, expr.MemLoad, expr.RegLoad:
+	case expr.MemLoad:
+		// Address keeps its width.
+		addr, changedAddr := purgeWidthGadgetsKeepWidth(e.Addr())
+		addr, prunedAddr := pruneUselessWidthGadgets(addr, e.Width())
+
+		// Performance (allocation) optimization.
+		if !(changedAddr || prunedAddr) {
+			return ex, false
+		}
+		return expr.NewMemLoad(e.Key(), addr, e.Width()), true
+	case expr.Const, expr.RegLoad:
 		return e, false
 	default:
 		panic(fmt.Sprintf("unknown expr.Expr type: %T", ex))
 	}
 }
 
-func dropUselessWidthGadgets(ex expr.Expr, w expr.Width) (expr.Expr, bool) {
+func pruneUselessWidthGadgets(ex expr.Expr, w expr.Width) (expr.Expr, bool) {
 	var dropped bool
 	for {
 		g, ok := dropUselessWidthGadget(ex, w)

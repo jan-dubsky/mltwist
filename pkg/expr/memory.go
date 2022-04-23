@@ -7,6 +7,9 @@ var (
 
 // MemLoad implements memory load from a memory address space identified by key,
 // from address adds. The width of load is w.
+//
+// Address of the memory store is not effected by w, but it keeps its original
+// width.
 type MemLoad struct {
 	key  Key
 	addr Expr
@@ -34,6 +37,9 @@ func (MemLoad) internalExpr()  {}
 
 // MemStore stores value of expression e to a memory address space identified by
 // key to address adds. The width of store is w.
+//
+// Address of the memory store is not effected by w, but it keeps its original
+// width.
 type MemStore struct {
 	value Expr
 	key   Key

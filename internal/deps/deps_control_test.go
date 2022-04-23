@@ -1,9 +1,14 @@
 package deps
 
 import (
-	"mltwist/pkg/model"
+	"mltwist/internal/parser"
+	"mltwist/pkg/expr"
 	"testing"
 )
+
+func testInsJumpTarget(exprs ...expr.Expr) *instruction {
+	return testIns(parser.Instruction{JumpTargets: exprs})
+}
 
 func TestControlDeps(t *testing.T) {
 	tests := []testCase{
@@ -22,7 +27,9 @@ func TestControlDeps(t *testing.T) {
 				testInsReg(1),
 				testInsReg(2),
 				testInsReg(3, 2, 1),
-				testTypeIns(model.TypeJump),
+				testInsJumpTarget(
+					expr.NewConstUint[uint8](56, expr.Width32),
+				),
 			},
 			deps: []dep{
 				{0, 3},
@@ -36,7 +43,13 @@ func TestControlDeps(t *testing.T) {
 				testInsReg(1),
 				testInsReg(2),
 				testInsReg(3, 2, 1),
-				testTypeIns(model.TypeCJump),
+				testInsJumpTarget(expr.NewCond(expr.Eq,
+					expr.Zero,
+					expr.One,
+					expr.Zero,
+					expr.One,
+					expr.Width32,
+				)),
 			},
 			deps: []dep{
 				{0, 3},
@@ -50,7 +63,7 @@ func TestControlDeps(t *testing.T) {
 				testInsReg(1),
 				testInsReg(2),
 				testInsReg(3, 2, 1),
-				testTypeIns(model.TypeJumpDyn),
+				testInsJumpTarget(expr.NewRegLoad("r1", expr.Width32)),
 			},
 			deps: []dep{
 				{0, 3},

@@ -2,7 +2,7 @@ package basicblock
 
 import (
 	"fmt"
-	"mltwist/internal/repr"
+	"mltwist/internal/parser"
 	"mltwist/pkg/model"
 	"sort"
 )
@@ -18,16 +18,16 @@ import (
 // basic block just because it't not possible to identify jump target of this
 // dynamic jump during the decompilation process.
 type block struct {
-	seq    []repr.Instruction
+	seq    []parser.Instruction
 	length model.Addr
 }
 
-func newBlock(seq []repr.Instruction) block {
+func newBlock(seq []parser.Instruction) block {
 	return block{seq: seq, length: seqBytes(seq)}
 }
 
 // seqBytes calculates sum of instruction lengths in a sequence.
-func seqBytes(seq []repr.Instruction) model.Addr {
+func seqBytes(seq []parser.Instruction) model.Addr {
 	var length model.Addr
 	for _, ins := range seq {
 		length += ins.ByteLen

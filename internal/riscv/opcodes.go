@@ -228,10 +228,6 @@ func sext(e expr.Expr, signBit uint8, w expr.Width) expr.Expr {
 
 func sext32To64(e expr.Expr) expr.Expr { return sext(e, 31, expr.Width64) }
 
-func unsignedReg(r reg, i Instruction, w expr.Width) expr.Expr {
-	return exprtools.MaskBits(regLoad(r, i, w), w.Bits()-1, w)
-}
-
 func memLoad(addr expr.Expr, w expr.Width) expr.Expr {
 	return expr.NewMemLoad(memoryKey, addr, w)
 }

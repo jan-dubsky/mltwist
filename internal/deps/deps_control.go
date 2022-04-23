@@ -1,9 +1,23 @@
 package deps
 
-import "mltwist/pkg/model"
+import (
+	"mltwist/internal/parser"
+	"mltwist/pkg/expr"
+	"mltwist/pkg/model"
+)
 
-func controlFlowInstruction(t model.Type) bool {
-	return t.Jump() || t.CJump() || t.JumpDyn()
+func controlFlowInstruction(ins parser.Instruction) bool {
+	for _, t := range ins.JumpTargets {
+		if c, ok := t.(expr.Const); ok {
+			addr, ok := expr.ConstUint[model.Addr](c)
+			if ok && addr == ins.NextAddr() {
+				continue
+			}
+		}
+
+		return true
+	}
+	return false
 }
 
 func processControlDeps(instrs []*instruction) {
@@ -15,7 +29,7 @@ func processControlDeps(instrs []*instruction) {
 	// instruction will be the last in this basic block as none of them is
 	// control flow instruction and every single one will result in
 	// increment of instruction pointer -> no control dependency at all.
-	if !controlFlowInstruction(last.Instr.Type) {
+	if !controlFlowInstruction(last.Instr) {
 		return
 	}
 

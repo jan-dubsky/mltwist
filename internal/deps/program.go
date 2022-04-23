@@ -1,16 +1,16 @@
 package deps
 
 import (
-	"mltwist/internal/deps/internal/basicblock"
-	"mltwist/internal/repr"
 	"fmt"
+	"mltwist/internal/deps/internal/basicblock"
+	"mltwist/internal/parser"
 )
 
 type Program struct {
 	blocks []*block
 }
 
-func NewProgram(seq []repr.Instruction) (*Program, error) {
+func NewProgram(seq []parser.Instruction) (*Program, error) {
 	seqs, err := basicblock.Parse(seq)
 	if err != nil {
 		return nil, fmt.Errorf("cannot find basic blocks: %w", err)

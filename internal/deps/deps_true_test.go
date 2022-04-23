@@ -1,9 +1,9 @@
 package deps
 
 import (
-	"mltwist/internal/repr"
 	"fmt"
 	"math"
+	"mltwist/internal/parser"
 	"strconv"
 	"testing"
 
@@ -12,7 +12,7 @@ import (
 
 const regInvalid uint64 = math.MaxUint64
 
-func testIns(ins repr.Instruction) *instruction {
+func testIns(ins parser.Instruction) *instruction {
 	return &instruction{
 		trueDepsFwd:     make(insSet, numRegs),
 		trueDepsBack:    make(insSet, numRegs),
@@ -31,11 +31,7 @@ func testIns(ins repr.Instruction) *instruction {
 }
 
 func testInsReg(out uint64, in ...uint64) *instruction {
-	return testIns(testReprReg(out, in...))
-}
-
-func testReprReg(out uint64, in ...uint64) repr.Instruction {
-	inRegs := make(map[string]struct{}, len(in))
+	inRegs := make(regSet, len(in))
 	for _, r := range in {
 		rStr := strconv.FormatUint(r, 10)
 		if _, ok := inRegs[rStr]; ok {
@@ -45,15 +41,13 @@ func testReprReg(out uint64, in ...uint64) repr.Instruction {
 		inRegs[rStr] = struct{}{}
 	}
 
-	outRegs := make(map[string]struct{}, 1)
+	ins := testIns(parser.Instruction{})
+	ins.inRegs = inRegs
 	if out != regInvalid {
-		outRegs[strconv.FormatUint(out, 10)] = struct{}{}
+		ins.outRegs = regSet{strconv.FormatUint(out, 10): struct{}{}}
 	}
 
-	return repr.Instruction{
-		InputRegistry:  inRegs,
-		OutputRegistry: outRegs,
-	}
+	return ins
 }
 
 type dep struct {

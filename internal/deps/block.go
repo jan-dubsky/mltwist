@@ -2,7 +2,7 @@ package deps
 
 import (
 	"fmt"
-	"mltwist/internal/repr"
+	"mltwist/internal/parser"
 	"mltwist/pkg/model"
 )
 
@@ -18,7 +18,7 @@ type block struct {
 // newBlock parses a non-empty sequence of instructions sorted by their
 // in-memory addresses into a block and analyzes dependencies in between
 // instructions.
-func newBlock(idx int, seq []repr.Instruction) *block {
+func newBlock(idx int, seq []parser.Instruction) *block {
 	var length model.Addr
 	instrs := make([]*instruction, len(seq))
 	for i, ins := range seq {

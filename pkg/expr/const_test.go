@@ -19,7 +19,7 @@ func TestConst(t *testing.T) {
 	r.Equal([]byte{5, 6, 7, 8}, c.Bytes())
 }
 
-func TestConstUint(t *testing.T) {
+func TestNewConstUint(t *testing.T) {
 	r := require.New(t)
 
 	r.Panics(func() {
@@ -43,7 +43,7 @@ func TestConstUint(t *testing.T) {
 	})
 }
 
-func TestConstInt(t *testing.T) {
+func TestNewConstInt(t *testing.T) {
 	r := require.New(t)
 
 	r.Panics(func() {
@@ -89,4 +89,33 @@ func TestConstInt(t *testing.T) {
 	r.Panics(func() {
 		_ = expr.NewConstInt(bigPosNum, expr.Width32)
 	})
+}
+
+func TestConstUint(t *testing.T) {
+	r := require.New(t)
+
+	e := expr.NewConstUint[uint8](57, expr.Width32)
+	v32, ok := expr.ConstUint[uint32](e)
+	r.True(ok)
+	r.Equal(uint32(57), v32)
+
+	e = expr.NewConstUint[uint16](537, expr.Width16)
+	v8, ok := expr.ConstUint[uint8](e)
+	r.False(ok)
+	r.Zero(v8)
+
+	e = expr.NewConstUint[uint16](255, expr.Width16)
+	v8, ok = expr.ConstUint[uint8](e)
+	r.True(ok)
+	r.Equal(uint8(255), v8)
+
+	e = expr.NewConst([]byte{0, 0, 0, 0, 0, 0, 0, 0, 1}, expr.Width128)
+	v64, ok := expr.ConstUint[uint64](e)
+	r.False(ok)
+	r.Zero(v64)
+
+	e = expr.NewConst([]byte{0, 0, 0, 0, 0, 0, 0x25, 0}, expr.Width128)
+	v64, ok = expr.ConstUint[uint64](e)
+	r.True(ok)
+	r.Equal(uint64(0x25000000000000), v64)
 }

@@ -2,14 +2,14 @@ package basicblock
 
 import (
 	"fmt"
-	"mltwist/internal/repr"
+	"mltwist/internal/parser"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 	"sort"
 )
 
 // Parse identifies basic blocks in a sequence of program instructions.
-func Parse(instrs []repr.Instruction) ([][]repr.Instruction, error) {
+func Parse(instrs []parser.Instruction) ([][]parser.Instruction, error) {
 	sort.Slice(instrs, func(i, j int) bool {
 		return instrs[i].Address < instrs[j].Address
 	})
@@ -21,7 +21,7 @@ func Parse(instrs []repr.Instruction) ([][]repr.Instruction, error) {
 		return nil, fmt.Errorf("cannot split blocks by jump targets: %w", err)
 	}
 
-	sequences := make([][]repr.Instruction, len(blocks))
+	sequences := make([][]parser.Instruction, len(blocks))
 	for i, b := range blocks {
 		sequences[i] = b.seq
 	}
@@ -29,7 +29,7 @@ func Parse(instrs []repr.Instruction) ([][]repr.Instruction, error) {
 	return sequences, nil
 }
 
-func seqsToBlocks(seqs [][]repr.Instruction) []block {
+func seqsToBlocks(seqs [][]parser.Instruction) []block {
 	blocks := make([]block, len(seqs))
 	for i, s := range seqs {
 		blocks[i] = newBlock(s)
@@ -38,8 +38,8 @@ func seqsToBlocks(seqs [][]repr.Instruction) []block {
 	return blocks
 }
 
-func splitByAddress(seq []repr.Instruction) [][]repr.Instruction {
-	seqs := make([][]repr.Instruction, 0, 1)
+func splitByAddress(seq []parser.Instruction) [][]parser.Instruction {
+	seqs := make([][]parser.Instruction, 0, 1)
 	begin := 0
 
 	for i := range seq[1:] {
@@ -58,11 +58,7 @@ func splitByAddress(seq []repr.Instruction) [][]repr.Instruction {
 	return seqs
 }
 
-func controlFlowInstruction(t model.Type) bool {
-	return t.Jump() || t.CJump() || t.JumpDyn()
-}
-
-func isJumpInstr(ins repr.Instruction) bool {
+func isJumpInstr(ins parser.Instruction) bool {
 	for _, e := range ins.JumpTargets {
 		// Exclude those jumps which provably always jump to a following
 		// instruction - There doesn't seem to be any reason for such
@@ -81,8 +77,8 @@ func isJumpInstr(ins repr.Instruction) bool {
 	return false
 }
 
-func splitByJumps(seq []repr.Instruction) [][]repr.Instruction {
-	seqs := make([][]repr.Instruction, 0, 1)
+func splitByJumps(seq []parser.Instruction) [][]parser.Instruction {
+	seqs := make([][]parser.Instruction, 0, 1)
 	begin := 0
 
 	for i, ins := range seq {

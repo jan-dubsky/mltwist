@@ -2,52 +2,55 @@ package deps
 
 import (
 	"fmt"
-	"mltwist/internal/repr"
+	"mltwist/internal/parser"
+	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
+	"strconv"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func testReprLen(address model.Addr, bytes model.Addr) repr.Instruction {
-	return repr.Instruction{
-		Address: address,
-		Instruction: model.Instruction{
-			ByteLen: bytes,
-		},
-	}
-}
-
 func TestBlock_New(t *testing.T) {
+	testInputInsLen := func(address model.Addr, bytes model.Addr) parser.Instruction {
+		return parser.Instruction{
+			Address: address,
+			Instruction: model.Instruction{
+				ByteLen: bytes,
+			},
+		}
+	}
+
 	tests := []struct {
 		name  string
-		seq   []repr.Instruction
+		seq   []parser.Instruction
 		begin model.Addr
 		bytes model.Addr
 	}{
 		{
 			name: "single_add",
-			seq: []repr.Instruction{
-				testReprLen(56, 2),
-				testReprLen(58, 3),
-				testReprLen(61, 4),
+			seq: []parser.Instruction{
+				testInputInsLen(56, 2),
+				testInputInsLen(58, 3),
+				testInputInsLen(61, 4),
 			},
 			begin: 56,
 			bytes: 9,
 		},
 		{
 			name: "multiple_ins",
-			seq: []repr.Instruction{
-				testReprLen(128, 4),
-				testReprLen(132, 4),
-				testReprLen(136, 4),
+			seq: []parser.Instruction{
+				testInputInsLen(128, 4),
+				testInputInsLen(132, 4),
+				testInputInsLen(136, 4),
 
-				testReprLen(140, 2),
-				testReprLen(142, 2),
-				testReprLen(144, 8),
+				testInputInsLen(140, 2),
+				testInputInsLen(142, 2),
+				testInputInsLen(144, 8),
 
-				testReprLen(152, 2),
-				testReprLen(154, 4),
+				testInputInsLen(152, 2),
+				testInputInsLen(154, 4),
 			},
 			begin: 128,
 			bytes: 30,
@@ -73,6 +76,36 @@ func TestBlock_New(t *testing.T) {
 	}
 }
 
+// testInputInsCtr is counter of testInputInsReg calls which allows to generate
+// unique register names to avoid random clashes in dependency analysis.
+var testInputInsCtr int64
+
+func testInputInsReg(out uint64, in ...uint64) parser.Instruction {
+	effects := make([]expr.Effect, 0, len(in)+1)
+	id := atomic.AddInt64(&testInputInsCtr, 1)
+
+	for i, r := range in {
+		key := expr.Key(strconv.FormatUint(r, 10))
+		ef := expr.NewRegStore(
+			expr.NewRegLoad(key, expr.Width8),
+			expr.Key(fmt.Sprintf("test_register_%d_%d", id, i)),
+			expr.Width8,
+		)
+		effects = append(effects, ef)
+	}
+
+	if out != regInvalid {
+		key := expr.Key(strconv.FormatUint(out, 10))
+		effects = append(effects, expr.NewRegStore(expr.Zero, key, expr.Width8))
+	}
+
+	return parser.Instruction{
+		Instruction: model.Instruction{
+			Effects: effects,
+		},
+	}
+}
+
 func TestBlock_Bounds(t *testing.T) {
 	// Keep in mind that last instruction in a basic block has always
 	// control dependency on all other instructions.
@@ -83,15 +116,15 @@ func TestBlock_Bounds(t *testing.T) {
 	}
 	tests := []struct {
 		name   string
-		ins    []repr.Instruction
+		ins    []parser.Instruction
 		bounds map[int]bounds
 	}{
 		{
 			name: "simple_add",
-			ins: []repr.Instruction{
-				testReprReg(1),
-				testReprReg(2),
-				testReprReg(3, 1, 2),
+			ins: []parser.Instruction{
+				testInputInsReg(1),
+				testInputInsReg(2),
+				testInputInsReg(3, 1, 2),
 			},
 			bounds: map[int]bounds{
 				0: {lower: 0, upper: 1},
@@ -101,17 +134,17 @@ func TestBlock_Bounds(t *testing.T) {
 		},
 		{
 			name: "multiple_adds",
-			ins: []repr.Instruction{
-				testReprReg(1, 1),
-				testReprReg(3),
-				testReprReg(2, 2),
-				testReprReg(4, 1, 3),
-				testReprReg(5, 2, 1),
-				testReprReg(6, 3, 4),
-				testReprReg(7, 1, 3),
-				testReprReg(3),
-				testReprReg(1),
-				testReprReg(8),
+			ins: []parser.Instruction{
+				testInputInsReg(1, 1),
+				testInputInsReg(3),
+				testInputInsReg(2, 2),
+				testInputInsReg(4, 1, 3),
+				testInputInsReg(5, 2, 1),
+				testInputInsReg(6, 3, 4),
+				testInputInsReg(7, 1, 3),
+				testInputInsReg(3),
+				testInputInsReg(1),
+				testInputInsReg(8),
 			},
 			bounds: map[int]bounds{
 				0: {lower: 0, upper: 2},
@@ -128,14 +161,14 @@ func TestBlock_Bounds(t *testing.T) {
 		},
 		{
 			name: "anti_dependencies",
-			ins: []repr.Instruction{
-				testReprReg(1),
-				testReprReg(2, 7, 2),
-				testReprReg(3, 5),
-				testReprReg(5, 4),
-				testReprReg(4, 8),
-				testReprReg(6, 9),
-				testReprReg(7, 7),
+			ins: []parser.Instruction{
+				testInputInsReg(1),
+				testInputInsReg(2, 7, 2),
+				testInputInsReg(3, 5),
+				testInputInsReg(5, 4),
+				testInputInsReg(4, 8),
+				testInputInsReg(6, 9),
+				testInputInsReg(7, 7),
 			},
 			bounds: map[int]bounds{
 				0: {lower: 0, upper: 6},

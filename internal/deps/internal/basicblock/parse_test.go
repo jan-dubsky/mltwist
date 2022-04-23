@@ -2,7 +2,7 @@ package basicblock_test
 
 import (
 	"mltwist/internal/deps/internal/basicblock"
-	"mltwist/internal/repr"
+	"mltwist/internal/parser"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 	"testing"
@@ -21,13 +21,13 @@ func ins(
 	addr model.Addr,
 	desc string,
 	jmps ...model.Addr,
-) repr.Instruction {
+) parser.Instruction {
 	jmpExprs := make([]expr.Expr, len(jmps))
 	for i, j := range jmps {
 		jmpExprs[i] = model.AddrExpr(j)
 	}
 
-	return repr.Instruction{
+	return parser.Instruction{
 		Address: addr,
 		Instruction: model.Instruction{
 			ByteLen: instrLen,
@@ -40,30 +40,30 @@ func ins(
 func TestParse_Succ(t *testing.T) {
 	tests := []struct {
 		name     string
-		instrs   []repr.Instruction
-		expected [][]repr.Instruction
+		instrs   []parser.Instruction
+		expected [][]parser.Instruction
 	}{{
 		name: "simple_loop",
-		instrs: []repr.Instruction{
+		instrs: []parser.Instruction{
 			ins(72, "1"),
 			ins(76, "2"),
 			ins(80, "3", 72),
 		},
-		expected: [][]repr.Instruction{{
+		expected: [][]parser.Instruction{{
 			ins(72, "1"),
 			ins(76, "2"),
 			ins(80, "3", 72),
 		}},
 	}, {
 		name: "hole_in_between_instructions",
-		instrs: []repr.Instruction{
+		instrs: []parser.Instruction{
 			ins(72, "1"),
 			ins(76, "2"),
 			ins(80, "3"),
 			ins(96, "4"),
 			ins(100, "5"),
 		},
-		expected: [][]repr.Instruction{{
+		expected: [][]parser.Instruction{{
 			ins(72, "1"),
 			ins(76, "2"),
 			ins(80, "3"),
@@ -73,14 +73,14 @@ func TestParse_Succ(t *testing.T) {
 		}},
 	}, {
 		name: "jump_instruction_splits_block",
-		instrs: []repr.Instruction{
+		instrs: []parser.Instruction{
 			ins(72, "1"),
 			ins(76, "2"),
 			ins(80, "3", 72),
 			ins(84, "4"),
 			ins(88, "5"),
 		},
-		expected: [][]repr.Instruction{{
+		expected: [][]parser.Instruction{{
 			ins(72, "1"),
 			ins(76, "2"),
 			ins(80, "3", 72),
@@ -90,7 +90,7 @@ func TestParse_Succ(t *testing.T) {
 		}},
 	}, {
 		name: "jump_target_splits_block",
-		instrs: []repr.Instruction{
+		instrs: []parser.Instruction{
 			ins(50, "1"),
 			ins(54, "2"),
 			ins(58, "3"),
@@ -98,7 +98,7 @@ func TestParse_Succ(t *testing.T) {
 			ins(66, "5", 58, 70),
 			ins(70, "6"),
 		},
-		expected: [][]repr.Instruction{{
+		expected: [][]parser.Instruction{{
 			ins(50, "1"),
 			ins(54, "2"),
 		}, {
@@ -110,14 +110,14 @@ func TestParse_Succ(t *testing.T) {
 		}},
 	}, {
 		name: "split_by_jump_to_jump",
-		instrs: []repr.Instruction{
+		instrs: []parser.Instruction{
 			ins(30, "1"),
 			ins(34, "2"),
 			ins(38, "3", 30, 42),
 			ins(42, "4", 38, 46),
 			ins(46, "5"),
 		},
-		expected: [][]repr.Instruction{{
+		expected: [][]parser.Instruction{{
 			ins(30, "1"),
 			ins(34, "2"),
 		}, {
@@ -129,7 +129,7 @@ func TestParse_Succ(t *testing.T) {
 		}},
 	}, {
 		name: "no_double_splits",
-		instrs: []repr.Instruction{
+		instrs: []parser.Instruction{
 			ins(50, "1"),
 			ins(54, "2"),
 			ins(58, "3", 50, 62),
@@ -140,7 +140,7 @@ func TestParse_Succ(t *testing.T) {
 			ins(82, "8"),
 			ins(86, "9", 78),
 		},
-		expected: [][]repr.Instruction{{
+		expected: [][]parser.Instruction{{
 			ins(50, "1"),
 			ins(54, "2"),
 			ins(58, "3", 50, 62),
@@ -174,10 +174,10 @@ func TestParse_Succ(t *testing.T) {
 func TestParse_Fail(t *testing.T) {
 	tests := []struct {
 		name   string
-		instrs []repr.Instruction
+		instrs []parser.Instruction
 	}{{
 		name: "jump_in_between_basic_blocks",
-		instrs: []repr.Instruction{
+		instrs: []parser.Instruction{
 			ins(50, "1"),
 			ins(54, "2"),
 			ins(58, "3", 72),
@@ -187,14 +187,14 @@ func TestParse_Fail(t *testing.T) {
 		},
 	}, {
 		name: "jump_behind_all_blocks",
-		instrs: []repr.Instruction{
+		instrs: []parser.Instruction{
 			ins(72, "4"),
 			ins(76, "5"),
 			ins(80, "6", 92),
 		},
 	}, {
 		name: "jump_into_instruction",
-		instrs: []repr.Instruction{
+		instrs: []parser.Instruction{
 			ins(72, "4"),
 			ins(76, "5"),
 			ins(80, "6", 78),

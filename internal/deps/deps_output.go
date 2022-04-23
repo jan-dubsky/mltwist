@@ -19,7 +19,7 @@ func processOutputDeps(instrs []*instruction) {
 }
 
 func (p *outputDepProcessor) processRegDeps(ins *instruction) {
-	for r := range ins.Instr.OutputRegistry {
+	for r := range ins.outRegs {
 		i, ok := p.regs[r]
 		if !ok {
 			p.regs[r] = ins
@@ -32,7 +32,7 @@ func (p *outputDepProcessor) processRegDeps(ins *instruction) {
 }
 
 func (p *outputDepProcessor) processMemDeps(ins *instruction) {
-	if !ins.Instr.Type.Store() {
+	if len(ins.stores) == 0 {
 		return
 	}
 
