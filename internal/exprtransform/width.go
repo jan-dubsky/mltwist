@@ -6,52 +6,135 @@ import (
 	"mltwist/pkg/expr/exprtools"
 )
 
-func setWidth(ex expr.Expr, w expr.Width) expr.Expr {
+// SetWidth changes width of ex to w.
+//
+// If expression width can be changed (for example if ex is expr.Const), a new
+// expression of the same type as ex is created with width w. If width cannot be
+// changed trivially (for example ex is expr.Binary), then
+// exprtools.NewWidthGadget is used to change the width.
+//
+// Given that this function lacks information about context (i.e. consumer) of
+// ex, it's not able to perform any context-based optimization. Consequently the
+// expression produced by any algorithm using this method might contain useless
+// width gadgets. For this reason, it's highly recommended to use
+// PurgeWidthGadgets method on the resultion expression.
+func SetWidth(ex expr.Expr, w expr.Width) expr.Expr {
+	if e, ok := setWidth(ex, w); ok {
+		return e
+	}
+
+	return exprtools.NewWidthGadget(ex, w)
+}
+
+// setWidth tries to directly change ex width to w - i.e. it creates a new
+// expression  of the same type but with width w. This function returns (nil,
+// false) in case it's not possible to create such a new expression which would
+// be equal to ex under any circumstances.
+func setWidth(ex expr.Expr, w expr.Width) (expr.Expr, bool) {
 	if ex.Width() == w {
-		return ex
+		return ex, true
 	}
 
 	switch e := ex.(type) {
 	case expr.Binary, expr.Cond:
-		return exprtools.NewWidthGadget(ex, w)
+		// We ignore any smart optimization here as it's significantly
+		// simpler to now enter gadgets and drop them later in
+		// purgeWidthGadgets function.
+		return nil, false
 	case expr.Const:
-		return expr.NewConst(e.Bytes(), w)
+		return expr.NewConst(e.Bytes(), w), true
 	case expr.MemLoad:
-		return exprtools.NewWidthGadget(e, w)
+		// By making the load wider/narrower, we might break dependency
+		// analysis. Let's show an example:
+		//      STORE16 r15 -> r1(2)
+		//      LOAD32 r1(0) -> r4
+		//      ADD16 r4, r5 -> r8
+		// Where <n> in <ins><n> notation represents number of bits
+		// operated and <c> in r<x>(<c>) represents offset in bytes.
+		//
+		// In setup above, the LOAD32 clearly depends on STORE16 as it
+		// reads the same memory. But if we made load narrower because
+		// we then use only low 16 bits in ADD16, we'd make those 2
+		// instructions independent. Consequently, we are not allowed to
+		// shrink memory load width.
+		//
+		// It's very obvious why we cannot make load wider.
+		return nil, false
 	case expr.RegLoad:
 		// Register can contain nonzero bytes above e.Width().
 		if w > e.Width() {
-			return exprtools.NewWidthGadget(e, w)
+			return nil, false
 		}
 
-		return expr.NewRegLoad(e.Key(), w)
+		// Argument used above for expr.MemLoad doesn't apply here as we
+		// don't track dependencies by register bytes as we do with
+		// memory, but we use register key to track dependencies.
+		return expr.NewRegLoad(e.Key(), w), true
 	default:
 		panic(fmt.Sprintf("unknown expr.Expr type: %T", ex))
 	}
 }
 
-func purgeWidthGadgets(ex expr.Expr) expr.Expr {
+// PurgeWidthGadgets removes all unnecessary width gadgets in an expression
+// tree. No no-width gadget expression are not modified in any way.
+//
+// In many algorithms or transformations, the algorithm doesn't know the full
+// context (i.e. consumer) of an expression. This absence of knowledge can
+// result in extensive usage of width gadget (defined by exprtools package).
+// This function performs context-based analysis of an expression which allows
+// it to remove unnecessary width gadgets.
+func PurgeWidthGadgets(ex expr.Expr) expr.Expr {
+	e, _ := purgeWidthGadgets(ex)
+	for {
+		arg, ok := exprtools.WidthGadgetArg(e)
+		if !ok || arg.Width() != e.Width() {
+			break
+		}
+
+		e = arg
+	}
+	return e
+}
+
+func purgeWidthGadgets(ex expr.Expr) (expr.Expr, bool) {
 	switch e := ex.(type) {
 	case expr.Binary:
-		e1 := dropUselessWidthGadgets(purgeWidthGadgets(e.Arg1()), e.Width())
-		e2 := dropUselessWidthGadgets(purgeWidthGadgets(e.Arg2()), e.Width())
+		e1, changedArg1 := purgeWidthGadgets(e.Arg1())
+		e2, changedArg2 := purgeWidthGadgets(e.Arg2())
+		e1, prunedArg1 := dropUselessWidthGadgets(e1, e.Width())
+		e2, prunedArg2 := dropUselessWidthGadgets(e2, e.Width())
 
-		return expr.NewBinary(e.Op(), e1, e2, e.Width())
+		// Performance (allocation) optimization.
+		if !(changedArg1 || changedArg2 || prunedArg1 || prunedArg2) {
+			return ex, false
+		}
+		return expr.NewBinary(e.Op(), e1, e2, e.Width()), true
 	case expr.Cond:
-		c1 := dropUselessWidthGadgets(purgeWidthGadgets(e.Arg1()), e.Width())
-		c2 := dropUselessWidthGadgets(purgeWidthGadgets(e.Arg2()), e.Width())
-		et := dropUselessWidthGadgets(purgeWidthGadgets(e.ExprTrue()), e.Width())
-		ef := dropUselessWidthGadgets(purgeWidthGadgets(e.ExprFalse()), e.Width())
+		c1, changedArg1 := purgeWidthGadgets(e.Arg1())
+		c2, changedArg2 := purgeWidthGadgets(e.Arg2())
+		et, changedTrue := purgeWidthGadgets(e.ExprTrue())
+		ef, changedFalse := purgeWidthGadgets(e.ExprFalse())
+		changed := changedArg1 || changedArg2 || changedTrue || changedFalse
 
-		return expr.NewCond(e.Condition(), c1, c2, et, ef, e.Width())
+		c1, prunedArg1 := dropUselessWidthGadgets(c1, e.Width())
+		c2, prunedArg2 := dropUselessWidthGadgets(c2, e.Width())
+		et, prunedTrue := dropUselessWidthGadgets(et, e.Width())
+		ef, prunedFalse := dropUselessWidthGadgets(ef, e.Width())
+
+		// Performance (allocation) optimization.
+		if !(changed || prunedArg1 || prunedArg2 || prunedTrue || prunedFalse) {
+			return ex, false
+		}
+		return expr.NewCond(e.Condition(), c1, c2, et, ef, e.Width()), true
 	case expr.Const, expr.MemLoad, expr.RegLoad:
-		return e
+		return e, false
 	default:
 		panic(fmt.Sprintf("unknown expr.Expr type: %T", ex))
 	}
 }
 
-func dropUselessWidthGadgets(ex expr.Expr, w expr.Width) expr.Expr {
+func dropUselessWidthGadgets(ex expr.Expr, w expr.Width) (expr.Expr, bool) {
+	var dropped bool
 	for {
 		g, ok := dropUselessWidthGadget(ex, w)
 		if !ok {
@@ -59,9 +142,10 @@ func dropUselessWidthGadgets(ex expr.Expr, w expr.Width) expr.Expr {
 		}
 
 		ex = g
+		dropped = true
 	}
 
-	return ex
+	return ex, dropped
 }
 
 func dropUselessWidthGadget(ex expr.Expr, w expr.Width) (expr.Expr, bool) {

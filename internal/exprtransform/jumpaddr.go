@@ -2,10 +2,7 @@ package exprtransform
 
 import (
 	"fmt"
-	"mltwist/internal/exprtransform/internal/expreval"
 	"mltwist/pkg/expr"
-	"mltwist/pkg/model"
-	"unsafe"
 )
 
 func JumpAddrs(ex expr.Expr) []expr.Expr {
@@ -35,10 +32,10 @@ func jumpAddrs(ex expr.Expr) []expr.Expr {
 
 		es := make([]expr.Expr, 0, len(es1)+len(es2))
 		for _, e1 := range es1 {
-			es = append(es, setWidth(e1, e.Width()))
+			es = append(es, SetWidth(e1, e.Width()))
 		}
 		for _, e2 := range es2 {
-			es = append(es, setWidth(e2, e.Width()))
+			es = append(es, SetWidth(e2, e.Width()))
 		}
 
 		return es
@@ -47,22 +44,4 @@ func jumpAddrs(ex expr.Expr) []expr.Expr {
 	default:
 		panic(fmt.Sprintf("unknown expr.Expr type: %T", ex))
 	}
-}
-
-func filterJumpAddr(addr model.Addr, jumps []expr.Expr) []expr.Expr {
-	w := expr.Width(unsafe.Sizeof(addr))
-	skipAddr := expreval.ParseConst(expr.NewConstUint(addr, w))
-
-	filtered := make([]expr.Expr, 0, len(jumps))
-	for _, j := range jumps {
-		if c, ok := j.(expr.Const); ok {
-			if expreval.Eq(expreval.ParseConst(c), skipAddr, w) {
-				continue
-			}
-		}
-
-		filtered = append(filtered, j)
-	}
-
-	return filtered
 }

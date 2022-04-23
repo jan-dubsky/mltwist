@@ -68,43 +68,64 @@ func condEval(c expr.Condition, c1 expr.Const, c2 expr.Const, w expr.Width) bool
 }
 
 func ConstFold(ex expr.Expr) expr.Expr {
-	return purgeWidthGadgets(constFold(ex))
+	e, _ := constFold(ex)
+	return PurgeWidthGadgets(e)
 }
 
-func constFold(ex expr.Expr) expr.Expr {
+func constFold(ex expr.Expr) (expr.Expr, bool) {
 	switch e := ex.(type) {
 	case expr.Binary:
-		arg1, arg2 := constFold(e.Arg1()), constFold(e.Arg2())
+		arg1, changedArg1 := constFold(e.Arg1())
+		arg2, changedArg2 := constFold(e.Arg2())
+
 		c1, ok1 := arg1.(expr.Const)
 		c2, ok2 := arg2.(expr.Const)
-		if !ok1 || !ok2 {
-			return expr.NewBinary(e.Op(), arg1, arg2, e.Width())
+		if ok1 && ok2 {
+			return binaryEval(e.Op(), c1, c2, e.Width()), true
 		}
 
-		return binaryEval(e.Op(), c1, c2, e.Width())
+		// Performance (allocation) optimization.
+		if !(changedArg1 || changedArg2) {
+			return ex, false
+		}
+		return expr.NewBinary(e.Op(), arg1, arg2, e.Width()), true
 	case expr.Cond:
-		arg1, arg2 := constFold(e.Arg1()), constFold(e.Arg2())
+		arg1, changedArg1 := constFold(e.Arg1())
+		arg2, changedArg2 := constFold(e.Arg2())
+
 		c1, ok1 := arg1.(expr.Const)
 		c2, ok2 := arg2.(expr.Const)
-		if !ok1 || !ok2 {
-			t, f := constFold(e.ExprTrue()), constFold(e.ExprFalse())
-			return expr.NewCond(e.Condition(), arg1, arg2, t, f, e.Width())
+		if ok1 && ok2 {
+			var res expr.Expr
+			if condEval(e.Condition(), c1, c2, e.Width()) {
+				res, _ = constFold(e.ExprTrue())
+			} else {
+				res, _ = constFold(e.ExprFalse())
+			}
+
+			return SetWidth(res, e.Width()), true
 		}
 
-		var res expr.Expr
-		if condEval(e.Condition(), c1, c2, e.Width()) {
-			res = constFold(e.ExprTrue())
-		} else {
-			res = constFold(e.ExprFalse())
-		}
+		t, changedTrue := constFold(e.ExprTrue())
+		f, changedFalse := constFold(e.ExprFalse())
 
-		return setWidth(res, e.Width())
+		// Performance (allocation) optimization.
+		if !(changedArg1 || changedArg2 || changedTrue || changedFalse) {
+			return ex, false
+		}
+		return expr.NewCond(e.Condition(), arg1, arg2, t, f, e.Width()), true
 	case expr.Const:
-		return e
+		return ex, false
 	case expr.MemLoad:
-		return e
+		addr, changedAddr := constFold(e.Addr())
+
+		// Performance (allocation) optimization.
+		if !changedAddr {
+			return ex, false
+		}
+		return expr.NewMemLoad(e.Key(), addr, e.Width()), true
 	case expr.RegLoad:
-		return e
+		return ex, false
 	default:
 		panic(fmt.Sprintf("unknown expr.Expr type: %T", ex))
 	}

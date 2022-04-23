@@ -10,12 +10,15 @@ import (
 )
 
 func TestConstFold(t *testing.T) {
+	c1 := expr.NewConstUint[uint](25, expr.Width8)
+	c2 := expr.NewConstInt[int16](-1, expr.Width16)
+
 	tests := []struct {
 		name string
 		e    expr.Expr
 		exp  expr.Expr
 	}{{
-		name: "add_const_simple",
+		name: "add_const_no_width_change",
 		e: expr.NewBinary(expr.Add,
 			expr.NewConstUint[uint32](23, expr.Width32),
 			expr.NewConstUint[uint32](0xffff, expr.Width32),
@@ -33,11 +36,7 @@ func TestConstFold(t *testing.T) {
 	}, {
 		name: "add_const_multilayer",
 		e: expr.NewBinary(expr.Add,
-			expr.NewBinary(expr.Add,
-				expr.NewConstUint[uint](25, expr.Width8),
-				expr.NewConstInt[int16](-1, expr.Width16),
-				expr.Width32,
-			),
+			expr.NewBinary(expr.Add, c1, c2, expr.Width32),
 			expr.NewConstUint[uint](56899, expr.Width16),
 			expr.Width32,
 		),
@@ -45,11 +44,7 @@ func TestConstFold(t *testing.T) {
 	}, {
 		name: "simplify_sub",
 		e: expr.NewBinary(expr.Add,
-			expr.NewBinary(expr.Sub,
-				expr.NewConstUint[uint](25, expr.Width8),
-				expr.NewConstInt[int16](-1, expr.Width16),
-				expr.Width32,
-			),
+			expr.NewBinary(expr.Sub, c1, c2, expr.Width32),
 			expr.NewRegLoad("foo1", expr.Width16),
 			expr.Width32,
 		),
@@ -64,11 +59,7 @@ func TestConstFold(t *testing.T) {
 			expr.Eq,
 			expr.NewBinary(expr.Lsh,
 				expr.NewConstUint[uint8](5, expr.Width8),
-				expr.NewBinary(expr.Sub,
-					expr.NewConstUint[uint](25, expr.Width8),
-					expr.NewConstInt[int16](-1, expr.Width16),
-					expr.Width8,
-				),
+				expr.NewBinary(expr.Sub, c1, c2, expr.Width8),
 				expr.Width32,
 			),
 			expr.NewConstUint[uint32](5<<26, expr.Width32),
@@ -82,11 +73,7 @@ func TestConstFold(t *testing.T) {
 		e: expr.NewCond(expr.Eq,
 			expr.NewBinary(expr.Lsh,
 				expr.NewConstUint[uint8](5, expr.Width8),
-				expr.NewBinary(expr.Sub,
-					expr.NewConstUint[uint](25, expr.Width8),
-					expr.NewConstInt[int16](-1, expr.Width16),
-					expr.Width8,
-				),
+				expr.NewBinary(expr.Sub, c1, c2, expr.Width8),
 				expr.Width32,
 			),
 			expr.Zero,
@@ -213,7 +200,7 @@ func TestConstFold(t *testing.T) {
 			expr.Width64,
 		),
 	}, {
-		name: "eval_condition_intermediate_width_change_critical",
+		name: "eval_condition_intermediate_width_change_necessary",
 		e: expr.NewBinary(expr.Add,
 			expr.NewCond(expr.Leu,
 				expr.NewConstUint[uint16](323, expr.Width16),
@@ -242,7 +229,7 @@ func TestConstFold(t *testing.T) {
 			expr.Width64,
 		),
 	}, {
-		name: "eval_condition_intermediate_width_change_noncirtical",
+		name: "eval_condition_intermediate_width_change_non_necessary",
 		e: expr.NewBinary(expr.Add,
 			expr.NewCond(expr.Leu,
 				expr.NewConstUint[uint16](323, expr.Width16),
@@ -267,8 +254,29 @@ func TestConstFold(t *testing.T) {
 			expr.NewConstUint[uint8](64, expr.Width8),
 			expr.Width64,
 		),
-	},
-	}
+	}, {
+		name: "memory_address",
+		e: expr.NewMemLoad("foo1",
+			expr.NewBinary(expr.Div,
+				expr.NewBinary(expr.Mod,
+					expr.NewConstUint[uint8](146, expr.Width32),
+					expr.NewConstInt[int16](13, expr.Width16),
+					expr.Width8,
+				),
+				expr.NewRegLoad("foo2", expr.Width16),
+				expr.Width32,
+			),
+			expr.Width64,
+		),
+		exp: expr.NewMemLoad("foo1",
+			expr.NewBinary(expr.Div,
+				expr.NewConstUint[uint8](146%13, expr.Width8),
+				expr.NewRegLoad("foo2", expr.Width16),
+				expr.Width32,
+			),
+			expr.Width64,
+		),
+	}}
 
 	for _, tt := range tests {
 		tt := tt
