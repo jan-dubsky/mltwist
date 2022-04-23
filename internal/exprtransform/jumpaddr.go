@@ -49,7 +49,7 @@ func jumpAddrs(ex expr.Expr) []expr.Expr {
 	}
 }
 
-func filterJumpAddr(addr model.Address, jumps []expr.Expr) []expr.Expr {
+func filterJumpAddr(addr model.Addr, jumps []expr.Expr) []expr.Expr {
 	w := expr.Width(unsafe.Sizeof(addr))
 	skipAddr := expreval.ParseConst(expr.NewConstUint(addr, w))
 

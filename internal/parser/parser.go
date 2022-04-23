@@ -1,20 +1,20 @@
 package parser
 
 import (
+	"fmt"
 	"mltwist/internal/memory"
 	"mltwist/internal/repr"
 	"mltwist/pkg/model"
-	"fmt"
 )
 
 type Program struct {
-	Entrypoint   model.Address
+	Entrypoint   model.Addr
 	Memory       *memory.Memory
 	Instructions []repr.Instruction
 }
 
 func Parse(
-	entrypoint model.Address,
+	entrypoint model.Addr,
 	m *memory.Memory,
 	p Parser,
 ) (Program, error) {
@@ -29,7 +29,7 @@ func Parse(
 			}
 
 			instrs = append(instrs, ins)
-			addr += model.Address(ins.ByteLen)
+			addr += model.Addr(ins.ByteLen)
 		}
 	}
 
@@ -43,7 +43,7 @@ func Parse(
 func parseIns(
 	p Parser,
 	block memory.Block,
-	addr model.Address,
+	addr model.Addr,
 ) (repr.Instruction, error) {
 	b := block.Addr(addr)
 

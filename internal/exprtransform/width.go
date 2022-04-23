@@ -57,6 +57,7 @@ func dropUselessWidthGadgets(ex expr.Expr, w expr.Width) expr.Expr {
 		if !ok {
 			break
 		}
+
 		ex = g
 	}
 

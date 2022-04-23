@@ -2,14 +2,14 @@ package executable
 
 import (
 	"debug/elf"
-	"mltwist/internal/memory"
-	"mltwist/pkg/model"
 	"fmt"
 	"io"
+	"mltwist/internal/memory"
+	"mltwist/pkg/model"
 )
 
 type Executable struct {
-	Entrypoint model.Address
+	Entrypoint model.Addr
 	Memory     *memory.Memory
 }
 
@@ -47,7 +47,7 @@ func Parse(filename string) (Executable, error) {
 				s.Size, len(bytes))
 		}
 
-		blocks = append(blocks, memory.NewBlock(model.Address(s.Addr), bytes))
+		blocks = append(blocks, memory.NewBlock(model.Addr(s.Addr), bytes))
 	}
 
 	if len(blocks) == 0 {
@@ -60,7 +60,7 @@ func Parse(filename string) (Executable, error) {
 	}
 
 	return Executable{
-		Entrypoint: model.Address(f.Entry),
+		Entrypoint: model.Addr(f.Entry),
 		Memory:     mem,
 	}, nil
 }

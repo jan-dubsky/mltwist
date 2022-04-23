@@ -85,7 +85,7 @@ func TestMemory_Addr(t *testing.T) {
 	tests := []struct {
 		name   string
 		blocks []memory.Block
-		addr   model.Address
+		addr   model.Addr
 		length int
 	}{
 		{

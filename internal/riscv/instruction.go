@@ -7,12 +7,12 @@ import (
 )
 
 type Instruction struct {
-	address model.Address
+	address model.Addr
 	value   uint32
 	opcode  *instructionOpcode
 }
 
-func newInstruction(a model.Address, b []byte, opcode *instructionOpcode) Instruction {
+func newInstruction(a model.Addr, b []byte, opcode *instructionOpcode) Instruction {
 	if l := len(b); l < instructionLen {
 		panic(fmt.Sprintf("not enough bytes to represent valid opcode: %d", l))
 	}

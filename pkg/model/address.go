@@ -6,8 +6,8 @@ import (
 	"unsafe"
 )
 
-// Address represents an arbitrary memory address in a program (user-space)
-// address space.
+// Addr represents an arbitrary memory address in a program (user-space) address
+// space.
 //
 // We might use plain old uint64 to represent any memory address and we would be
 // most likely fine for following 10 years. On the other hand given that RISC-V
@@ -16,17 +16,17 @@ import (
 //
 // For future compatibility, it's guaranteed that this type will be always an
 // unsigned integer and that uint64 will be always castable to this type.
-type Address uint64
+type Addr uint64
 
 const (
 	// MinAddress is the smallest value Address is able to represent.
-	MinAddress Address = 0
+	MinAddress Addr = 0
 	// MaxAddress is the biggest value Address is able to represent.
-	MaxAddress Address = math.MaxUint64
+	MaxAddress Addr = math.MaxUint64
 )
 
-// AddressExpr is a helper function creating expr.Const with width of Address
-// type and value of a.
-func AddressExpr(a Address) expr.Const {
+// AddrExpr is a helper function creating expr.Const with width of Address type
+// and value of a.
+func AddrExpr(a Addr) expr.Const {
 	return expr.NewConstUint(a, expr.Width(unsafe.Sizeof(a)))
 }

@@ -163,11 +163,11 @@ func opcodeShiftImm(arithmetic bool, shiftBits uint8, mid byte, low byte) opcode
 	}
 }
 
-func addrAddImm(a model.Address, imm int32) model.Address {
+func addrAddImm(a model.Addr, imm int32) model.Addr {
 	if imm >= 0 {
-		return a + model.Address(imm)
+		return a + model.Addr(imm)
 	} else {
-		return a - model.Address(-imm)
+		return a - model.Addr(-imm)
 	}
 }
 

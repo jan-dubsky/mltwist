@@ -12,7 +12,7 @@ func TestBlock_Addr(t *testing.T) {
 	tests := []struct {
 		name   string
 		block  memory.Block
-		addr   model.Address
+		addr   model.Addr
 		length int
 	}{
 		{

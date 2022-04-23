@@ -18,5 +18,5 @@ type Parser interface {
 	// This method can fail in case it's not possible to identify an
 	// instruction, b doesn't start with a valid opcode or b is too short to
 	// contain the full instruction opcode.
-	Parse(addr model.Address, b []byte) (model.Instruction, error)
+	Parse(addr model.Addr, b []byte) (model.Instruction, error)
 }

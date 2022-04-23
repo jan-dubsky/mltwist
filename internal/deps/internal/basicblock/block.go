@@ -1,9 +1,9 @@
 package basicblock
 
 import (
+	"fmt"
 	"mltwist/internal/repr"
 	"mltwist/pkg/model"
-	"fmt"
 	"sort"
 )
 
@@ -19,7 +19,7 @@ import (
 // dynamic jump during the decompilation process.
 type block struct {
 	seq    []repr.Instruction
-	length model.Address
+	length model.Addr
 }
 
 func newBlock(seq []repr.Instruction) block {
@@ -27,8 +27,8 @@ func newBlock(seq []repr.Instruction) block {
 }
 
 // seqBytes calculates sum of instruction lengths in a sequence.
-func seqBytes(seq []repr.Instruction) model.Address {
-	var length model.Address
+func seqBytes(seq []repr.Instruction) model.Addr {
+	var length model.Addr
 	for _, ins := range seq {
 		length += ins.ByteLen
 	}
@@ -36,13 +36,13 @@ func seqBytes(seq []repr.Instruction) model.Address {
 }
 
 // begin returns inclusive start address of b.
-func (b block) begin() model.Address { return b.seq[0].Address }
+func (b block) begin() model.Addr { return b.seq[0].Address }
 
 // end returns exclusive end address of b.
-func (b block) end() model.Address { return b.begin() + b.length }
+func (b block) end() model.Addr { return b.begin() + b.length }
 
 // Containts check if addr is inside the basic block.
-func (b block) contains(addr model.Address) bool {
+func (b block) contains(addr model.Addr) bool {
 	return addr >= b.begin() && addr < b.end()
 }
 
@@ -54,7 +54,7 @@ func (b block) contains(addr model.Address) bool {
 // Please note that even though adds==b.Begin() is technically correct and will
 // result in empty first block returned, it makes just little sense to perform
 // split at b.Begin() address.
-func (b block) Split(addr model.Address) (block, block, error) {
+func (b block) Split(addr model.Addr) (block, block, error) {
 	if !b.contains(addr) {
 		err := fmt.Errorf("block doesn't contain address 0x%x", addr)
 		return block{}, block{}, err
@@ -81,7 +81,7 @@ type blocks []block
 
 // split splits block containing addr into 2 blocks using Split(addr) and
 // modifies blocks to contain both new blocks instead of the one splitted.
-func (bs *blocks) split(addr model.Address) error {
+func (bs *blocks) split(addr model.Addr) error {
 	idx := sort.Search(len(*bs), func(i int) bool { return (*bs)[i].end() > addr })
 	if idx == len(*bs) || addr < (*bs)[idx].begin() {
 		return fmt.Errorf("no basic block with address 0x%x found", addr)

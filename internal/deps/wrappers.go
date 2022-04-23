@@ -12,7 +12,7 @@ func (i Instruction) String() string { return i.Instr.Details.String() }
 
 // Address returns the in-memory address of the instruction in the original
 // binary.
-func (i Instruction) Address() model.Address { return i.Instr.Address }
+func (i Instruction) Address() model.Addr { return i.Instr.Address }
 
 type Block struct {
 	*block

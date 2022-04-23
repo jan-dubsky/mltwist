@@ -1,15 +1,15 @@
 package deps
 
 import (
+	"fmt"
 	"mltwist/internal/repr"
 	"mltwist/pkg/model"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func testReprLen(address model.Address, bytes model.Address) repr.Instruction {
+func testReprLen(address model.Addr, bytes model.Addr) repr.Instruction {
 	return repr.Instruction{
 		Address: address,
 		Instruction: model.Instruction{
@@ -22,8 +22,8 @@ func TestBlock_New(t *testing.T) {
 	tests := []struct {
 		name  string
 		seq   []repr.Instruction
-		begin model.Address
-		bytes model.Address
+		begin model.Addr
+		bytes model.Addr
 	}{
 		{
 			name: "single_add",
@@ -359,7 +359,7 @@ func TestBlock_Move(t *testing.T) {
 			for i := range seq {
 				seq[i] = &instruction{
 					blockIdx:     i,
-					DynAddress:   model.Address(i),
+					DynAddress:   model.Addr(i),
 					trueDepsFwd:  make(insSet),
 					trueDepsBack: make(insSet),
 				}
@@ -389,7 +389,7 @@ func TestBlock_Move(t *testing.T) {
 					for i, ins := range block.seq {
 						r.Equal(i, ins.blockIdx)
 
-						addr := model.Address(m.order[i])
+						addr := model.Addr(m.order[i])
 						t.Logf("instr addr: %d\n", ins.DynAddress)
 						r.Equal(addr, ins.DynAddress)
 					}

@@ -43,7 +43,7 @@ func splitByAddress(seq []repr.Instruction) [][]repr.Instruction {
 	begin := 0
 
 	for i := range seq[1:] {
-		if seq[i].Address+seq[i].ByteLen == seq[i+1].Address {
+		if seq[i].NextAddr() == seq[i+1].Address {
 			continue
 		}
 
@@ -62,12 +62,31 @@ func controlFlowInstruction(t model.Type) bool {
 	return t.Jump() || t.CJump() || t.JumpDyn()
 }
 
+func isJumpInstr(ins repr.Instruction) bool {
+	for _, e := range ins.JumpTargets {
+		// Exclude those jumps which provably always jump to a following
+		// instruction - There doesn't seem to be any reason for such
+		// jumps, but they exist in real codes (for example in grep
+		// compiled for riscv64).
+		if c, ok := e.(expr.Const); ok {
+			addr, ok := expr.ConstUint[model.Addr](c)
+			if ok && addr == ins.NextAddr() {
+				continue
+			}
+		}
+
+		return true
+	}
+
+	return false
+}
+
 func splitByJumps(seq []repr.Instruction) [][]repr.Instruction {
 	seqs := make([][]repr.Instruction, 0, 1)
 	begin := 0
 
 	for i, ins := range seq {
-		if t := ins.Type; controlFlowInstruction(t) {
+		if isJumpInstr(ins) {
 			seqs = append(seqs, seq[begin:i+1])
 			begin = i + 1
 		}
@@ -94,7 +113,7 @@ func splitByJumpTargets(bs []block) ([]block, error) {
 					continue
 				}
 
-				addr, ok := expr.ConstUint[model.Address](c)
+				addr, ok := expr.ConstUint[model.Addr](c)
 				if !ok {
 					continue
 				}

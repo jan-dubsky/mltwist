@@ -12,13 +12,13 @@ import (
 
 func testReprIns(
 	tp model.Type,
-	address model.Address,
-	bytes model.Address,
-	jmps ...model.Address,
+	address model.Addr,
+	bytes model.Addr,
+	jmps ...model.Addr,
 ) repr.Instruction {
 	jmpExprs := make([]expr.Expr, len(jmps))
 	for i, j := range jmps {
-		jmpExprs[i] = model.AddressExpr(j)
+		jmpExprs[i] = model.AddrExpr(j)
 	}
 
 	return repr.Instruction{
@@ -129,7 +129,7 @@ func TestProgram_Move(t *testing.T) {
 			for i := range blocks {
 				ins := testReprIns(
 					model.TypeAritm,
-					model.Address(i),
+					model.Addr(i),
 					1,
 				)
 				blocks[i] = newBlock(i, []repr.Instruction{ins})
@@ -149,7 +149,7 @@ func TestProgram_Move(t *testing.T) {
 			r.Len(tt.order, numBlocks)
 			for i, n := range tt.order {
 				b := p.Index(i)
-				r.Equal(model.Address(n), b.Begin(),
+				r.Equal(model.Addr(n), b.Begin(),
 					"Invalid block at index: %d", i)
 				r.Equal(i, b.Idx())
 			}

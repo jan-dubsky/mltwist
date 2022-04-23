@@ -8,7 +8,7 @@ import (
 type insSet map[*instruction]struct{}
 
 type instruction struct {
-	DynAddress model.Address
+	DynAddress model.Addr
 	Instr      repr.Instruction
 
 	trueDepsFwd     insSet

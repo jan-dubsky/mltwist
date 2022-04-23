@@ -10,7 +10,7 @@ type Instruction struct {
 	// to.
 	Type Type
 	// ByteLen is length if an instruction opcode in bytes.
-	ByteLen Address
+	ByteLen Addr
 
 	Effects []expr.Effect
 

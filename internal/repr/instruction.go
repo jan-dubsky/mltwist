@@ -8,7 +8,7 @@ import (
 type Instruction struct {
 	model.Instruction
 
-	Address model.Address
+	Address model.Addr
 	Bytes   []byte
 
 	InputRegistry  RegSet
@@ -17,7 +17,7 @@ type Instruction struct {
 	JumpTargets []expr.Expr
 }
 
-func NewInstruction(ins model.Instruction, addr model.Address, bytes []byte) Instruction {
+func NewInstruction(ins model.Instruction, addr model.Addr, bytes []byte) Instruction {
 	inRegs, outRegs := regs(ins.Effects)
 	return Instruction{
 		Instruction: ins,
@@ -30,3 +30,6 @@ func NewInstruction(ins model.Instruction, addr model.Address, bytes []byte) Ins
 		JumpTargets: jumps(ins.Effects),
 	}
 }
+
+// NextAddr returns address following this instruction.
+func (i Instruction) NextAddr() model.Addr { return i.Address + i.ByteLen }

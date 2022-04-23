@@ -1,8 +1,8 @@
 package memory
 
 import (
-	"mltwist/pkg/model"
 	"fmt"
+	"mltwist/pkg/model"
 	"sort"
 )
 
@@ -41,7 +41,7 @@ func New(blocks ...Block) (*Memory, error) {
 
 // Addr returns the longest available slice of memory starting at memory address
 // addr.
-func (m *Memory) Addr(addr model.Address) []byte {
+func (m *Memory) Addr(addr model.Addr) []byte {
 	idx := sort.Search(len(m.Blocks), func(i int) bool {
 		return m.Blocks[i].End() > addr
 	})

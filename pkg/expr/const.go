@@ -107,7 +107,7 @@ func nonzeroUpperIdx(b []byte) int {
 
 // ConstUint converts Const into an arbitrary uint type. The boolean return
 // value indicates if conversion was successful or Const value doesn't fit T. In
-// the latter case, the first return value is undefined.
+// the latter case, the value of returned uint is undefined.
 func ConstUint[T uints](c Const) (T, bool) {
 	var dummy T
 	TSize := unsafe.Sizeof(dummy)

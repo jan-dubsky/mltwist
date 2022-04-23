@@ -1,14 +1,14 @@
 package deps
 
 import (
+	"fmt"
 	"mltwist/internal/repr"
 	"mltwist/pkg/model"
-	"fmt"
 )
 
 type block struct {
-	begin model.Address
-	end   model.Address
+	begin model.Addr
+	end   model.Addr
 	seq   []*instruction
 
 	// idx is zero-based index of the block in the program.
@@ -19,7 +19,7 @@ type block struct {
 // in-memory addresses into a block and analyzes dependencies in between
 // instructions.
 func newBlock(idx int, seq []repr.Instruction) *block {
-	var length model.Address
+	var length model.Addr
 	instrs := make([]*instruction, len(seq))
 	for i, ins := range seq {
 		length += ins.ByteLen
@@ -42,14 +42,14 @@ func newBlock(idx int, seq []repr.Instruction) *block {
 
 // Begin returns starting in-memory address of the block. The address relates to
 // the original address space of a binary.
-func (b *block) Begin() model.Address { return b.begin }
+func (b *block) Begin() model.Addr { return b.begin }
 
 // End returns in-memory address of the first byte behind the block. The address
 // relates to the original address space of a binary.
-func (b *block) End() model.Address { return b.end }
+func (b *block) End() model.Addr { return b.end }
 
 // Bytes returns number of bytes of all instructions in the block.
-func (b *block) Bytes() model.Address { return b.end - b.begin }
+func (b *block) Bytes() model.Addr { return b.end - b.begin }
 
 // Len returns number of instructions in b.
 func (b *block) Len() int { return len(b.seq) }
