@@ -21,16 +21,8 @@ type instruction struct {
 	loads  []expr.MemLoad
 	stores []expr.MemStore
 
-	trueDepsFwd     insSet
-	trueDepsBack    insSet
-	antiDepsFwd     insSet
-	antiDepsBack    insSet
-	outputDepsFwd   insSet
-	outputDepsBack  insSet
-	controlDepsFwd  insSet
-	controlDepsBack insSet
-	specialDepsFwd  insSet
-	specialDepsBack insSet
+	depsFwd  insSet
+	depsBack insSet
 
 	blockIdx int
 }
@@ -52,27 +44,8 @@ func newInstruction(ins parser.Instruction, index int) *instruction {
 		loads:  loads(ins.Effects),
 		stores: stores(ins.Effects),
 
-		trueDepsFwd:    make(insSet, expectedDeps),
-		trueDepsBack:   make(insSet, expectedDeps),
-		antiDepsFwd:    make(insSet, expectedDeps),
-		antiDepsBack:   make(insSet, expectedDeps),
-		outputDepsFwd:  make(insSet, expectedDeps),
-		outputDepsBack: make(insSet, expectedDeps),
-		// Each non-jump instruction is dependent on exactly one
-		// instruction in forward direction - the jump/call instruction
-		// at the end of basic block.
-		controlDepsFwd: make(insSet, 1),
-		// Here optimal size is the size of basic block which is not
-		// known to us for jump/call instruction at the end of the block
-		// and 0 for any non-jump instruction. As there is significantly
-		// more more non-jump than jump instructions, we use 0 not to
-		// waste memory and we rely on exponential size increasing in
-		// case of jump/call instructions.
-		controlDepsBack: make(insSet, 0),
-
-		// No special instructions are expected as those are very rare.
-		specialDepsFwd:  make(insSet, 0),
-		specialDepsBack: make(insSet, 0),
+		depsFwd:  make(insSet, 5),
+		depsBack: make(insSet, 5),
 
 		blockIdx: index,
 	}

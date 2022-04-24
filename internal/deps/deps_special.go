@@ -14,8 +14,8 @@ func processSpecialDeps(instrs []*instruction) {
 	var last *instruction
 	for i, ins := range instrs {
 		if last != nil {
-			last.specialDepsFwd[ins] = struct{}{}
-			ins.specialDepsBack[last] = struct{}{}
+			last.depsFwd[ins] = struct{}{}
+			ins.depsBack[last] = struct{}{}
 		}
 
 		if specials[i] {
@@ -27,8 +27,8 @@ func processSpecialDeps(instrs []*instruction) {
 	for i := len(instrs) - 1; i >= 0; i-- {
 		ins := instrs[i]
 		if last != nil {
-			ins.specialDepsFwd[last] = struct{}{}
-			last.specialDepsBack[ins] = struct{}{}
+			ins.depsFwd[last] = struct{}{}
+			last.depsBack[ins] = struct{}{}
 		}
 
 		if specials[i] {

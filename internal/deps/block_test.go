@@ -208,16 +208,8 @@ func TestBlock_Bounds(t *testing.T) {
 
 				ins := block.index(i)
 				t.Logf("Index: %d\n", i)
-				t.Logf("\tFwd true: %v\n", idxs(ins.trueDepsFwd))
-				t.Logf("\tFwd anti: %v\n", idxs(ins.antiDepsFwd))
-				t.Logf("\tFwd out: %v\n", idxs(ins.outputDepsFwd))
-				t.Logf("\tFwd control: %v\n", idxs(ins.controlDepsFwd))
-				t.Logf("\tFwd special: %v\n", idxs(ins.specialDepsFwd))
-				t.Logf("\tBack true: %v\n", idxs(ins.trueDepsBack))
-				t.Logf("\tBack anti: %v\n", idxs(ins.antiDepsBack))
-				t.Logf("\tBack out: %v\n", idxs(ins.outputDepsBack))
-				t.Logf("\tBack control: %v\n", idxs(ins.controlDepsBack))
-				t.Logf("\tBack special: %v\n", idxs(ins.specialDepsBack))
+				t.Logf("\tFwd: %v\n", idxs(ins.depsFwd))
+				t.Logf("\tBack: %v\n", idxs(ins.depsBack))
 
 				r.Equal(b.lower, l, "Lower bound doesn't match for %d", i)
 				r.Equal(b.upper, u, "Upper bound doesn't match for %d", i)
@@ -391,10 +383,10 @@ func TestBlock_Move(t *testing.T) {
 			seq := make([]*instruction, tt.numIns)
 			for i := range seq {
 				seq[i] = &instruction{
-					blockIdx:     i,
-					DynAddress:   model.Addr(i),
-					trueDepsFwd:  make(insSet),
-					trueDepsBack: make(insSet),
+					blockIdx:   i,
+					DynAddress: model.Addr(i),
+					depsFwd:    make(insSet),
+					depsBack:   make(insSet),
 				}
 			}
 
@@ -402,8 +394,8 @@ func TestBlock_Move(t *testing.T) {
 				require.NoError(t, d.Validate())
 
 				src, dst := seq[d.src], seq[d.dst]
-				src.trueDepsFwd[dst] = struct{}{}
-				dst.trueDepsBack[src] = struct{}{}
+				src.depsFwd[dst] = struct{}{}
+				dst.depsBack[src] = struct{}{}
 			}
 
 			block := &block{seq: seq}

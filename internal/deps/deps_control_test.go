@@ -73,8 +73,5 @@ func TestControlDeps(t *testing.T) {
 		},
 	}
 
-	runDepsTest(t, tests, processControlDeps,
-		func(i *instruction) insSet { return i.controlDepsFwd },
-		func(i *instruction) insSet { return i.controlDepsBack },
-	)
+	runDepsTest(t, tests, processControlDeps)
 }

@@ -52,8 +52,5 @@ func TestOutputDeps_Register(t *testing.T) {
 		},
 	}
 
-	runDepsTest(t, tests, processOutputDeps,
-		func(i *instruction) insSet { return i.outputDepsFwd },
-		func(i *instruction) insSet { return i.outputDepsBack },
-	)
+	runDepsTest(t, tests, processOutputDeps)
 }

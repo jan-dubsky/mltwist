@@ -43,6 +43,6 @@ func (p *outputDepProcessor) processMemDeps(ins *instruction) {
 }
 
 func (*outputDepProcessor) link(first, second *instruction) {
-	first.outputDepsFwd[second] = struct{}{}
-	second.outputDepsBack[first] = struct{}{}
+	first.depsFwd[second] = struct{}{}
+	second.depsBack[first] = struct{}{}
 }

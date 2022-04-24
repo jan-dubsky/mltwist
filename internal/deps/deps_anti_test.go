@@ -47,8 +47,5 @@ func TestAntiDeps_Register(t *testing.T) {
 		},
 	}
 
-	runDepsTest(t, tests, processAntiDeps,
-		func(i *instruction) insSet { return i.antiDepsFwd },
-		func(i *instruction) insSet { return i.antiDepsBack },
-	)
+	runDepsTest(t, tests, processAntiDeps)
 }

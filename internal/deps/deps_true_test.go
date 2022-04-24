@@ -14,17 +14,9 @@ const regInvalid uint64 = math.MaxUint64
 
 func testIns(ins parser.Instruction) *instruction {
 	return &instruction{
-		trueDepsFwd:     make(insSet, numRegs),
-		trueDepsBack:    make(insSet, numRegs),
-		antiDepsFwd:     make(insSet, numRegs),
-		antiDepsBack:    make(insSet, numRegs),
-		outputDepsFwd:   make(insSet, numRegs),
-		outputDepsBack:  make(insSet, numRegs),
-		controlDepsFwd:  make(insSet, 1),
-		controlDepsBack: make(insSet, 0),
-		specialDepsFwd:  make(insSet, 0),
-		specialDepsBack: make(insSet, 0),
-		blockIdx:        -1,
+		depsFwd:  make(insSet, numRegs),
+		depsBack: make(insSet, numRegs),
+		blockIdx: -1,
 
 		Instr: ins,
 	}
@@ -101,8 +93,6 @@ func runDepsTest(
 	t *testing.T,
 	tests []testCase,
 	f func(instrs []*instruction),
-	fwdF depFunc,
-	backF depFunc,
 ) {
 	for _, tt := range tests {
 		tt := tt
@@ -116,28 +106,28 @@ func runDepsTest(
 			f(tt.ins)
 
 			for i, ins := range tt.ins {
-				t.Logf("Forward deps %d: %d\n", i, len(fwdF(ins)))
+				t.Logf("Forward deps %d: %d\n", i, len(ins.depsFwd))
 			}
 			t.Logf("\n")
 			for i, ins := range tt.ins {
-				t.Logf("Backward deps %d: %d\n", i, len(backF(ins)))
+				t.Logf("Backward deps %d: %d\n", i, len(ins.depsBack))
 			}
 
 			for d := range deps {
 				src := tt.ins[d.src]
 				dst := tt.ins[d.dst]
-				r.Contains(fwdF(src), dst, "dependency: %v", d)
-				r.Contains(backF(dst), src, "dependency: %v", d)
+				r.Contains(src.depsFwd, dst, "dependency: %v", d)
+				r.Contains(dst.depsBack, src, "dependency: %v", d)
 			}
 
 			srcs := depCnts(deps, func(d dep) int { return d.src })
 			for i := range tt.ins {
-				r.Len(fwdF(tt.ins[i]), srcs[i], "instruction: %d", i)
+				r.Len(tt.ins[i].depsFwd, srcs[i], "instruction: %d", i)
 			}
 
 			dsts := depCnts(deps, func(d dep) int { return d.dst })
 			for i := range tt.ins {
-				r.Len(backF(tt.ins[i]), dsts[i], "instruction: %d", i)
+				r.Len(tt.ins[i].depsBack, dsts[i], "instruction: %d", i)
 			}
 		})
 	}
@@ -214,8 +204,5 @@ func TestTrueDeps_Register(t *testing.T) {
 		},
 	}
 
-	runDepsTest(t, tests, processTrueDeps,
-		func(i *instruction) insSet { return i.trueDepsFwd },
-		func(i *instruction) insSet { return i.trueDepsBack },
-	)
+	runDepsTest(t, tests, processTrueDeps)
 }

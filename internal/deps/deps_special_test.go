@@ -59,8 +59,5 @@ func TestSpecialDeps(t *testing.T) {
 		},
 	}
 
-	runDepsTest(t, tests, processSpecialDeps,
-		func(i *instruction) insSet { return i.specialDepsFwd },
-		func(i *instruction) insSet { return i.specialDepsBack },
-	)
+	runDepsTest(t, tests, processSpecialDeps)
 }

@@ -57,6 +57,6 @@ func (p *antiDepProcessor) processMemDeps(ins *instruction) {
 }
 
 func (*antiDepProcessor) link(first, second *instruction) {
-	first.antiDepsFwd[second] = struct{}{}
-	second.antiDepsBack[first] = struct{}{}
+	first.depsFwd[second] = struct{}{}
+	second.depsBack[first] = struct{}{}
 }

@@ -34,7 +34,7 @@ func processControlDeps(instrs []*instruction) {
 	}
 
 	for _, ins := range instrs[:len(instrs)-1] {
-		ins.controlDepsFwd[last] = struct{}{}
-		last.controlDepsBack[ins] = struct{}{}
+		ins.depsFwd[last] = struct{}{}
+		last.depsBack[ins] = struct{}{}
 	}
 }

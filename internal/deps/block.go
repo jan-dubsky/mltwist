@@ -97,13 +97,11 @@ func (b *block) checkMove(from int, to int) error {
 // index) in multiple sets of instructions. The cmpF is a comparison predicate
 // used to evaluate if the new value of index is "better" than the current (so
 // far found) value.
-func findBound(cmpF func(first int, second int) bool, sets ...insSet) int {
+func findBound(cmpF func(first int, second int) bool, set insSet) int {
 	var curr int = -1
-	for _, s := range sets {
-		for ins := range s {
-			if curr < 0 || cmpF(ins.blockIdx, curr) {
-				curr = ins.blockIdx
-			}
+	for ins := range set {
+		if curr < 0 || cmpF(ins.blockIdx, curr) {
+			curr = ins.blockIdx
 		}
 	}
 
@@ -115,13 +113,7 @@ func findBound(cmpF func(first int, second int) bool, sets ...insSet) int {
 // instruction), this method returns zero index.
 func (b *block) lowerBound(i int) int {
 	ins := b.index(i)
-	idx := findBound(func(i, j int) bool { return i > j },
-		ins.trueDepsBack,
-		ins.antiDepsBack,
-		ins.outputDepsBack,
-		ins.controlDepsBack,
-		ins.specialDepsBack,
-	)
+	idx := findBound(func(i, j int) bool { return i > j }, ins.depsBack)
 
 	if idx < 0 {
 		return 0
@@ -134,13 +126,7 @@ func (b *block) lowerBound(i int) int {
 // method returns b.Len() - 1.
 func (b *block) upperBound(i int) int {
 	ins := b.index(i)
-	idx := findBound(func(i, j int) bool { return i < j },
-		ins.trueDepsFwd,
-		ins.antiDepsFwd,
-		ins.outputDepsFwd,
-		ins.controlDepsFwd,
-		ins.specialDepsFwd,
-	)
+	idx := findBound(func(i, j int) bool { return i < j }, ins.depsFwd)
 
 	if idx < 0 {
 		return b.Len() - 1
