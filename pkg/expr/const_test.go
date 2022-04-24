@@ -41,6 +41,10 @@ func TestNewConstUint(t *testing.T) {
 	r.Panics(func() {
 		_ = expr.NewConstUint(bigNum, expr.Width32)
 	})
+
+	c = expr.ConstFromUint[uint32](25)
+	r.Equal([]byte{25, 0, 0, 0}, c.Bytes())
+	r.Equal(expr.Width32, c.Width())
 }
 
 func TestNewConstInt(t *testing.T) {
@@ -89,6 +93,14 @@ func TestNewConstInt(t *testing.T) {
 	r.Panics(func() {
 		_ = expr.NewConstInt(bigPosNum, expr.Width32)
 	})
+
+	c = expr.ConstFromInt[int32](26)
+	r.Equal([]byte{26, 0, 0, 0}, c.Bytes())
+	r.Equal(expr.Width32, c.Width())
+
+	c = expr.ConstFromInt[int16](-23)
+	r.Equal([]byte{0xff - 22, 0xff}, c.Bytes())
+	r.Equal(expr.Width16, c.Width())
 }
 
 func TestConstUint(t *testing.T) {
@@ -99,12 +111,12 @@ func TestConstUint(t *testing.T) {
 	r.True(ok)
 	r.Equal(uint32(57), v32)
 
-	e = expr.NewConstUint[uint16](537, expr.Width16)
+	e = expr.ConstFromUint[uint16](537)
 	v8, ok := expr.ConstUint[uint8](e)
 	r.False(ok)
 	r.Zero(v8)
 
-	e = expr.NewConstUint[uint16](255, expr.Width16)
+	e = expr.ConstFromUint[uint16](255)
 	v8, ok = expr.ConstUint[uint8](e)
 	r.True(ok)
 	r.Equal(uint8(255), v8)

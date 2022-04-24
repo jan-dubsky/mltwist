@@ -17,7 +17,7 @@ var integer32 = []*instructionOpcode{
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			imm, _ := immTypeU.parseValue(i.value)
-			val := expr.NewConstInt(imm, width32)
+			val := expr.ConstFromInt[int32](imm)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -29,7 +29,7 @@ var integer32 = []*instructionOpcode{
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			imm, _ := immTypeU.parseValue(i.value)
-			val := expr.NewConstUint(addrAddImm(i.address, imm), width32)
+			val := expr.ConstFromUint(uint32(addrAddImm(i.address, imm)))
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -42,7 +42,7 @@ var integer32 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			target := addrImmConst(immTypeJ, i, width32)
 			// Address of following instruction.
-			following := expr.NewConstUint(uint64(i.address+4), width32)
+			following := expr.ConstFromUint(uint32(i.address) + 4)
 			return []expr.Effect{
 				expr.NewRegStore(target, expr.IPKey, width32),
 				regStore(following, i, width32),
@@ -59,7 +59,7 @@ var integer32 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			target := regImmOp(expr.Add, immTypeI, i, width32)
 			// Address of following instruction.
-			following := expr.NewConstUint(uint32(i.address+4), width32)
+			following := expr.ConstFromUint(uint32(i.address) + 4)
 			return []expr.Effect{
 				expr.NewRegStore(target, expr.IPKey, width32),
 				regStore(following, i, width32),
@@ -583,7 +583,7 @@ var mul32 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			mul := exprtools.SignedMul(r1, r2, width32)
-			shift := expr.NewConstUint[uint8](32, width8)
+			shift := expr.ConstFromUint[uint8](32)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
 			val := exprtools.NewWidthGadget(shifted, width32)
 			return []expr.Effect{regStore(val, i, width32)}
@@ -598,7 +598,7 @@ var mul32 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			mul := expr.NewBinary(expr.Mul, r1, r2, width64)
-			shift := expr.NewConstUint[uint8](32, width8)
+			shift := expr.ConstFromUint[uint8](32)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
 			val := exprtools.NewWidthGadget(shifted, width32)
 			return []expr.Effect{regStore(val, i, width32)}
@@ -614,7 +614,7 @@ var mul32 = []*instructionOpcode{
 			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			r1Abs := exprtools.Abs(r1, width32)
 			mul := expr.NewBinary(expr.Mul, r1Abs, r2, width64)
-			shift := expr.NewConstUint[uint8](32, width8)
+			shift := expr.ConstFromUint[uint8](32)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
 			val := expr.NewCond(
 				expr.Eq,

@@ -27,9 +27,7 @@ func TestControlDeps(t *testing.T) {
 				testInsReg(1),
 				testInsReg(2),
 				testInsReg(3, 2, 1),
-				testInsJumpTarget(
-					expr.NewConstUint[uint8](56, expr.Width32),
-				),
+				testInsJumpTarget(expr.ConstFromUint[uint32](56)),
 			},
 			deps: []dep{
 				{0, 3},

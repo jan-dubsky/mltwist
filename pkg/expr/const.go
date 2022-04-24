@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"unsafe"
+
+	"golang.org/x/exp/constraints"
 )
 
 var (
@@ -35,20 +37,12 @@ func NewConst(b []byte, w Width) Const {
 	return newConst(bCopy)
 }
 
-type uints interface {
-	~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uint
-}
-
-type ints interface {
-	~int8 | ~int16 | ~int32 | ~int64 | ~int
-}
-
 // NewConstUint converts any uint value into Const of width w.
 //
 // This method will panic in case val doesn't fit w bytes. It's allowed to
 // convert val of type wider than w, but all bytes of val higher than w has to
 // be zero bytes.
-func NewConstUint[T uints](val T, w Width) Const {
+func NewConstUint[T constraints.Unsigned](val T, w Width) Const {
 	valCopy := val
 
 	bs := make([]byte, w)
@@ -70,7 +64,7 @@ func NewConstUint[T uints](val T, w Width) Const {
 // This method will panic in case val doesn't fit w bytes. It's allowed to
 // convert val of type wider than w, but all bytes of val higher than w has to
 // be sign extension of last bit of byte [w-1].
-func NewConstInt[T ints](val T, w Width) Const {
+func NewConstInt[T constraints.Signed](val T, w Width) Const {
 	valCopy := val
 
 	bs := make([]byte, w)
@@ -85,6 +79,18 @@ func NewConstInt[T ints](val T, w Width) Const {
 	}
 
 	return newConst(bs)
+}
+
+// ConstFromUint converts any unsigned integer into Const of the same width as T
+// has.
+func ConstFromUint[T constraints.Unsigned](val T) Const {
+	return NewConstUint(val, Width(unsafe.Sizeof(val)))
+}
+
+// ConstFromInt converts any signed integer into Const of the same width as T
+// has.
+func ConstFromInt[T constraints.Signed](val T) Const {
+	return NewConstInt(val, Width(unsafe.Sizeof(val)))
 }
 
 func (c Const) Bytes() []byte { return c.b }
@@ -107,7 +113,7 @@ func nonzeroUpperIdx(b []byte) int {
 // ConstUint converts Const into an arbitrary uint type. The boolean return
 // value indicates if conversion was successful or Const value doesn't fit T. In
 // the latter case, the value of returned uint is undefined.
-func ConstUint[T uints](c Const) (T, bool) {
+func ConstUint[T constraints.Unsigned](c Const) (T, bool) {
 	var val T
 	TSize := unsafe.Sizeof(val)
 

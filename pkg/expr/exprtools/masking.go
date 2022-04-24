@@ -14,7 +14,7 @@ func bitMask(bits uint16, w expr.Width) expr.Expr {
 		return expr.NewConstUint(uint64((1<<bits)-1), w)
 	}
 
-	shift := expr.NewConstUint(bits, expr.Width16)
+	shift := expr.ConstFromUint(bits)
 	topBit := expr.NewBinary(expr.Lsh, expr.One, shift, w)
 	return expr.NewBinary(expr.Sub, topBit, expr.One, w)
 }
@@ -33,7 +33,7 @@ func signBitMask(w expr.Width) expr.Expr {
 		return expr.NewConstUint(uint64(1)<<uint64(signBit), w)
 	}
 
-	shift := expr.NewConstUint(signBit, expr.Width16)
+	shift := expr.ConstFromUint(signBit)
 	return expr.NewBinary(expr.Lsh, expr.One, shift, w)
 }
 

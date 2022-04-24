@@ -11,11 +11,11 @@ import (
 )
 
 func TestSetWidth(t *testing.T) {
-	c1 := expr.NewConstUint[uint16](457, expr.Width16)
-	c2 := expr.NewConstUint[uint32](54455554, expr.Width32)
+	c1 := expr.ConstFromUint[uint16](457)
+	c2 := expr.ConstFromUint[uint32](54455554)
 
-	c3 := expr.NewConstUint[uint16](787, expr.Width16)
-	c4 := expr.NewConstUint[uint32](87989030, expr.Width32)
+	c3 := expr.ConstFromUint[uint16](787)
+	c4 := expr.ConstFromUint[uint32](87989030)
 
 	tests := []struct {
 		name string
@@ -33,13 +33,13 @@ func TestSetWidth(t *testing.T) {
 			name: "const_wider",
 			e:    c2,
 			w:    expr.Width64,
-			exp:  expr.NewConstUint[uint32](54455554, expr.Width64),
+			exp:  expr.ConstFromUint[uint64](54455554),
 		},
 		{
 			name: "const_narrower",
 			e:    c2,
 			w:    expr.Width8,
-			exp:  expr.NewConstUint[uint8](54455554%256, expr.Width8),
+			exp:  expr.ConstFromUint[uint8](54455554 % 256),
 		},
 		{
 			name: "binary_wider",
@@ -131,10 +131,10 @@ func assertSameMemory(t testing.TB, expected expr.Expr, actual expr.Expr) {
 }
 
 func TestPurgeWidthGadgets(t *testing.T) {
-	c1 := expr.NewConstUint[uint16](457, expr.Width16)
-	c2 := expr.NewConstUint[uint32](54455554, expr.Width32)
-	c3 := expr.NewConstUint[uint64](8796756564, expr.Width64)
-	c4 := expr.NewConstUint[uint8](34, expr.Width8)
+	c1 := expr.ConstFromUint[uint16](457)
+	c2 := expr.ConstFromUint[uint32](54455554)
+	c3 := expr.ConstFromUint[uint64](8796756564)
+	c4 := expr.ConstFromUint[uint8](34)
 
 	tests := []struct {
 		name     string

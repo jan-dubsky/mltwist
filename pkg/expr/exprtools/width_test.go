@@ -46,7 +46,7 @@ func TestWidthGadgetArg(t *testing.T) {
 		{
 			e: expr.NewBinary(expr.Add,
 				expr.NewRegLoad("reg1", expr.Width64),
-				expr.NewConstUint[uint8](1, expr.Width8),
+				expr.ConstFromUint[uint8](1),
 				expr.Width16,
 			),
 			w: expr.Width16,

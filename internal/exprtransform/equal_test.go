@@ -9,8 +9,8 @@ import (
 )
 
 func TestEqual(t *testing.T) {
-	c1 := expr.NewConstUint[uint8](55, expr.Width32)
-	c2 := expr.NewConstUint[uint8](22, expr.Width8)
+	c1 := expr.ConstFromUint[uint32](55)
+	c2 := expr.ConstFromUint[uint8](22)
 
 	tests := []struct {
 		name string
@@ -25,12 +25,12 @@ func TestEqual(t *testing.T) {
 	}, {
 		name: "const_neq_width",
 		e1:   c1,
-		e2:   expr.NewConstUint[uint8](55, expr.Width16),
+		e2:   expr.ConstFromUint[uint16](55),
 		eq:   false,
 	}, {
 		name: "const_neq_value",
-		e1:   expr.NewConstUint[uint32](2139032992, expr.Width32),
-		e2:   expr.NewConstUint[uint32](2139032992+1, expr.Width32),
+		e1:   expr.ConstFromUint[uint32](2139032992),
+		e2:   expr.ConstFromUint[uint32](2139032992 + 1),
 		eq:   false,
 	}, {
 		name: "mem_load_eq",
@@ -85,12 +85,12 @@ func TestEqual(t *testing.T) {
 		name: "binary_neq_arg2",
 		e1: expr.NewBinary(expr.Add,
 			c1,
-			expr.NewConstUint[uint8](22, expr.Width8),
+			expr.ConstFromUint[uint8](22),
 			expr.Width32,
 		),
 		e2: expr.NewBinary(expr.Add,
 			c1,
-			expr.NewConstUint[uint8](23, expr.Width8),
+			expr.ConstFromUint[uint8](23),
 			expr.Width16,
 		),
 		eq: false,

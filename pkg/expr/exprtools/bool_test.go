@@ -16,20 +16,20 @@ func TestBool(t *testing.T) {
 		exp expr.Expr
 	}{
 		{
-			e:   expr.NewConstUint[uint8](8, expr.Width8),
-			exp: expr.NewConstUint[uint8](1, expr.Width8),
+			e:   expr.ConstFromUint[uint8](8),
+			exp: expr.ConstFromUint[uint8](1),
 		},
 		{
-			e:   expr.NewConstUint[uint8](0, expr.Width8),
-			exp: expr.NewConstUint[uint8](0, expr.Width8),
+			e:   expr.ConstFromUint[uint8](0),
+			exp: expr.ConstFromUint[uint8](0),
 		},
 		{
-			e:   expr.NewConstUint[uint16](0xba00, expr.Width16),
-			exp: expr.NewConstUint[uint8](1, expr.Width8),
+			e:   expr.ConstFromUint[uint16](0xba00),
+			exp: expr.ConstFromUint[uint8](1),
 		},
 		{
-			e:   expr.NewConstUint[uint8](0, expr.Width32),
-			exp: expr.NewConstUint[uint8](0, expr.Width8),
+			e:   expr.ConstFromUint[uint32](0),
+			exp: expr.ConstFromUint[uint8](0),
 		},
 	}
 
@@ -48,24 +48,24 @@ func TestNot(t *testing.T) {
 		exp expr.Expr
 	}{
 		{
-			e:   expr.NewConstUint[uint8](8, expr.Width8),
-			exp: expr.NewConstUint[uint8](0, expr.Width8),
+			e:   expr.ConstFromUint[uint8](8),
+			exp: expr.ConstFromUint[uint8](0),
 		},
 		{
-			e:   expr.NewConstUint[uint8](0, expr.Width8),
-			exp: expr.NewConstUint[uint8](1, expr.Width8),
+			e:   expr.ConstFromUint[uint8](0),
+			exp: expr.ConstFromUint[uint8](1),
 		},
 		{
-			e:   expr.NewConstUint[uint64](0xfba462839bacaef1, expr.Width64),
-			exp: expr.NewConstUint[uint8](0, expr.Width8),
+			e:   expr.ConstFromUint[uint64](0xfba462839bacaef1),
+			exp: expr.ConstFromUint[uint8](0),
 		},
 		{
-			e:   expr.NewConstUint[uint16](0x1700, expr.Width16),
-			exp: expr.NewConstUint[uint8](0, expr.Width8),
+			e:   expr.ConstFromUint[uint16](0x1700),
+			exp: expr.ConstFromUint[uint8](0),
 		},
 		{
-			e:   expr.NewConstUint[uint8](0, expr.Width32),
-			exp: expr.NewConstUint[uint8](1, expr.Width8),
+			e:   expr.ConstFromUint[uint32](0),
+			exp: expr.ConstFromUint[uint8](1),
 		},
 	}
 
@@ -87,25 +87,25 @@ func TestBoolCond(t *testing.T) {
 		exp expr.Expr
 	}{
 		{
-			e:   expr.NewConstUint[uint8](8, expr.Width8),
-			t:   expr.NewConstUint[uint32](0xfba64bc5, expr.Width32),
-			f:   expr.NewConstUint[uint8](1, expr.Width8),
+			e:   expr.ConstFromUint[uint8](8),
+			t:   expr.ConstFromUint[uint32](0xfba64bc5),
+			f:   expr.ConstFromUint[uint8](1),
 			w:   expr.Width32,
-			exp: expr.NewConstUint[uint32](0xfba64bc5, expr.Width32),
+			exp: expr.ConstFromUint[uint32](0xfba64bc5),
 		},
 		{
-			e:   expr.NewConstUint[uint8](0, expr.Width8),
-			t:   expr.NewConstUint[uint32](0xfba64bc5, expr.Width32),
-			f:   expr.NewConstUint[uint8](1, expr.Width8),
+			e:   expr.ConstFromUint[uint8](0),
+			t:   expr.ConstFromUint[uint32](0xfba64bc5),
+			f:   expr.ConstFromUint[uint8](1),
 			w:   expr.Width16,
-			exp: expr.NewConstUint[uint16](1, expr.Width16),
+			exp: expr.ConstFromUint[uint16](1),
 		},
 		{
-			e:   expr.NewConstUint[uint8](8, expr.Width8),
-			t:   expr.NewConstUint[uint32](0xfba64bc5, expr.Width32),
-			f:   expr.NewConstUint[uint8](1, expr.Width8),
+			e:   expr.ConstFromUint[uint8](8),
+			t:   expr.ConstFromUint[uint32](0xfba64bc5),
+			f:   expr.ConstFromUint[uint8](1),
 			w:   expr.Width16,
-			exp: expr.NewConstUint[uint32](0x4bc5, expr.Width16),
+			exp: expr.ConstFromUint[uint16](0x4bc5),
 		},
 	}
 

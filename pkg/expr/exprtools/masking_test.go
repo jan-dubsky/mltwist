@@ -20,17 +20,17 @@ func TestMaskBits(t *testing.T) {
 	}{
 		{
 			name: "singlebyte",
-			e:    expr.NewConstUint[uint8](0x7c, expr.Width8),
+			e:    expr.ConstFromUint[uint8](0x7c),
 			cnt:  5,
 			w:    expr.Width16,
-			exp:  expr.NewConstUint[uint16](0x1c, expr.Width16),
+			exp:  expr.ConstFromUint[uint16](0x1c),
 		},
 		{
 			name: "multibyte",
-			e:    expr.NewConstUint[uint16](0xffff, expr.Width16),
+			e:    expr.ConstFromUint[uint16](0xffff),
 			cnt:  12,
 			w:    expr.Width16,
-			exp:  expr.NewConstUint[uint16](0x0fff, expr.Width16),
+			exp:  expr.ConstFromUint[uint16](0x0fff),
 		},
 		{
 			name: "bit_int",
@@ -58,29 +58,29 @@ func TestIntNegative(t *testing.T) {
 		exp  expr.Expr
 	}{{
 		name: "positive",
-		e:    expr.NewConstInt[int16](math.MaxInt16, expr.Width16),
+		e:    expr.ConstFromInt[int16](math.MaxInt16),
 		w:    expr.Width16,
-		exp:  expr.NewConstUint[uint8](0, expr.Width16),
+		exp:  expr.ConstFromUint[uint16](0),
 	}, {
 		name: "negative",
-		e:    expr.NewConstInt[int32](-1, expr.Width32),
+		e:    expr.ConstFromInt[int32](-1),
 		w:    expr.Width32,
-		exp:  expr.NewConstUint[uint32](0x80000000, expr.Width32),
+		exp:  expr.ConstFromUint[uint32](0x80000000),
 	}, {
 		name: "grown_to_positive",
-		e:    expr.NewConstInt[int32](-1, expr.Width32),
+		e:    expr.ConstFromInt[int32](-1),
 		w:    expr.Width64,
-		exp:  expr.NewConstUint[uint8](0, expr.Width64),
+		exp:  expr.ConstFromUint[uint64](0),
 	}, {
 		name: "cropped_to_negative",
-		e:    expr.NewConstUint[uint16](0x10ff, expr.Width16),
+		e:    expr.ConstFromUint[uint16](0x10ff),
 		w:    expr.Width8,
-		exp:  expr.NewConstUint[uint8](0x80, expr.Width8),
+		exp:  expr.ConstFromUint[uint8](0x80),
 	}, {
 		name: "zero",
-		e:    expr.NewConstUint[uint16](0, expr.Width16),
+		e:    expr.ConstFromUint[uint16](0),
 		w:    expr.Width16,
-		exp:  expr.NewConstUint[uint16](0, expr.Width16),
+		exp:  expr.ConstFromUint[uint16](0),
 	}, {
 		name: "big_positive",
 		e:    expr.NewConst([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4}, expr.Width128),

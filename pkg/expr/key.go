@@ -46,3 +46,9 @@ func (k Key) assertValid() {
 		panic(fmt.Sprintf("invalid key %q: %s", k, err.Error()))
 	}
 }
+
+// Reserved informs if key is reserved key or if it's standard (non-reserved)
+// key.
+//
+// This function will panic for an empty key.
+func (k Key) Reserved() bool { return k[0] == '#' }

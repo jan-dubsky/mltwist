@@ -178,14 +178,14 @@ func immConst(t immType, i Instruction) expr.Const {
 	}
 	// Immediatealways contains at most 20 bits, so 32 bits is always
 	// enough.
-	return expr.NewConstInt(imm, expr.Width32)
+	return expr.ConstFromInt[int32](imm)
 }
 
 func immShift(shiftBits uint8, i Instruction) expr.Const {
 	assertshiftBits(shiftBits)
 	mask := int32(1) << int32(shiftBits)
 	imm, _ := immTypeI.parseValue(i.value)
-	return expr.NewConstInt(imm&mask, expr.Width32)
+	return expr.ConstFromInt[int32](imm & mask)
 }
 
 func regLoad(r reg, i Instruction, w expr.Width) expr.Expr {
@@ -222,8 +222,7 @@ func regImmShift(op expr.BinaryOp, i Instruction, bits uint8, w expr.Width) expr
 }
 
 func sext(e expr.Expr, signBit uint8, w expr.Width) expr.Expr {
-	signBitExpr := expr.NewConstUint(signBit, expr.Width8)
-	return exprtools.SignExtend(e, signBitExpr, w)
+	return exprtools.SignExtend(e, expr.ConstFromUint(signBit), w)
 }
 
 func sext32To64(e expr.Expr) expr.Expr { return sext(e, 31, expr.Width64) }

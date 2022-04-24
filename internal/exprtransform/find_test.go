@@ -27,13 +27,13 @@ func TestFind(t *testing.T) {
 		expr.Width64,
 	)
 	load2 := expr.NewMemLoad("mem2",
-		expr.NewConstUint[uint16](0xffbc, expr.Width16),
+		expr.ConstFromUint[uint16](0xffbc),
 		expr.Width32,
 	)
 
 	cond1 := expr.NewCond(expr.Ltu,
 		expr.NewRegLoad("r1", expr.Width64),
-		expr.NewConstUint[uint16](6789, expr.Width16),
+		expr.ConstFromUint[uint16](6789),
 		binary1,
 		binary2,
 		expr.Width16,
@@ -60,8 +60,8 @@ func TestFind(t *testing.T) {
 	consts := []expr.Const{
 		expr.Zero,
 		expr.One,
-		expr.NewConstUint[uint16](6789, expr.Width16),
-		expr.NewConstUint[uint16](0xffbc, expr.Width16),
+		expr.ConstFromUint[uint16](6789),
+		expr.ConstFromUint[uint16](0xffbc),
 	}
 	r.ElementsMatch(consts, exprtransform.FindAll[expr.Const](e))
 
