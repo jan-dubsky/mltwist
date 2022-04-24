@@ -9,6 +9,9 @@ import (
 // Addr represents an arbitrary memory address in a program (user-space) address
 // space.
 //
+// Memory address can overflow. This implies that the memory model we use is
+// "donut" memory, where MaxAddr + 1 == MinAddr.
+//
 // We might use plain old uint64 to represent any memory address and we would be
 // most likely fine for following 10 years. On the other hand given that RISC-V
 // already has 128bit instruction set described, it makes sense to introduce

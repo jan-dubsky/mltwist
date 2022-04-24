@@ -4,9 +4,14 @@ import (
 	"mltwist/pkg/expr"
 )
 
+// bitCnt represents a number of bits in an expression. Given that our Width in
+// bytes always fits uint8, uint16 is big enough to represent any number of bits
+// in an expression.
+type BitCnt uint16
+
 // bitMask returns an expression of width w which has ones in positions
 // [0..bits) and zeros in position bits and all bits above.
-func bitMask(bits uint16, w expr.Width) expr.Expr {
+func bitMask(bits BitCnt, w expr.Width) expr.Expr {
 	// Optimization for those masks we are able to calculate using
 	// in-language features to make the description simpler and possible
 	// further execution faster.
@@ -21,7 +26,7 @@ func bitMask(bits uint16, w expr.Width) expr.Expr {
 
 // MaskBits returns an expresion of width w with cnt lower bits of e. All higher
 // bits are unset.
-func MaskBits(e expr.Expr, cnt uint16, w expr.Width) expr.Expr {
+func MaskBits(e expr.Expr, cnt BitCnt, w expr.Width) expr.Expr {
 	return expr.NewBinary(expr.And, e, bitMask(cnt, w), w)
 }
 

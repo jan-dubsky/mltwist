@@ -178,14 +178,14 @@ func immConst(t immType, i Instruction) expr.Const {
 	}
 	// Immediatealways contains at most 20 bits, so 32 bits is always
 	// enough.
-	return expr.ConstFromInt[int32](imm)
+	return expr.ConstFromInt(imm)
 }
 
 func immShift(shiftBits uint8, i Instruction) expr.Const {
 	assertshiftBits(shiftBits)
 	mask := int32(1) << int32(shiftBits)
 	imm, _ := immTypeI.parseValue(i.value)
-	return expr.ConstFromInt[int32](imm & mask)
+	return expr.ConstFromInt(imm & mask)
 }
 
 func regLoad(r reg, i Instruction, w expr.Width) expr.Expr {
@@ -213,7 +213,7 @@ func reg2Op(op expr.BinaryOp, i Instruction, w expr.Width) expr.Expr {
 }
 
 func maskedRegOp(op expr.BinaryOp, i Instruction, bits uint8, w expr.Width) expr.Expr {
-	mask := exprtools.MaskBits(regLoad(rs2, i, w), uint16(bits), w)
+	mask := exprtools.MaskBits(regLoad(rs2, i, w), exprtools.BitCnt(bits), w)
 	return expr.NewBinary(op, regLoad(rs1, i, w), mask, w)
 }
 

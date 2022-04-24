@@ -14,7 +14,7 @@ func TestMaskBits(t *testing.T) {
 	tests := []struct {
 		name string
 		e    expr.Expr
-		cnt  uint16
+		cnt  exprtools.BitCnt
 		w    expr.Width
 		exp  expr.Expr
 	}{

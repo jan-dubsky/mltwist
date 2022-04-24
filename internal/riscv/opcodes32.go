@@ -17,7 +17,7 @@ var integer32 = []*instructionOpcode{
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			imm, _ := immTypeU.parseValue(i.value)
-			val := expr.ConstFromInt[int32](imm)
+			val := expr.ConstFromInt(imm)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {

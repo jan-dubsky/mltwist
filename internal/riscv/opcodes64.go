@@ -17,7 +17,7 @@ var integer64 = []*instructionOpcode{
 		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			imm, _ := immTypeU.parseValue(i.value)
-			val := sext32To64(expr.ConstFromInt[int32](imm))
+			val := sext32To64(expr.ConstFromInt(imm))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -42,7 +42,7 @@ var integer64 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			target := addrImmConst(immTypeJ, i, width64)
 			// Address of following instruction.
-			following := expr.ConstFromUint(uint64(i.address)+4)
+			following := expr.ConstFromUint(uint64(i.address) + 4)
 			return []expr.Effect{
 				expr.NewRegStore(target, expr.IPKey, width64),
 				regStore(following, i, width64),
@@ -59,7 +59,7 @@ var integer64 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			target := regImmOp(expr.Add, immTypeI, i, width64)
 			// Address of following instruction.
-			following := expr.ConstFromUint(uint64(i.address)+4)
+			following := expr.ConstFromUint(uint64(i.address) + 4)
 			return []expr.Effect{
 				expr.NewRegStore(target, expr.IPKey, width64),
 				regStore(following, i, width64),

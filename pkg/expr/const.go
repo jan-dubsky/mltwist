@@ -111,15 +111,15 @@ func nonzeroUpperIdx(b []byte) int {
 }
 
 // ConstUint converts Const into an arbitrary uint type. The boolean return
-// value indicates if conversion was successful or Const value doesn't fit T. In
-// the latter case, the value of returned uint is undefined.
+// value indicates if Const value fits T. If Const value doesn't fit T, returned
+// value contains lower sizeof(T) bytes.
 func ConstUint[T constraints.Unsigned](c Const) (T, bool) {
+	fits := true
 	var val T
-	TSize := unsafe.Sizeof(val)
 
 	idx := nonzeroUpperIdx(c.Bytes())
-	if uintptr(idx) >= TSize {
-		return 0, false
+	if size := unsafe.Sizeof(val); uintptr(idx) >= size {
+		idx, fits = int(size-1), false
 	}
 
 	for i := idx; i >= 0; i-- {
@@ -127,5 +127,5 @@ func ConstUint[T constraints.Unsigned](c Const) (T, bool) {
 		val |= T(c.Bytes()[i])
 	}
 
-	return val, true
+	return val, fits
 }

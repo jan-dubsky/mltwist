@@ -114,7 +114,7 @@ func TestConstUint(t *testing.T) {
 	e = expr.ConstFromUint[uint16](537)
 	v8, ok := expr.ConstUint[uint8](e)
 	r.False(ok)
-	r.Zero(v8)
+	r.Equal(uint8(537%256), v8)
 
 	e = expr.ConstFromUint[uint16](255)
 	v8, ok = expr.ConstUint[uint8](e)
@@ -124,7 +124,7 @@ func TestConstUint(t *testing.T) {
 	e = expr.NewConst([]byte{0, 0, 0, 0, 0, 0, 0, 0, 1}, expr.Width128)
 	v64, ok := expr.ConstUint[uint64](e)
 	r.False(ok)
-	r.Zero(v64)
+	r.Equal(uint64(0), v64)
 
 	e = expr.NewConst([]byte{0, 0, 0, 0, 0, 0, 0x25, 0}, expr.Width128)
 	v64, ok = expr.ConstUint[uint64](e)
