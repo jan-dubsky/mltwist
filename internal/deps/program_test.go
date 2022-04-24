@@ -2,6 +2,7 @@ package deps
 
 import (
 	"fmt"
+	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/internal/parser"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
@@ -11,21 +12,19 @@ import (
 )
 
 func testInputInsJump(
-	address model.Addr,
+	addr model.Addr,
 	bytes model.Addr,
-	jmps ...model.Addr,
+	jumpAddrs ...model.Addr,
 ) parser.Instruction {
-	jmpExprs := make([]expr.Expr, len(jmps))
-	for i, j := range jmps {
-		jmpExprs[i] = model.AddrExpr(j)
+	jumps := make([]expr.Effect, len(jumpAddrs))
+	for i, j := range jumpAddrs {
+		jumps[i] = expr.NewRegStore(model.AddrExpr(j), expr.IPKey, expr.Width32)
 	}
 
 	return parser.Instruction{
-		Address: address,
-		Instruction: model.Instruction{
-			ByteLen: bytes,
-		},
-		JumpTargets: jmpExprs,
+		Address: addr,
+		Bytes:   make([]byte, bytes),
+		Effects: jumps,
 	}
 }
 
@@ -125,8 +124,8 @@ func TestProgram_Move(t *testing.T) {
 		t.Run(fmt.Sprintf("move_%d", i), func(t *testing.T) {
 			blocks := make([]*block, numBlocks)
 			for i := range blocks {
-				ins := testInputInsJump(model.Addr(i), 1)
-				blocks[i] = newBlock(i, []parser.Instruction{ins})
+				ins := basicblock.Instruction{Addr: model.Addr(i)}
+				blocks[i] = newBlock(i, []basicblock.Instruction{ins})
 			}
 
 			r := require.New(t)

@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"mltwist/internal/exprtransform"
 	"mltwist/internal/memory"
 	"mltwist/pkg/model"
 )
@@ -29,7 +28,7 @@ func Parse(
 			}
 
 			instrs = append(instrs, ins)
-			addr += model.Addr(ins.ByteLen)
+			addr += ins.Len()
 		}
 	}
 
@@ -56,8 +55,6 @@ func parseIns(
 		err = fmt.Errorf("invalid instruction model produced: %w", err)
 		return Instruction{}, err
 	}
-
-	ins.Effects = exprtransform.EffectsApply(ins.Effects, exprtransform.ConstFold)
 
 	return newInstruction(ins, addr, b), nil
 }

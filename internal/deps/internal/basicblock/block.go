@@ -2,7 +2,6 @@ package basicblock
 
 import (
 	"fmt"
-	"mltwist/internal/parser"
 	"mltwist/pkg/model"
 	"sort"
 )
@@ -18,25 +17,28 @@ import (
 // basic block just because it't not possible to identify jump target of this
 // dynamic jump during the decompilation process.
 type block struct {
-	seq    []parser.Instruction
+	seq    []Instruction
 	length model.Addr
 }
 
-func newBlock(seq []parser.Instruction) block {
-	return block{seq: seq, length: seqBytes(seq)}
+func newBlock(seq []Instruction) block {
+	return block{
+		seq:    seq,
+		length: seqBytes(seq),
+	}
 }
 
 // seqBytes calculates sum of instruction lengths in a sequence.
-func seqBytes(seq []parser.Instruction) model.Addr {
+func seqBytes(seq []Instruction) model.Addr {
 	var length model.Addr
 	for _, ins := range seq {
-		length += ins.ByteLen
+		length += ins.Len()
 	}
 	return length
 }
 
 // begin returns inclusive start address of b.
-func (b block) begin() model.Addr { return b.seq[0].Address }
+func (b block) begin() model.Addr { return b.seq[0].Addr }
 
 // end returns exclusive end address of b.
 func (b block) end() model.Addr { return b.begin() + b.length }
@@ -46,7 +48,7 @@ func (b block) contains(addr model.Addr) bool {
 	return addr >= b.begin() && addr < b.end()
 }
 
-// Split creates 2 new basic blocks consisting of instructions of b, but
+// split creates 2 new basic blocks consisting of instructions of b, but
 // separated by addr respectively. The instruction starting at addr will be
 // already included in the later block. If addr doesn't belong to the block or
 // is not at an instruction boundary, this method returns an error.
@@ -54,18 +56,18 @@ func (b block) contains(addr model.Addr) bool {
 // Please note that even though adds==b.Begin() is technically correct and will
 // result in empty first block returned, it makes just little sense to perform
 // split at b.Begin() address.
-func (b block) Split(addr model.Addr) (block, block, error) {
+func (b block) split(addr model.Addr) (block, block, error) {
 	if !b.contains(addr) {
 		err := fmt.Errorf("block doesn't contain address 0x%x", addr)
 		return block{}, block{}, err
 	}
 
-	i := sort.Search(len(b.seq), func(i int) bool { return b.seq[i].Address >= addr })
+	i := sort.Search(len(b.seq), func(i int) bool { return b.seq[i].Addr >= addr })
 	if i == len(b.seq) {
 		err := fmt.Errorf("instruction at address 0x%x not found", addr)
 		return block{}, block{}, err
 	}
-	if b.seq[i].Address != addr {
+	if b.seq[i].Addr != addr {
 		err := fmt.Errorf("address 0x%x is not at instruction boundary", addr)
 		return block{}, block{}, err
 	}
@@ -92,7 +94,7 @@ func (bs *blocks) split(addr model.Addr) error {
 		return nil
 	}
 
-	b1, b2, err := (*bs)[idx].Split(addr)
+	b1, b2, err := (*bs)[idx].split(addr)
 	if err != nil {
 		return fmt.Errorf("cannot split block: %w", err)
 	}

@@ -9,10 +9,9 @@ import (
 )
 
 // Parse identifies basic blocks in a sequence of program instructions.
-func Parse(instrs []parser.Instruction) ([][]parser.Instruction, error) {
-	sort.Slice(instrs, func(i, j int) bool {
-		return instrs[i].Address < instrs[j].Address
-	})
+func Parse(instrList []parser.Instruction) ([][]Instruction, error) {
+	instrs := convertInstructions(instrList)
+	sort.Slice(instrs, func(i, j int) bool { return instrs[i].Addr < instrs[j].Addr })
 
 	seqs := pipeline.apply(instrs)
 
@@ -21,7 +20,7 @@ func Parse(instrs []parser.Instruction) ([][]parser.Instruction, error) {
 		return nil, fmt.Errorf("cannot split blocks by jump targets: %w", err)
 	}
 
-	sequences := make([][]parser.Instruction, len(blocks))
+	sequences := make([][]Instruction, len(blocks))
 	for i, b := range blocks {
 		sequences[i] = b.seq
 	}
@@ -29,7 +28,7 @@ func Parse(instrs []parser.Instruction) ([][]parser.Instruction, error) {
 	return sequences, nil
 }
 
-func seqsToBlocks(seqs [][]parser.Instruction) []block {
+func seqsToBlocks(seqs [][]Instruction) []block {
 	blocks := make([]block, len(seqs))
 	for i, s := range seqs {
 		blocks[i] = newBlock(s)
@@ -38,12 +37,12 @@ func seqsToBlocks(seqs [][]parser.Instruction) []block {
 	return blocks
 }
 
-func splitByAddress(seq []parser.Instruction) [][]parser.Instruction {
-	seqs := make([][]parser.Instruction, 0, 1)
+func splitByAddress(seq []Instruction) [][]Instruction {
+	seqs := make([][]Instruction, 0, 1)
 	begin := 0
 
 	for i := range seq[1:] {
-		if seq[i].NextAddr() == seq[i+1].Address {
+		if seq[i].NextAddr() == seq[i+1].Addr {
 			continue
 		}
 
@@ -58,7 +57,7 @@ func splitByAddress(seq []parser.Instruction) [][]parser.Instruction {
 	return seqs
 }
 
-func isJumpInstr(ins parser.Instruction) bool {
+func isJumpInstr(ins Instruction) bool {
 	for _, e := range ins.JumpTargets {
 		// Exclude those jumps which provably always jump to a following
 		// instruction - There doesn't seem to be any reason for such
@@ -77,8 +76,8 @@ func isJumpInstr(ins parser.Instruction) bool {
 	return false
 }
 
-func splitByJumps(seq []parser.Instruction) [][]parser.Instruction {
-	seqs := make([][]parser.Instruction, 0, 1)
+func splitByJumps(seq []Instruction) [][]Instruction {
+	seqs := make([][]Instruction, 0, 1)
 	begin := 0
 
 	for i, ins := range seq {

@@ -1,17 +1,13 @@
 package deps
 
 import (
-	"mltwist/internal/parser"
+	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/pkg/model"
 	"testing"
 )
 
 func testTypeIns(t model.Type) *instruction {
-	return testIns(parser.Instruction{
-		Instruction: model.Instruction{
-			Type: t,
-		},
-	})
+	return testIns(basicblock.Instruction{Type: t})
 }
 
 func TestSpecialDeps(t *testing.T) {

@@ -1,13 +1,13 @@
 package deps
 
 import (
-	"mltwist/internal/parser"
+	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/pkg/expr"
 	"testing"
 )
 
 func testInsJumpTarget(exprs ...expr.Expr) *instruction {
-	return testIns(parser.Instruction{JumpTargets: exprs})
+	return testIns(basicblock.Instruction{JumpTargets: exprs})
 }
 
 func TestControlDeps(t *testing.T) {

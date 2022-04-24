@@ -2,7 +2,7 @@ package deps
 
 import (
 	"fmt"
-	"mltwist/internal/parser"
+	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 	"strconv"
@@ -13,24 +13,22 @@ import (
 )
 
 func TestBlock_New(t *testing.T) {
-	testInputInsLen := func(address model.Addr, bytes model.Addr) parser.Instruction {
-		return parser.Instruction{
-			Address: address,
-			Instruction: model.Instruction{
-				ByteLen: bytes,
-			},
+	testInputInsLen := func(addr model.Addr, bytes model.Addr) basicblock.Instruction {
+		return basicblock.Instruction{
+			Addr:  addr,
+			Bytes: make([]byte, bytes),
 		}
 	}
 
 	tests := []struct {
 		name  string
-		seq   []parser.Instruction
+		seq   []basicblock.Instruction
 		begin model.Addr
 		bytes model.Addr
 	}{
 		{
 			name: "single_add",
-			seq: []parser.Instruction{
+			seq: []basicblock.Instruction{
 				testInputInsLen(56, 2),
 				testInputInsLen(58, 3),
 				testInputInsLen(61, 4),
@@ -40,7 +38,7 @@ func TestBlock_New(t *testing.T) {
 		},
 		{
 			name: "multiple_ins",
-			seq: []parser.Instruction{
+			seq: []basicblock.Instruction{
 				testInputInsLen(128, 4),
 				testInputInsLen(132, 4),
 				testInputInsLen(136, 4),
@@ -80,7 +78,7 @@ func TestBlock_New(t *testing.T) {
 // unique register names to avoid random clashes in dependency analysis.
 var testInputInsCtr int64
 
-func testInputInsReg(out uint64, in ...uint64) parser.Instruction {
+func testInputInsReg(out uint64, in ...uint64) basicblock.Instruction {
 	effects := make([]expr.Effect, 0, len(in)+1)
 	id := atomic.AddInt64(&testInputInsCtr, 1)
 
@@ -99,11 +97,7 @@ func testInputInsReg(out uint64, in ...uint64) parser.Instruction {
 		effects = append(effects, expr.NewRegStore(expr.Zero, key, expr.Width8))
 	}
 
-	return parser.Instruction{
-		Instruction: model.Instruction{
-			Effects: effects,
-		},
-	}
+	return basicblock.Instruction{Effects: effects}
 }
 
 func TestBlock_Bounds(t *testing.T) {
@@ -116,12 +110,12 @@ func TestBlock_Bounds(t *testing.T) {
 	}
 	tests := []struct {
 		name   string
-		ins    []parser.Instruction
+		ins    []basicblock.Instruction
 		bounds map[int]bounds
 	}{
 		{
 			name: "simple_add",
-			ins: []parser.Instruction{
+			ins: []basicblock.Instruction{
 				testInputInsReg(1),
 				testInputInsReg(2),
 				testInputInsReg(3, 1, 2),
@@ -134,7 +128,7 @@ func TestBlock_Bounds(t *testing.T) {
 		},
 		{
 			name: "multiple_adds",
-			ins: []parser.Instruction{
+			ins: []basicblock.Instruction{
 				testInputInsReg(1, 1),
 				testInputInsReg(3),
 				testInputInsReg(2, 2),
@@ -161,7 +155,7 @@ func TestBlock_Bounds(t *testing.T) {
 		},
 		{
 			name: "anti_dependencies",
-			ins: []parser.Instruction{
+			ins: []basicblock.Instruction{
 				testInputInsReg(1),
 				testInputInsReg(2, 7, 2),
 				testInputInsReg(3, 5),

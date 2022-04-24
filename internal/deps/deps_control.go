@@ -1,12 +1,12 @@
 package deps
 
 import (
-	"mltwist/internal/parser"
+	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 )
 
-func controlFlowInstruction(ins parser.Instruction) bool {
+func controlFlowInstruction(ins basicblock.Instruction) bool {
 	for _, t := range ins.JumpTargets {
 		if c, ok := t.(expr.Const); ok {
 			addr, ok := expr.ConstUint[model.Addr](c)

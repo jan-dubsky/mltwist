@@ -7,42 +7,23 @@ import (
 )
 
 type Instruction struct {
-	model.Instruction
+	Type model.Type
 
 	Address model.Addr
 	Bytes   []byte
 
-	JumpTargets []expr.Expr
+	Effects []expr.Effect
+	Details model.PlatformDetails
 }
 
 func newInstruction(ins model.Instruction, addr model.Addr, bytes []byte) Instruction {
 	return Instruction{
-		Instruction: ins,
-		Address:     addr,
-		Bytes:       bytes,
+		Type:    ins.Type,
+		Address: addr,
+		Bytes:   bytes[:ins.ByteLen],
 
-		JumpTargets: jumps(ins.Effects),
+		Effects: exprtransform.EffectsApply(ins.Effects, exprtransform.ConstFold),
+		Details: ins.Details,
 	}
 }
-
-// NextAddr returns address following this instruction.
-func (i Instruction) NextAddr() model.Addr { return i.Address + i.ByteLen }
-
-func jumps(effects []expr.Effect) []expr.Expr {
-	var jumpAddrs []expr.Expr
-	for _, ef := range effects {
-		e, ok := ef.(expr.RegStore)
-		if !ok {
-			continue
-		}
-
-		if e.Key() != expr.IPKey {
-			continue
-		}
-
-		addrs := exprtransform.JumpAddrs(e.Value())
-		jumpAddrs = append(jumpAddrs, addrs...)
-	}
-
-	return jumpAddrs
-}
+func (i Instruction) Len() model.Addr { return model.Addr(len(i.Bytes)) }

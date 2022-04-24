@@ -1,8 +1,8 @@
 package deps
 
 import (
+	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/internal/exprtransform"
-	"mltwist/internal/parser"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 )
@@ -13,7 +13,7 @@ type regSet map[string]struct{}
 
 type instruction struct {
 	DynAddress model.Addr
-	Instr      parser.Instruction
+	Instr      basicblock.Instruction
 
 	inRegs  regSet
 	outRegs regSet
@@ -27,7 +27,7 @@ type instruction struct {
 	blockIdx int
 }
 
-func newInstruction(ins parser.Instruction, index int) *instruction {
+func newInstruction(ins basicblock.Instruction, index int) *instruction {
 	// Those are absolutely thumbsucked numbers of expected dependencies.
 	// There is no scientific neither measured reason for those constant,
 	// but given that Go default for map size is 100, those are definitely
@@ -35,7 +35,7 @@ func newInstruction(ins parser.Instruction, index int) *instruction {
 	const expectedDeps = 2
 
 	return &instruction{
-		DynAddress: ins.Address,
+		DynAddress: ins.Addr,
 		Instr:      ins,
 
 		inRegs:  inputRegs(ins.Effects),

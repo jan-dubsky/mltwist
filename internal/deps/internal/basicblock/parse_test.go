@@ -17,23 +17,35 @@ type detail string
 func (d detail) Name() string   { return string(d) }
 func (d detail) String() string { return string(d) }
 
-func ins(
-	addr model.Addr,
-	desc string,
-	jmps ...model.Addr,
-) parser.Instruction {
-	jmpExprs := make([]expr.Expr, len(jmps))
-	for i, j := range jmps {
-		jmpExprs[i] = model.AddrExpr(j)
+func jumpEffects(jumpAddrs []model.Addr) []expr.Effect {
+	jumps := make([]expr.Effect, len(jumpAddrs))
+	for i, j := range jumpAddrs {
+		jumps[i] = expr.NewRegStore(model.AddrExpr(j), expr.IPKey, expr.Width32)
 	}
+	return jumps
+}
 
+func insInput(addr model.Addr, desc string, jumpAddrs ...model.Addr) parser.Instruction {
 	return parser.Instruction{
 		Address: addr,
-		Instruction: model.Instruction{
-			ByteLen: instrLen,
-			Details: detail(desc),
-		},
-		JumpTargets: jmpExprs,
+		Bytes:   make([]byte, instrLen),
+		Details: detail(desc),
+		Effects: jumpEffects(jumpAddrs),
+	}
+}
+
+func ins(addr model.Addr, desc string, jumpAddrs ...model.Addr) basicblock.Instruction {
+	var jumps []expr.Expr
+	for _, a := range jumpAddrs {
+		jumps = append(jumps, model.AddrExpr(a))
+	}
+
+	return basicblock.Instruction{
+		Addr:        addr,
+		Bytes:       make([]byte, instrLen),
+		Details:     detail(desc),
+		Effects:     jumpEffects(jumpAddrs),
+		JumpTargets: jumps,
 	}
 }
 
@@ -41,15 +53,15 @@ func TestParse_Succ(t *testing.T) {
 	tests := []struct {
 		name     string
 		instrs   []parser.Instruction
-		expected [][]parser.Instruction
+		expected [][]basicblock.Instruction
 	}{{
 		name: "simple_loop",
 		instrs: []parser.Instruction{
-			ins(72, "1"),
-			ins(76, "2"),
-			ins(80, "3", 72),
+			insInput(72, "1"),
+			insInput(76, "2"),
+			insInput(80, "3", 72),
 		},
-		expected: [][]parser.Instruction{{
+		expected: [][]basicblock.Instruction{{
 			ins(72, "1"),
 			ins(76, "2"),
 			ins(80, "3", 72),
@@ -57,13 +69,13 @@ func TestParse_Succ(t *testing.T) {
 	}, {
 		name: "hole_in_between_instructions",
 		instrs: []parser.Instruction{
-			ins(72, "1"),
-			ins(76, "2"),
-			ins(80, "3"),
-			ins(96, "4"),
-			ins(100, "5"),
+			insInput(72, "1"),
+			insInput(76, "2"),
+			insInput(80, "3"),
+			insInput(96, "4"),
+			insInput(100, "5"),
 		},
-		expected: [][]parser.Instruction{{
+		expected: [][]basicblock.Instruction{{
 			ins(72, "1"),
 			ins(76, "2"),
 			ins(80, "3"),
@@ -74,13 +86,13 @@ func TestParse_Succ(t *testing.T) {
 	}, {
 		name: "jump_instruction_splits_block",
 		instrs: []parser.Instruction{
-			ins(72, "1"),
-			ins(76, "2"),
-			ins(80, "3", 72),
-			ins(84, "4"),
-			ins(88, "5"),
+			insInput(72, "1"),
+			insInput(76, "2"),
+			insInput(80, "3", 72),
+			insInput(84, "4"),
+			insInput(88, "5"),
 		},
-		expected: [][]parser.Instruction{{
+		expected: [][]basicblock.Instruction{{
 			ins(72, "1"),
 			ins(76, "2"),
 			ins(80, "3", 72),
@@ -91,14 +103,14 @@ func TestParse_Succ(t *testing.T) {
 	}, {
 		name: "jump_target_splits_block",
 		instrs: []parser.Instruction{
-			ins(50, "1"),
-			ins(54, "2"),
-			ins(58, "3"),
-			ins(62, "4"),
-			ins(66, "5", 58, 70),
-			ins(70, "6"),
+			insInput(50, "1"),
+			insInput(54, "2"),
+			insInput(58, "3"),
+			insInput(62, "4"),
+			insInput(66, "5", 58, 70),
+			insInput(70, "6"),
 		},
-		expected: [][]parser.Instruction{{
+		expected: [][]basicblock.Instruction{{
 			ins(50, "1"),
 			ins(54, "2"),
 		}, {
@@ -111,13 +123,13 @@ func TestParse_Succ(t *testing.T) {
 	}, {
 		name: "split_by_jump_to_jump",
 		instrs: []parser.Instruction{
-			ins(30, "1"),
-			ins(34, "2"),
-			ins(38, "3", 30, 42),
-			ins(42, "4", 38, 46),
-			ins(46, "5"),
+			insInput(30, "1"),
+			insInput(34, "2"),
+			insInput(38, "3", 30, 42),
+			insInput(42, "4", 38, 46),
+			insInput(46, "5"),
 		},
-		expected: [][]parser.Instruction{{
+		expected: [][]basicblock.Instruction{{
 			ins(30, "1"),
 			ins(34, "2"),
 		}, {
@@ -130,17 +142,17 @@ func TestParse_Succ(t *testing.T) {
 	}, {
 		name: "no_double_splits",
 		instrs: []parser.Instruction{
-			ins(50, "1"),
-			ins(54, "2"),
-			ins(58, "3", 50, 62),
-			ins(62, "4"),
-			ins(66, "5"),
-			ins(70, "6", 50, 62),
-			ins(78, "7"),
-			ins(82, "8"),
-			ins(86, "9", 78),
+			insInput(50, "1"),
+			insInput(54, "2"),
+			insInput(58, "3", 50, 62),
+			insInput(62, "4"),
+			insInput(66, "5"),
+			insInput(70, "6", 50, 62),
+			insInput(78, "7"),
+			insInput(82, "8"),
+			insInput(86, "9", 78),
 		},
-		expected: [][]parser.Instruction{{
+		expected: [][]basicblock.Instruction{{
 			ins(50, "1"),
 			ins(54, "2"),
 			ins(58, "3", 50, 62),
@@ -178,26 +190,26 @@ func TestParse_Fail(t *testing.T) {
 	}{{
 		name: "jump_in_between_basic_blocks",
 		instrs: []parser.Instruction{
-			ins(50, "1"),
-			ins(54, "2"),
-			ins(58, "3", 72),
-			ins(72, "4"),
-			ins(76, "5"),
-			ins(80, "6", 64),
+			insInput(50, "1"),
+			insInput(54, "2"),
+			insInput(58, "3", 72),
+			insInput(72, "4"),
+			insInput(76, "5"),
+			insInput(80, "6", 64),
 		},
 	}, {
 		name: "jump_behind_all_blocks",
 		instrs: []parser.Instruction{
-			ins(72, "4"),
-			ins(76, "5"),
-			ins(80, "6", 92),
+			insInput(72, "4"),
+			insInput(76, "5"),
+			insInput(80, "6", 92),
 		},
 	}, {
 		name: "jump_into_instruction",
 		instrs: []parser.Instruction{
-			ins(72, "4"),
-			ins(76, "5"),
-			ins(80, "6", 78),
+			insInput(72, "4"),
+			insInput(76, "5"),
+			insInput(80, "6", 78),
 		},
 	}}
 
