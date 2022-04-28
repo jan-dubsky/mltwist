@@ -28,12 +28,6 @@ type instruction struct {
 }
 
 func newInstruction(ins basicblock.Instruction, index int) *instruction {
-	// Those are absolutely thumbsucked numbers of expected dependencies.
-	// There is no scientific neither measured reason for those constant,
-	// but given that Go default for map size is 100, those are definitely
-	// more optimal sizes for dependency maps.
-	const expectedDeps = 2
-
 	return &instruction{
 		DynAddress: ins.Addr,
 		Instr:      ins,

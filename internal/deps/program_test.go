@@ -67,7 +67,7 @@ func TestProgram_New(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			p, err := NewProgram(tt.seq)
+			p, err := NewProgram(0, tt.seq)
 			r.NoError(err)
 
 			r.Equal(len(tt.blocks), p.Len())

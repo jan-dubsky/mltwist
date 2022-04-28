@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/pkg/model"
+	"sort"
 )
 
 type block struct {
-	begin model.Addr
-	end   model.Addr
-	seq   []*instruction
+	begin     model.Addr
+	end       model.Addr
+	seq       []*instruction
+	seqByAddr []*instruction
 
 	// idx is zero-based index of the block in the program.
 	idx int
@@ -18,25 +20,30 @@ type block struct {
 // newBlock parses a non-empty sequence of instructions sorted by their
 // in-memory addresses into a block and analyzes dependencies in between
 // instructions.
-func newBlock(idx int, seq []basicblock.Instruction) *block {
+func newBlock(idx int, bbSeq []basicblock.Instruction) *block {
 	var length model.Addr
-	instrs := make([]*instruction, len(seq))
-	for i, ins := range seq {
+	seq := make([]*instruction, len(bbSeq))
+	for i, ins := range bbSeq {
 		length += ins.Len()
-		instrs[i] = newInstruction(ins, i)
+		seq[i] = newInstruction(ins, i)
 	}
 
-	processTrueDeps(instrs)
-	processAntiDeps(instrs)
-	processOutputDeps(instrs)
-	processControlDeps(instrs)
-	processSpecialDeps(instrs)
+	seqByAddr := make([]*instruction, len(seq))
+	copy(seqByAddr, seq)
+
+	processTrueDeps(seq)
+	processAntiDeps(seq)
+	processOutputDeps(seq)
+	processControlDeps(seq)
+	processSpecialDeps(seq)
 
 	return &block{
-		begin: seq[0].Addr,
-		end:   seq[0].Addr + length,
-		seq:   instrs,
-		idx:   idx,
+		begin:     bbSeq[0].Addr,
+		end:       bbSeq[0].Addr + length,
+		seq:       seq,
+		seqByAddr: seqByAddr,
+
+		idx: idx,
 	}
 }
 
@@ -135,3 +142,19 @@ func (b *block) upperBound(i int) int {
 }
 
 func (b *block) setIndex(i int) { b.idx = i }
+
+func (b *block) Addr(a model.Addr) (Instruction, bool) {
+	i := sort.Search(len(b.seqByAddr), func(i int) bool {
+		return b.seqByAddr[i].DynAddress >= a
+	})
+	if i == len(b.seqByAddr) {
+		return Instruction{}, false
+	}
+
+	ins := b.seqByAddr[i]
+	if ins.DynAddress != a {
+		return Instruction{}, false
+	}
+
+	return wrapInstruction(ins), true
+}

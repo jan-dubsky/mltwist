@@ -172,7 +172,7 @@ func TestParse_Succ(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			seqs, err := basicblock.Parse(tt.instrs)
+			seqs, err := basicblock.Parse(tt.instrs[0].Address, tt.instrs)
 			r.NoError(err)
 			r.Equal(len(tt.expected), len(seqs), "Unexpected output length.")
 
@@ -218,7 +218,7 @@ func TestParse_Fail(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			seqs, err := basicblock.Parse(tt.instrs)
+			seqs, err := basicblock.Parse(tt.instrs[0].Address, tt.instrs)
 			r.Error(err)
 			r.Nil(seqs)
 		})

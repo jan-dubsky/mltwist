@@ -1,33 +1,63 @@
 package control
 
 import (
+	"errors"
+	"fmt"
 	"mltwist/internal/console/internal/cursor"
 	"mltwist/internal/console/internal/lines"
 	"mltwist/internal/console/internal/view"
-	"errors"
-	"fmt"
+	"mltwist/internal/deps"
 	"os"
 	"strings"
 )
 
 type Control struct {
+	p *deps.Program
 	l *lines.Lines
 	c *cursor.Cursor
 	v *view.View
 
-	reader   *lineReader
-	commands map[string]*command
+	reader    *lineReader
+	modeStack []mode
 }
 
-func New(l *lines.Lines, c *cursor.Cursor, v *view.View) *Control {
+func New(p *deps.Program, l *lines.Lines, c *cursor.Cursor, v *view.View) *Control {
 	return &Control{
+		p: p,
 		l: l,
 		c: c,
 		v: v,
 
-		reader:   newLineReader(os.Stdin),
-		commands: commandMap(),
+		reader:    newLineReader(os.Stdin),
+		modeStack: []mode{newMode("app", listDisassemble())},
 	}
+}
+
+func (c *Control) cmd(s string) *command {
+	return c.modeStack[len(c.modeStack)-1].cmds[s]
+}
+
+func (c *Control) addMode(name string, cmds []*command) {
+	c.modeStack = append(c.modeStack, newMode(name, cmds))
+}
+func (c *Control) quitMode() error {
+	m := c.modeStack[len(c.modeStack)-1]
+	c.modeStack = c.modeStack[:len(c.modeStack)-1]
+
+	if len(c.modeStack) == 0 {
+		fmt.Printf("leaving app\n")
+		if _, err := c.reader.readLine(); err != nil {
+			return fmt.Errorf("readline error: %w", err)
+		}
+		return ErrQuit
+	}
+
+	fmt.Printf("leaving mode %s\n", m.name)
+	if _, err := c.reader.readLine(); err != nil {
+		return fmt.Errorf("readline error: %w", err)
+	}
+
+	return nil
 }
 
 func dropEmptyStrs(strs []string) []string {
@@ -45,8 +75,8 @@ func (c *Control) parseCommand(str string) (*command, []interface{}, error) {
 	cmdStr := parts[0]
 	parts = parts[1:]
 
-	cmd, ok := c.commands[cmdStr]
-	if !ok {
+	cmd := c.cmd(cmdStr)
+	if cmd == nil {
 		return nil, nil, fmt.Errorf("command %q not recognized", cmdStr)
 	}
 
@@ -102,7 +132,7 @@ func (c *Control) Command() error {
 	err = cmd.action(c, args...)
 	if err != nil {
 		if errors.Is(err, ErrQuit) {
-			return err
+			return c.quitMode()
 		}
 
 		fmt.Printf("error: %s\n", err.Error())

@@ -1,68 +1,26 @@
 package control
 
 import (
-	"mltwist/internal/console/internal/lines"
 	"fmt"
 	"math"
+	"mltwist/internal/console/internal/lines"
 	"regexp"
 )
 
 // ErrQuit is returned by command in case UI termination is required.
 var ErrQuit = fmt.Errorf("app exit required")
 
-// commandsProxy is a helped variable containing the same array array (the very
-// same instance) as commands variable.
-//
-// An unpleasant consequence of Go in-package initialization order is that there
-// is no way how to write help command referring commands variable. The problem
-// is that help command closure has to refer commands array and command array
-// has to contains command for help message (including the help closure). Go is
-// then not able to find any order in which those 2 values should be
-// initialized.
-//
-// A natural solution would be to write a function (getter) which will return
-// value of commands array. This way, there will be no closure and the plain
-// (getter) function itself doesn't require any initialization, so there exists
-// an initialization order without loops. Unfortunately, Go doesn't care about
-// real dependencies. Instead it analyzes dependencies only based on lexical
-// references. So if the help closure refers the getter function, the getter
-// function refers the commands array and the help closure refers the getter, Go
-// still understands this as a loop and doesn't compile this code.
-//
-// The only solution to this case seems to be to create another symbol which
-// won't depend directly on commands array, but which will have the same
-// content. To achieve this, we laverage go init function which is granted to
-// run in the package initialization phase. Consequently we are certain that
-// value of commandsProxy will be set before it will be used by the help
-// closure. In other words, existence of this helper variable is just a fancy
-// way how to bypass Go technical limitations, but it doesn't bring any
-// performance, neither functional impact for the code.
-var commandsProxy []*command
+var standardCmds = []*command{{
+	keys: []string{"quit", "q"},
+	help: "Quit the app.",
+	action: func(c *Control, args ...interface{}) error {
+		fmt.Printf("\n")
+		return ErrQuit
+	}},
+}
 
-func init() { commandsProxy = commands() }
-
-func commands() []*command {
+func listDisassemble() []*command {
 	return []*command{{
-		keys: []string{"help", "h"},
-		help: "Print help of all commands",
-		action: func(c *Control, _ ...interface{}) error {
-			for _, cmd := range commandsProxy {
-				fmt.Printf("%s\t(args: %d, additional_args: %t)\n",
-					cmd.keysString(),
-					len(cmd.args),
-					cmd.optionalArgs != nil,
-				)
-				fmt.Print(format(cmd.help, 1, width))
-				fmt.Printf("\n")
-			}
-
-			if err := c.errMsgf("\n"); err != nil {
-				return err
-			}
-
-			return nil
-		},
-	}, {
 		keys: []string{"down", "d"},
 		help: "Move line cursor <N> lines down.",
 		args: []argParseFunc{
@@ -192,6 +150,32 @@ func commands() []*command {
 			return nil
 		},
 	}, {
+		keys: []string{"entrypoint", "entry"},
+		help: "Sets cursor to app entrypoint.",
+		action: func(c *Control, args ...interface{}) error {
+			a := c.p.Entrypoint()
+			block, ok := c.p.Addr(a)
+			if !ok {
+				return fmt.Errorf("cannot find block at address 0x%x", a)
+			}
+
+			ins, ok := block.Addr(a)
+			if !ok {
+				return fmt.Errorf("cannot find instruction at address 0x%x", a)
+			}
+
+			line := c.l.Line(block, ins.Idx())
+			c.c.Set(line)
+			return nil
+		},
+	}, {
+		keys: []string{"emulate", "emul", "e"},
+		help: "Start emulating the machine code at current line.",
+		action: func(c *Control, args ...interface{}) error {
+			c.addMode("emulate", listEmulate())
+			return nil
+		},
+	}, {
 		keys: []string{"alllines"},
 		help: "Prints all lines of the code into console. " +
 			"Ignores current cursor position.",
@@ -206,29 +190,9 @@ func commands() []*command {
 
 			return nil
 		},
-	}, {
-		keys: []string{"quit", "q"},
-		help: "Quit the app.",
-		action: func(c *Control, args ...interface{}) error {
-			fmt.Printf("\n")
-			return ErrQuit
-		},
 	}}
 }
 
-func commandMap() map[string]*command {
-	m := make(map[string]*command)
-	for i, command := range commands() {
-		for _, k := range command.keys {
-			if _, ok := m[k]; ok {
-				panic(fmt.Sprintf(
-					"duplicate command key %q at position %d", k, i,
-				))
-			}
-
-			m[k] = command
-		}
-	}
-
-	return m
+func listEmulate() []*command {
+	return []*command{{}}
 }

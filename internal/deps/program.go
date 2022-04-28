@@ -4,14 +4,18 @@ import (
 	"fmt"
 	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/internal/parser"
+	"mltwist/pkg/model"
+	"sort"
 )
 
 type Program struct {
-	blocks []*block
+	entrypoint   model.Addr
+	blocks       []*block
+	blocksByAddr []*block
 }
 
-func NewProgram(seq []parser.Instruction) (*Program, error) {
-	seqs, err := basicblock.Parse(seq)
+func NewProgram(entrypoint model.Addr, seq []parser.Instruction) (*Program, error) {
+	seqs, err := basicblock.Parse(entrypoint, seq)
 	if err != nil {
 		return nil, fmt.Errorf("cannot find basic blocks: %w", err)
 	}
@@ -21,10 +25,17 @@ func NewProgram(seq []parser.Instruction) (*Program, error) {
 		blocks[i] = newBlock(i, seq)
 	}
 
+	blocksByAddr := make([]*block, len(blocks))
+	copy(blocksByAddr, blocks)
+
 	return &Program{
-		blocks: blocks,
+		entrypoint:   entrypoint,
+		blocks:       blocks,
+		blocksByAddr: blocksByAddr,
 	}, nil
 }
+
+func (p *Program) Entrypoint() model.Addr { return p.entrypoint }
 
 // Len returns number of basic blocks in the program.
 func (p *Program) Len() int { return len(p.blocks) }
@@ -67,4 +78,20 @@ func (p *Program) Move(from int, to int) error {
 
 	move(p.blocks, from, to)
 	return nil
+}
+
+func (p *Program) Addr(a model.Addr) (Block, bool) {
+	i := sort.Search(len(p.blocksByAddr), func(i int) bool {
+		return p.blocksByAddr[i].end > a
+	})
+	if i == len(p.blocksByAddr) {
+		return Block{}, false
+	}
+
+	b := p.blocksByAddr[i]
+	if b.begin > a {
+		return Block{}, false
+	}
+
+	return wrapBlock(b), true
 }

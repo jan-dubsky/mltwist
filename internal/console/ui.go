@@ -1,13 +1,13 @@
 package console
 
 import (
+	"errors"
+	"fmt"
 	"mltwist/internal/console/internal/control"
 	"mltwist/internal/console/internal/cursor"
 	"mltwist/internal/console/internal/lines"
 	"mltwist/internal/console/internal/view"
 	"mltwist/internal/deps"
-	"errors"
-	"fmt"
 )
 
 type UI struct {
@@ -22,7 +22,7 @@ func NewUI(p *deps.Program) *UI {
 	view := view.New(lines, cursor)
 	return &UI{
 		view:    view,
-		control: control.New(lines, cursor, view),
+		control: control.New(p, lines, cursor, view),
 	}
 }
 

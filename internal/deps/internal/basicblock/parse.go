@@ -9,19 +9,24 @@ import (
 )
 
 // Parse identifies basic blocks in a sequence of program instructions.
-func Parse(instrList []parser.Instruction) ([][]Instruction, error) {
+func Parse(entrypoint model.Addr, instrList []parser.Instruction) ([][]Instruction, error) {
 	instrs := convertInstructions(instrList)
 	sort.Slice(instrs, func(i, j int) bool { return instrs[i].Addr < instrs[j].Addr })
 
 	seqs := pipeline.apply(instrs)
 
-	blocks, err := splitByJumpTargets(seqsToBlocks(seqs))
+	bs, err := splitByJumpTargets(seqsToBlocks(seqs))
 	if err != nil {
 		return nil, fmt.Errorf("cannot split blocks by jump targets: %w", err)
 	}
 
-	sequences := make([][]Instruction, len(blocks))
-	for i, b := range blocks {
+	err = bs.split(entrypoint)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create basic block at entry point: %w", err)
+	}
+
+	sequences := make([][]Instruction, len(bs))
+	for i, b := range bs {
 		sequences[i] = b.seq
 	}
 
@@ -94,7 +99,7 @@ func splitByJumps(seq []Instruction) [][]Instruction {
 	return seqs
 }
 
-func splitByJumpTargets(bs []block) ([]block, error) {
+func splitByJumpTargets(bs []block) (blocks, error) {
 	blocks := make(blocks, len(bs))
 	for i, b := range bs {
 		blocks[i] = b
