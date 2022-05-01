@@ -11,6 +11,8 @@ type RegLoad struct {
 	w   Width
 }
 
+// NewRegLoad creates a new register load expression returning expression of
+// width w from a register identified by key.
 func NewRegLoad(key Key, w Width) RegLoad {
 	key.assertValid()
 
@@ -32,12 +34,17 @@ func (l RegLoad) Width() Width { return l.w }
 func (RegLoad) internalExpr()  {}
 
 // RegStore represents value store to a generic key-value registry storage.
+//
+// Register store always overrides the whole value previously stored in a
+// register. This fact is not effected by width of an expression.
 type RegStore struct {
 	value Expr
 	key   Key
 	w     Width
 }
 
+// NewRegStore creates a new register store expression storing value of value
+// with width w to a register identified by key.
 func NewRegStore(value Expr, key Key, w Width) RegStore {
 	key.assertValid()
 
