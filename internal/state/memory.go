@@ -1,6 +1,7 @@
 package state
 
 import (
+	"fmt"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 
@@ -30,6 +31,15 @@ func (m MemMap) Store(key expr.Key, addr model.Addr, ex expr.Expr, w expr.Width)
 	}
 
 	mem.Store(addr, ex, w)
+}
+
+func (m MemMap) Missing(key expr.Key, addr model.Addr, w expr.Width) []Interval {
+	mem, ok := m[key]
+	if !ok {
+		return []Interval{newInterval(addr, addr+model.Addr(w))}
+	}
+
+	return mem.Missing(addr, w)
 }
 
 // Memory represents a single linear address space where expressions of
@@ -111,19 +121,19 @@ func wholeInterval(begin, end model.Addr, ints []interval.KV[model.Addr, cutExpr
 func (m *Memory) Load(addr model.Addr, w expr.Width) (expr.Expr, bool) {
 	end := addr + model.Addr(w)
 
-	intervals := m.t.Overlaps(addr, end)
-	if !wholeInterval(addr, end, intervals) {
+	ints := m.t.Overlaps(addr, end)
+	if !wholeInterval(addr, end, ints) {
 		return nil, false
 	}
 
 	var finalEx expr.Expr
-	if low := intervals[0].Low; low == addr {
-		finalEx = intervals[0].Val.expr()
+	if low := ints[0].Low; low == addr {
+		finalEx = ints[0].Val.expr()
 	} else {
-		finalEx = intervals[0].Val.cutBegin(expr.Width(addr - low)).expr()
+		finalEx = ints[0].Val.cutBegin(expr.Width(addr - low)).expr()
 	}
 
-	for _, o := range intervals[1:] {
+	for _, o := range ints[1:] {
 		var ex expr.Expr
 		if o.High <= end {
 			ex = o.Val.expr()
@@ -171,4 +181,54 @@ func (m *Memory) Store(addr model.Addr, ex expr.Expr, w expr.Width) {
 		end:   w,
 	}
 	m.t.Add(addr, addr+model.Addr(w), c)
+}
+
+type Interval struct {
+	begin model.Addr
+	end   model.Addr
+}
+
+func newInterval(begin, end model.Addr) Interval {
+	if w := end - begin; w != model.Addr(expr.Width(w)) {
+		panic(fmt.Sprintf("interval is too wide: %d", w))
+	}
+
+	return Interval{
+		begin: begin,
+		end:   end,
+	}
+}
+
+func (i Interval) Begin() model.Addr { return i.begin }
+func (i Interval) End() model.Addr   { return i.end }
+func (i Interval) Width() expr.Width { return expr.Width(i.end - i.begin) }
+
+// Missing return list of address intervals which are missing in memory to be
+// able to perform full load of width w from address addr.
+func (m *Memory) Missing(addr model.Addr, w expr.Width) []Interval {
+	end := addr + model.Addr(w)
+
+	ints := m.t.Overlaps(addr, end)
+	if len(ints) == 0 {
+		return []Interval{newInterval(addr, end)}
+	}
+
+	var intervals []Interval
+	if low := ints[0].Low; addr < low {
+		intervals = append(intervals, newInterval(addr, low))
+	}
+
+	lastEnd := ints[0].High
+	for _, o := range ints[1:] {
+		if o.Low != lastEnd {
+			intervals = append(intervals, newInterval(lastEnd, o.Low))
+		}
+		lastEnd = o.High
+	}
+
+	if lastEnd < end {
+		intervals = append(intervals, newInterval(lastEnd, end))
+	}
+
+	return intervals
 }

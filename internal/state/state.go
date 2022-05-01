@@ -43,39 +43,3 @@ func (s *State) Apply(ef expr.Effect) {
 		panic(fmt.Sprintf("unknown expr.Effect type: %T", ef))
 	}
 }
-
-// Substitute replaces all register loads and memory loads in ex and all its
-// subexpressions by values in Regs and Mems respectively. Constant fonding is
-// applied to the expression returned.
-//
-// If value for a register or memory loaded is in the state, those loads are
-// left unchanged. If memory address to load is not a constant expression (or
-// cannot be made constant by constant fonding), the memory load will be left
-// unchanged as well.
-func (s *State) Substitute(ex expr.Expr) expr.Expr {
-	ex = exprtransform.ReplaceAll(ex, func(curr expr.RegLoad) (expr.Expr, bool) {
-		e, ok := s.Regs[curr.Key()]
-		if !ok {
-			return curr, false
-		}
-
-		return exprtransform.SetWidth(e, curr.Width()), true
-	})
-
-	ex = exprtransform.ReplaceAll(ex, func(curr expr.MemLoad) (expr.Expr, bool) {
-		c, ok := exprtransform.ConstFold(curr.Addr()).(expr.Const)
-		if !ok {
-			return curr, false
-		}
-
-		addr, _ := expr.ConstUint[model.Addr](c)
-		ex, ok := s.Mems.Load(curr.Key(), addr, curr.Width())
-		if !ok {
-			return curr, false
-		}
-
-		return ex, true
-	})
-
-	return exprtransform.ConstFold(ex)
-}
