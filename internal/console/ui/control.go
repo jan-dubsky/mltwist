@@ -1,45 +1,47 @@
-package control
+package ui
 
 import (
 	"errors"
 	"fmt"
-	"mltwist/internal/console/internal/cursor"
-	"mltwist/internal/console/internal/lines"
 	"mltwist/internal/console/internal/view"
-	"mltwist/internal/deps"
 	"os"
 	"strings"
 )
 
 type Control struct {
-	p *deps.Program
-	l *lines.Lines
-	c *cursor.Cursor
-	v *view.View
-
 	reader    *lineReader
-	modeStack []mode
+	modeStack []namedMode
 }
 
-func New(p *deps.Program, l *lines.Lines, c *cursor.Cursor, v *view.View) *Control {
-	return &Control{
-		p: p,
-		l: l,
-		c: c,
-		v: v,
-
-		reader:    newLineReader(os.Stdin),
-		modeStack: []mode{newMode("app", listDisassemble())},
+func New(initialMode Mode) (*Control, error) {
+	c := &Control{
+		reader: newLineReader(os.Stdin),
 	}
+
+	if err := c.AddMode("app", initialMode); err != nil {
+		return nil, fmt.Errorf("invalid initial mode: %w", err)
+	}
+
+	return c, nil
 }
 
-func (c *Control) cmd(s string) *command {
-	return c.modeStack[len(c.modeStack)-1].cmds[s]
+func (c *Control) mode() namedMode { return c.modeStack[len(c.modeStack)-1] }
+
+func (c *Control) cmd(s string) (Command, bool) {
+	cmd, ok := c.mode().cmdMap[s]
+	return cmd, ok
 }
 
-func (c *Control) addMode(name string, cmds []*command) {
-	c.modeStack = append(c.modeStack, newMode(name, cmds))
+func (c *Control) AddMode(name string, mode Mode) error {
+	m, err := newMode(name, mode)
+	if err != nil {
+		return fmt.Errorf("cannot process mode %q: %w", name, err)
+	}
+
+	c.modeStack = append(c.modeStack, m)
+	return nil
 }
+
 func (c *Control) quitMode() error {
 	m := c.modeStack[len(c.modeStack)-1]
 	c.modeStack = c.modeStack[:len(c.modeStack)-1]
@@ -70,48 +72,47 @@ func dropEmptyStrs(strs []string) []string {
 	return filtered
 }
 
-func (c *Control) parseCommand(str string) (*command, []interface{}, error) {
+func (c *Control) parseCommand(str string) (Command, []interface{}, error) {
 	parts := dropEmptyStrs(strings.Split(str, " "))
 	cmdStr := parts[0]
 	parts = parts[1:]
 
-	cmd := c.cmd(cmdStr)
-	if cmd == nil {
-		return nil, nil, fmt.Errorf("command %q not recognized", cmdStr)
+	cmd, ok := c.cmd(cmdStr)
+	if !ok {
+		return Command{}, nil, fmt.Errorf("command %q not recognized", cmdStr)
 	}
 
-	if l := len(cmd.args); len(parts) < l {
+	if l := len(cmd.Args); len(parts) < l {
 		err := fmt.Errorf("too few args: command %q requires %d args", cmdStr, l)
-		return nil, nil, err
+		return Command{}, nil, err
 	}
 
 	args := make([]interface{}, 0, len(parts))
-	for i, parseF := range cmd.args {
+	for i, parseF := range cmd.Args {
 		val, err := parseF(parts[i])
 		if err != nil {
-			return nil, nil, fmt.Errorf("cannot parse argument %d: %w", i, err)
+			err = fmt.Errorf("cannot parse argument %d: %w", i, err)
+			return Command{}, nil, err
 		}
 
 		args = append(args, val)
 	}
 
-	parts = parts[len(cmd.args):]
+	parts = parts[len(cmd.Args):]
 	if len(parts) == 0 {
 		return cmd, args, nil
 	}
 
-	vals, err := cmd.optionalArgs(parts)
+	vals, err := cmd.OptionalArgs(parts)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot parse optional arguments: %w", err)
+		return Command{}, nil, fmt.Errorf("cannot parse optional arguments: %w", err)
 	}
 	args = append(args, vals...)
 
 	return cmd, args, nil
 }
 
-func (c *Control) Command() error {
-	fmt.Printf("Enter command: ")
-
+func (c *Control) processCommand() error {
 	cmdStr, err := c.reader.readLine()
 	if err != nil {
 		return err
@@ -129,7 +130,7 @@ func (c *Control) Command() error {
 		return nil
 	}
 
-	err = cmd.action(c, args...)
+	err = cmd.Action(c, args...)
 	if err != nil {
 		if errors.Is(err, ErrQuit) {
 			return c.quitMode()
@@ -145,7 +146,26 @@ func (c *Control) Command() error {
 	return nil
 }
 
-func (c *Control) errMsgf(pattern string, args ...interface{}) error {
+func (c *Control) Run() error {
+	for {
+		e := view.NewView(c.mode().mode.Element(), commandPrompt{})
+		err := view.Print(e)
+		if err != nil {
+			return fmt.Errorf("cannot print UI elements: %w", err)
+		}
+
+		err = c.processCommand()
+		if err != nil {
+			if errors.Is(err, ErrQuit) {
+				return nil
+			}
+
+			return fmt.Errorf("cannot process command: %w", err)
+		}
+	}
+}
+
+func (c *Control) ErrMsgf(pattern string, args ...interface{}) error {
 	fmt.Printf(pattern, args...)
 	fmt.Printf("Press ENTER to continue\n")
 	if _, err := c.reader.readLine(); err != nil {

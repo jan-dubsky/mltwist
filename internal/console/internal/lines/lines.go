@@ -1,8 +1,8 @@
 package lines
 
 import (
-	"mltwist/internal/deps"
 	"fmt"
+	"mltwist/internal/deps"
 )
 
 type Lines struct {
@@ -13,7 +13,7 @@ type Lines struct {
 	marks       map[int]struct{}
 }
 
-func NewLines(p *deps.Program) *Lines {
+func New(p *deps.Program) *Lines {
 	// Each block will have a header and will be delimited by a blank line.
 	// Each instruction will be a single line. In the end, there will be a
 	// single empty line.

@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"mltwist/internal/console"
+	"mltwist/internal/console/disassemble"
+	"mltwist/internal/console/ui"
 	"mltwist/internal/deps"
 	"mltwist/internal/executable"
 	"mltwist/internal/parser"
@@ -30,12 +31,16 @@ func run() error {
 		return fmt.Errorf("instruction parsing failed: %w", err)
 	}
 
-	model, err := deps.NewProgram(ins.Entrypoint, ins.Instructions)
+	program, err := deps.NewProgram(ins.Entrypoint, ins.Instructions)
 	if err != nil {
 		return fmt.Errorf("cannot parse model: %w", err)
 	}
 
-	ui := console.NewUI(model)
+	ui, err := ui.New(disassemble.New(program))
+	if err != nil {
+		return fmt.Errorf("cannot create UI: %w", err)
+	}
+
 	return ui.Run()
 }
 
