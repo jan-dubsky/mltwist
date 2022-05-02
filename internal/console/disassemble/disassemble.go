@@ -11,10 +11,10 @@ import (
 var _ ui.Mode = &disassemble{}
 
 type disassemble struct {
-	p *deps.Program
-	l *lines.Lines
-	c *cursor.Cursor
-	v *view.LinesView
+	prog   *deps.Program
+	lines  *lines.Lines
+	cursor *cursor.Cursor
+	view   *view.LinesView
 }
 
 func New(p *deps.Program) *disassemble {
@@ -22,12 +22,12 @@ func New(p *deps.Program) *disassemble {
 	cursor := cursor.New(lines)
 
 	return &disassemble{
-		p: p,
-		l: lines,
-		c: cursor,
-		v: view.NewLinesView(lines, cursor),
+		prog:   p,
+		lines:  lines,
+		cursor: cursor,
+		view:   view.NewLinesView(lines, cursor),
 	}
 }
 
 func (d *disassemble) Commands() []ui.Command { return commands(d) }
-func (d *disassemble) Element() view.Element  { return d.v }
+func (d *disassemble) Element() view.Element  { return d.view }

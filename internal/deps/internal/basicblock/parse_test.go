@@ -44,7 +44,7 @@ func ins(addr model.Addr, desc string, jumpAddrs ...model.Addr) basicblock.Instr
 		Addr:        addr,
 		Bytes:       make([]byte, instrLen),
 		Details:     detail(desc),
-		Effects:     jumpEffects(jumpAddrs),
+		Effs:        jumpEffects(jumpAddrs),
 		JumpTargets: jumps,
 	}
 }

@@ -29,7 +29,11 @@ func New(prog *deps.Program, ip model.Addr, stateProv StateProvider) *Emulator {
 
 func (e *Emulator) IP() model.Addr { return e.ip }
 
-func (e *Emulator) Step(efs []expr.Effect) Evaluation {
+func (e *Emulator) State() *state.State { return e.state }
+
+func (e *Emulator) Step(ins Instruction) Evaluation {
+	efs := ins.Effects()
+
 	eval := Evaluation{
 		InputRegs:  make(RegSet, 16),
 		OutputRegs: make(RegSet, len(efs)),
@@ -39,11 +43,17 @@ func (e *Emulator) Step(efs []expr.Effect) Evaluation {
 		return e.eval(ex, &eval)
 	})
 
+	nextIP := e.ip + ins.Len()
 	for _, ef := range efs {
+		if rStore, ok := ef.(expr.RegStore); ok && rStore.Key() == expr.IPKey {
+			val := rStore.Value().(expr.Const)
+			nextIP, _ = expr.ConstUint[model.Addr](val)
+		}
 		eval.recordOutput(ef)
 		e.state.Apply(ef)
 	}
 
+	e.ip = nextIP
 	return eval
 }
 
@@ -56,12 +66,14 @@ func (e *Emulator) eval(ex expr.Expr, eval *Evaluation) expr.Const {
 	return exprtransform.ConstFold(ex).(expr.Const)
 }
 
-func (e *Emulator) regValue(key expr.Key) expr.Const {
+func (e *Emulator) regValue(key expr.Key, w expr.Width) expr.Const {
 	if val, ok := e.state.Regs[key]; ok {
 		return val.(expr.Const)
 	}
 
-	val := e.stateProv.Register(key)
+	val := e.stateProv.Register(key, w)
+	val = exprtransform.SetWidthConst(val, w)
+
 	e.state.Regs[key] = val
 	return val
 }
@@ -69,7 +81,7 @@ func (e *Emulator) regValue(key expr.Key) expr.Const {
 func (e *Emulator) evalRegsFully(ex expr.Expr, eval *Evaluation) expr.Expr {
 	ex = exprtransform.ReplaceAll(ex, func(curr expr.RegLoad) (expr.Expr, bool) {
 		key := curr.Key()
-		val := e.regValue(key)
+		val := e.regValue(key, curr.Width())
 
 		eval.inputReg(key, val)
 		return val, true
@@ -90,6 +102,7 @@ func (e *Emulator) memValue(key expr.Key, addr model.Addr, w expr.Width) expr.Co
 		addr, w := intv.Begin(), intv.Width()
 		val := e.stateProv.Memory(key, intv.Begin(), w)
 		val = exprtransform.SetWidthConst(val, w)
+
 		e.state.Mems.Store(key, addr, val, w)
 	}
 

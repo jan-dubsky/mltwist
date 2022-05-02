@@ -3,6 +3,7 @@ package disassemble
 import (
 	"fmt"
 	"math"
+	"mltwist/internal/console/emulate"
 	"mltwist/internal/console/internal/lines"
 	"mltwist/internal/console/ui"
 	"mltwist/internal/console/ui/cmdtools"
@@ -17,7 +18,7 @@ func commands(d *disassemble) []ui.Command {
 			cmdtools.ParseNum(0, math.MaxInt),
 		},
 		Action: func(c *ui.Control, args ...interface{}) error {
-			return d.c.Set(d.c.Value() + args[0].(int))
+			return d.cursor.Set(d.cursor.Value() + args[0].(int))
 		},
 	}, {
 		Keys: []string{"up", "u"},
@@ -26,7 +27,7 @@ func commands(d *disassemble) []ui.Command {
 			cmdtools.ParseNum(0, math.MaxInt),
 		},
 		Action: func(c *ui.Control, args ...interface{}) error {
-			return d.c.Set(d.c.Value() + -args[0].(int))
+			return d.cursor.Set(d.cursor.Value() + -args[0].(int))
 		},
 	}, {
 		Keys: []string{"move", "mv", "m"},
@@ -37,17 +38,17 @@ func commands(d *disassemble) []ui.Command {
 		},
 		Action: func(c *ui.Control, args ...interface{}) error {
 			from, to := args[0].(int), args[1].(int)
-			d.l.UnmarkAll()
+			d.lines.UnmarkAll()
 
-			err := d.l.Move(from, to)
+			err := d.lines.Move(from, to)
 			if err != nil {
-				d.l.SetMark(from, lines.MarkErrMovedFrom)
-				d.l.SetMark(to, lines.MarkErrMovedTo)
+				d.lines.SetMark(from, lines.MarkErrMovedFrom)
+				d.lines.SetMark(to, lines.MarkErrMovedTo)
 				return err
 			}
 
-			d.l.SetMark(from, lines.MarkMovedFrom)
-			d.l.SetMark(to, lines.MarkMovedTo)
+			d.lines.SetMark(from, lines.MarkMovedFrom)
+			d.lines.SetMark(to, lines.MarkMovedTo)
 			return nil
 		},
 	}, {
@@ -58,29 +59,29 @@ func commands(d *disassemble) []ui.Command {
 		},
 		Action: func(c *ui.Control, args ...interface{}) error {
 			l := args[0].(int)
-			d.l.UnmarkAll()
+			d.lines.UnmarkAll()
 
-			block, ok := d.l.Block(l)
+			block, ok := d.lines.Block(l)
 			if !ok {
-				d.l.SetMark(l, lines.MarkErr)
+				d.lines.SetMark(l, lines.MarkErr)
 				return fmt.Errorf("line doesn't belong to a block: %d", l)
 			}
 
-			ins, ok := d.l.Index(l).Instruction()
+			ins, ok := d.lines.Index(l).Instruction()
 			if !ok {
-				d.l.SetMark(l, lines.MarkErr)
+				d.lines.SetMark(l, lines.MarkErr)
 				return fmt.Errorf("line is not an instruction: %d", l)
 			}
 
 			lower := block.LowerBound(ins)
 			upper := block.UpperBound(ins)
-			lowerLine := d.l.Line(block, lower)
-			upperLine := d.l.Line(block, upper)
+			lowerLine := d.lines.Line(block, lower)
+			upperLine := d.lines.Line(block, upper)
 
 			// Lower and Upper indices are inclusive, but in
 			// visualization we want to have exclusive indices.
-			d.l.SetMark(lowerLine-1, lines.MarkLowerBound)
-			d.l.SetMark(upperLine+1, lines.MarkUpperBound)
+			d.lines.SetMark(lowerLine-1, lines.MarkLowerBound)
+			d.lines.SetMark(upperLine+1, lines.MarkUpperBound)
 
 			return nil
 		},
@@ -103,9 +104,9 @@ func commands(d *disassemble) []ui.Command {
 			}
 
 			var line int = -1
-			offset := d.c.Value()
-			for i := offset + 1; i != offset; i = (i + 1) % d.l.Len() {
-				if regexp.MatchString(d.l.Index(i).String()) {
+			offset := d.cursor.Value()
+			for i := offset + 1; i != offset; i = (i + 1) % d.lines.Len() {
+				if regexp.MatchString(d.lines.Index(i).String()) {
 					line = i
 					break
 				}
@@ -115,7 +116,7 @@ func commands(d *disassemble) []ui.Command {
 				return c.ErrMsgf("No line matching regex %q found.\n", r)
 			}
 
-			err = d.c.Set(line)
+			err = d.cursor.Set(line)
 			if err != nil {
 				return err
 			}
@@ -129,11 +130,11 @@ func commands(d *disassemble) []ui.Command {
 		},
 		Action: func(c *ui.Control, args ...interface{}) error {
 			n := args[0].(int)
-			if l := d.l.Len(); n > l {
+			if l := d.lines.Len(); n > l {
 				return fmt.Errorf("line number too big: %d > %d", n, l)
 			}
 
-			if err := d.c.Set(n); err != nil {
+			if err := d.cursor.Set(n); err != nil {
 				return err
 			}
 
@@ -143,8 +144,8 @@ func commands(d *disassemble) []ui.Command {
 		Keys: []string{"entrypoint", "entry"},
 		Help: "Sets cursor to app entrypoint.",
 		Action: func(c *ui.Control, args ...interface{}) error {
-			a := d.p.Entrypoint()
-			block, ok := d.p.Addr(a)
+			a := d.prog.Entrypoint()
+			block, ok := d.prog.Addr(a)
 			if !ok {
 				return fmt.Errorf("cannot find block at address 0x%x", a)
 			}
@@ -154,8 +155,8 @@ func commands(d *disassemble) []ui.Command {
 				return fmt.Errorf("cannot find instruction at address 0x%x", a)
 			}
 
-			line := d.l.Line(block, ins.Idx())
-			d.c.Set(line)
+			line := d.lines.Line(block, ins.Idx())
+			d.cursor.Set(line)
 			return nil
 		},
 	}, {
@@ -163,8 +164,8 @@ func commands(d *disassemble) []ui.Command {
 		Help: "Prints all lines of the code into console. " +
 			"Ignores current cursor position.",
 		Action: func(c *ui.Control, args ...interface{}) error {
-			for i := 0; i < d.l.Len(); i++ {
-				fmt.Print(d.v.Format(i))
+			for i := 0; i < d.lines.Len(); i++ {
+				fmt.Print(d.view.Format(i))
 			}
 
 			if err := c.ErrMsgf("\n"); err != nil {
@@ -173,12 +174,33 @@ func commands(d *disassemble) []ui.Command {
 
 			return nil
 		},
-	}, /*		{
-			Keys: []string{"emulate", "emul", "e"},
-			Help: "Start emulating the machine code at current line.",
-			Action: func(c *control.Control, args ...interface{}) error {
-				return c.AddMode("emulate", listEmulate())
-			},
-		},*/
+	}, {
+		Keys: []string{"emulate", "emul", "e"},
+		Help: "Start emulating the machine code at current line.\n\n" +
+			"TIP: for emulation started at entrypoint, use 'entrypoint' " +
+			"command followed by this command.",
+		Action: func(c *ui.Control, args ...interface{}) error {
+			l := d.cursor.Value()
+			line := d.lines.Index(l)
+
+			block, ok := d.lines.Block(l)
+			if !ok {
+				return fmt.Errorf("line %d belongs to no block", l)
+			}
+
+			insIdx, ok := line.Instruction()
+			if !ok {
+				return fmt.Errorf("line %d is not instruction line", l)
+			}
+
+			ins := block.Index(insIdx)
+			emul, err := emulate.New(d.prog, ins.DynAddress)
+			if err != nil {
+				return fmt.Errorf("bug: cannot create emulation: %w", err)
+			}
+
+			return c.AddMode("emulate", emul)
+		},
+	},
 	}
 }

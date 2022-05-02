@@ -97,7 +97,7 @@ func testInputInsReg(out uint64, in ...uint64) basicblock.Instruction {
 		effects = append(effects, expr.NewRegStore(expr.Zero, key, expr.Width8))
 	}
 
-	return basicblock.Instruction{Effects: effects}
+	return basicblock.Instruction{Effs: effects}
 }
 
 func TestBlock_Bounds(t *testing.T) {

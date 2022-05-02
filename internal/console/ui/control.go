@@ -3,21 +3,17 @@ package ui
 import (
 	"errors"
 	"fmt"
+	"mltwist/internal/console/internal/linereader"
 	"mltwist/internal/console/internal/view"
-	"os"
 	"strings"
 )
 
 type Control struct {
-	reader    *lineReader
 	modeStack []namedMode
 }
 
 func New(initialMode Mode) (*Control, error) {
-	c := &Control{
-		reader: newLineReader(os.Stdin),
-	}
-
+	c := &Control{}
 	if err := c.AddMode("app", initialMode); err != nil {
 		return nil, fmt.Errorf("invalid initial mode: %w", err)
 	}
@@ -48,14 +44,14 @@ func (c *Control) quitMode() error {
 
 	if len(c.modeStack) == 0 {
 		fmt.Printf("leaving app\n")
-		if _, err := c.reader.readLine(); err != nil {
+		if _, err := linereader.ReadLine(); err != nil {
 			return fmt.Errorf("readline error: %w", err)
 		}
 		return ErrQuit
 	}
 
 	fmt.Printf("leaving mode %s\n", m.name)
-	if _, err := c.reader.readLine(); err != nil {
+	if _, err := linereader.ReadLine(); err != nil {
 		return fmt.Errorf("readline error: %w", err)
 	}
 
@@ -113,7 +109,7 @@ func (c *Control) parseCommand(str string) (Command, []interface{}, error) {
 }
 
 func (c *Control) processCommand() error {
-	cmdStr, err := c.reader.readLine()
+	cmdStr, err := linereader.ReadLine()
 	if err != nil {
 		return err
 	}
@@ -124,7 +120,7 @@ func (c *Control) processCommand() error {
 	cmd, args, err := c.parseCommand(cmdStr)
 	if err != nil {
 		fmt.Printf("error: %s\n", err.Error())
-		if _, err := c.reader.readLine(); err != nil {
+		if _, err := linereader.ReadLine(); err != nil {
 			return fmt.Errorf("readline error: %w", err)
 		}
 		return nil
@@ -137,7 +133,7 @@ func (c *Control) processCommand() error {
 		}
 
 		fmt.Printf("error: %s\n", err.Error())
-		if _, err := c.reader.readLine(); err != nil {
+		if _, err := linereader.ReadLine(); err != nil {
 			return fmt.Errorf("readline error: %w", err)
 		}
 		return nil
@@ -148,10 +144,10 @@ func (c *Control) processCommand() error {
 
 func (c *Control) Run() error {
 	for {
-		e := view.NewView(c.mode().mode.Element(), commandPrompt{})
+		e := view.NewCompositeView(c.mode().mode.Element(), commandPrompt{})
 		err := view.Print(e)
 		if err != nil {
-			return fmt.Errorf("cannot print UI elements: %w", err)
+			return fmt.Errorf("cannot print screen: %w", err)
 		}
 
 		err = c.processCommand()
@@ -168,7 +164,7 @@ func (c *Control) Run() error {
 func (c *Control) ErrMsgf(pattern string, args ...interface{}) error {
 	fmt.Printf(pattern, args...)
 	fmt.Printf("Press ENTER to continue\n")
-	if _, err := c.reader.readLine(); err != nil {
+	if _, err := linereader.ReadLine(); err != nil {
 		return fmt.Errorf("readline error: %w", err)
 	}
 	return nil

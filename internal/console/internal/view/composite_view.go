@@ -4,17 +4,17 @@ import (
 	"fmt"
 )
 
-type View struct {
+type CompositeView struct {
 	elements []Element
 }
 
-func NewView(elements ...Element) *View {
-	return &View{
+func NewCompositeView(elements ...Element) *CompositeView {
+	return &CompositeView{
 		elements: elements,
 	}
 }
 
-func (v *View) Print(lines int) error {
+func (v *CompositeView) Print(lines int) error {
 	minLines := v.MinLines()
 	remainingLines := lines - v.MinLines()
 	if remainingLines < 0 {
@@ -40,9 +40,9 @@ func (v *View) Print(lines int) error {
 // elementSpaces returns number of spaces in between individual elements. As
 // every 2 consecutive elements are split by an empty line, the number returned
 // is number of elements minus one.
-func (v *View) elementSpaces() int { return len(v.elements) - 1 }
+func (v *CompositeView) elementSpaces() int { return len(v.elements) - 1 }
 
-func (v *View) MinLines() int {
+func (v *CompositeView) MinLines() int {
 	var h int
 	for _, p := range v.elements {
 		h += p.MinLines()
@@ -51,7 +51,7 @@ func (v *View) MinLines() int {
 	return h + v.elementSpaces()
 }
 
-func (v *View) MaxLines() int {
+func (v *CompositeView) MaxLines() int {
 	var h int
 	for _, p := range v.elements {
 		m := p.MaxLines()
@@ -65,7 +65,7 @@ func (v *View) MaxLines() int {
 	return h + v.elementSpaces()
 }
 
-func (v *View) distributeLines(remLines int) map[int]int {
+func (v *CompositeView) distributeLines(remLines int) map[int]int {
 	mins := v.mins()
 
 	lineCnts := make(map[int]int, len(mins))
@@ -91,7 +91,7 @@ func (v *View) distributeLines(remLines int) map[int]int {
 	return lineCnts
 }
 
-func (v *View) mins() map[int]int {
+func (v *CompositeView) mins() map[int]int {
 	mins := make(map[int]int, len(v.elements))
 	for i, e := range v.elements {
 		val := e.MinLines()
@@ -104,7 +104,7 @@ func (v *View) mins() map[int]int {
 	return mins
 }
 
-func (v *View) diffLinesMax(mins map[int]int, maxDiff int) map[int]int {
+func (v *CompositeView) diffLinesMax(mins map[int]int, maxDiff int) map[int]int {
 	diffs := make(map[int]int, len(v.elements))
 	for i, e := range v.elements {
 		min, max := mins[i], e.MaxLines()

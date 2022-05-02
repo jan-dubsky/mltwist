@@ -1,9 +1,14 @@
-package ui
+package linereader
 
 import (
 	"bufio"
 	"io"
+	"os"
 )
+
+func ReadLine() (string, error) { return r.readLine() }
+
+var r = newLineReader(os.Stdin)
 
 type lineReader struct {
 	s *bufio.Scanner

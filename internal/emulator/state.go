@@ -5,16 +5,17 @@ import (
 	"mltwist/pkg/model"
 )
 
+// StateProvider provides any state of the program which is not known to a
+// program emulation.
 type StateProvider interface {
-	Register(key expr.Key) expr.Const
+	// Register returns a value of register key of width w.
+	//
+	// Please note that the expr.Width parameter is necessary as the value
+	// returned might be a negative integer. In such a case, the value
+	// returned must have exactly width w.
+	Register(key expr.Key, w expr.Width) expr.Const
+
+	// Memory returns a value stored in memory identified by key at address
+	// addr. The width of the value returned is w.
 	Memory(key expr.Key, addr model.Addr, w expr.Width) expr.Const
-}
-
-var _ StateProvider = ZeroProvider{}
-
-type ZeroProvider struct{}
-
-func (ZeroProvider) Register(_ expr.Key) expr.Const { return expr.Zero }
-func (ZeroProvider) Memory(_ expr.Key, _ model.Addr, w expr.Width) expr.Const {
-	return expr.NewConstUint[uint8](0, w)
 }

@@ -32,11 +32,11 @@ func newInstruction(ins basicblock.Instruction, index int) *instruction {
 		DynAddress: ins.Addr,
 		Instr:      ins,
 
-		inRegs:  inputRegs(ins.Effects),
-		outRegs: outputRegs(ins.Effects),
+		inRegs:  inputRegs(ins.Effs),
+		outRegs: outputRegs(ins.Effs),
 
-		loads:  loads(ins.Effects),
-		stores: stores(ins.Effects),
+		loads:  loads(ins.Effs),
+		stores: stores(ins.Effs),
 
 		depsFwd:  make(insSet, 5),
 		depsBack: make(insSet, 5),

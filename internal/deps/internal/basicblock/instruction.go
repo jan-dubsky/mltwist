@@ -13,7 +13,7 @@ type Instruction struct {
 	Bytes   []byte
 	Details model.PlatformDetails
 
-	Effects     []expr.Effect
+	Effs        []expr.Effect
 	JumpTargets []expr.Expr
 }
 
@@ -24,7 +24,7 @@ func newInstruction(ins parser.Instruction) Instruction {
 		Bytes:   ins.Bytes,
 		Details: ins.Details,
 
-		Effects:     ins.Effects,
+		Effs:        ins.Effects,
 		JumpTargets: jumps(ins.Effects),
 	}
 }
@@ -61,3 +61,5 @@ func (i Instruction) Len() model.Addr { return model.Addr(len(i.Bytes)) }
 
 // NextAddr returns address following this instruction.
 func (i Instruction) NextAddr() model.Addr { return i.Addr + i.Len() }
+
+func (i Instruction) Effects() []expr.Effect { return i.Effs }

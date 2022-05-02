@@ -27,7 +27,9 @@ func newConst(b []byte) Const {
 	}
 }
 
-// NewConst creates constant of width w out of bytes b.
+// NewConst creates constant of width w out of bytes b. Bytes in b are encoded
+// using little-endian encoding -> b[0] is the least significant byte of the
+// value.
 //
 // Value of b is copied into an internal buffer. Consequently user is free to
 // use b once call to this function is completed.

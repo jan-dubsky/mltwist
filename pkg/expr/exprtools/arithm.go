@@ -130,6 +130,11 @@ func SignExtend(e expr.Expr, signBit expr.Expr, w expr.Width) expr.Expr {
 	)
 }
 
+// RshA arithmetically shifts e to right shift number of bits producing an
+// expression of width w.
+//
+// Highest bits produced by shift are always filled by zeros for non-negative
+// number and always filled with ones for negative number.
 func RshA(e expr.Expr, shift expr.Expr, w expr.Width) expr.Expr {
 	rsh := expr.NewBinary(expr.Rsh, e, shift, w)
 
