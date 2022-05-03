@@ -141,7 +141,7 @@ func (m *Memory) Load(addr model.Addr, w expr.Width) (expr.Expr, bool) {
 			ex = o.Val.cutEnd(expr.Width(o.High - end)).expr()
 		}
 
-		ex = expr.NewBinary(expr.Lsh, ex, expr.ConstFromUint(o.Low), w)
+		ex = expr.NewBinary(expr.Lsh, ex, expr.ConstFromUint((o.Low-addr)*8), w)
 		finalEx = expr.NewBinary(expr.Or, finalEx, ex, w)
 	}
 
@@ -154,7 +154,7 @@ func (m *Memory) Store(addr model.Addr, ex expr.Expr, w expr.Width) {
 
 	overlaps := m.t.Overlaps(addr, end)
 	// First remove all overlapping interval so that we are sure that all
-	// Adds will succeed.
+	// Adds below will succeed.
 	for _, o := range overlaps {
 		m.t.Remove(o.Low)
 	}
@@ -168,10 +168,10 @@ func (m *Memory) Store(addr model.Addr, ex expr.Expr, w expr.Width) {
 		if o.Low < addr {
 			m.t.Add(o.Low, addr, o.Val.cutEnd(expr.Width(addr-o.Low)))
 		}
-		// Note: else expression cannot be used here as we might be in a
+		// Note: Else branch cannot be used here as we might be in a
 		// following situation: o.Low < begin < end < o.High.
 		if end < o.High {
-			m.t.Put(end, o.High, o.Val.cutBegin(expr.Width(o.High-addr)))
+			m.t.Put(end, o.High, o.Val.cutBegin(expr.Width(o.High-end)))
 		}
 	}
 
@@ -189,8 +189,8 @@ type Interval struct {
 }
 
 func newInterval(begin, end model.Addr) Interval {
-	if w := end - begin; w != model.Addr(expr.Width(w)) {
-		panic(fmt.Sprintf("interval is too wide: %d", w))
+	if width := end - begin; width != model.Addr(expr.Width(width)) {
+		panic(fmt.Sprintf("interval is too wide: %d", width))
 	}
 
 	return Interval{

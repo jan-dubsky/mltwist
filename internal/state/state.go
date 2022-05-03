@@ -26,19 +26,22 @@ func New() *State {
 	}
 }
 
-// Apply changes state by applying effect ef.
-func (s *State) Apply(ef expr.Effect) {
+// Apply changes state by applying effect ef and provides an information if it
+// was possible to apply the effect.
+func (s *State) Apply(ef expr.Effect) bool {
 	switch e := ef.(type) {
 	case expr.MemStore:
-		c, ok := e.Addr().(expr.Const)
+		c, ok := exprtransform.ConstFold(e.Addr()).(expr.Const)
 		if !ok {
-			return
+			return false
 		}
 
 		addr, _ := expr.ConstUint[model.Addr](c)
 		s.Mems.Store(e.Key(), addr, e.Value(), e.Width())
+		return true
 	case expr.RegStore:
 		s.Regs[e.Key()] = exprtransform.SetWidth(e.Value(), e.Width())
+		return true
 	default:
 		panic(fmt.Sprintf("unknown expr.Effect type: %T", ef))
 	}
