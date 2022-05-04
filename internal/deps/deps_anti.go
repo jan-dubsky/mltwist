@@ -36,7 +36,7 @@ func (p *antiDepProcessor) processRegDeps(ins *instruction) {
 			continue
 		}
 
-		p.link(ins, i)
+		addDep(ins, i)
 	}
 }
 
@@ -52,11 +52,6 @@ func (p *antiDepProcessor) processMemDeps(ins *instruction) {
 	// The instruction might read memory before it writes it. In such a case
 	// we don't want the instruction to be dependent on itself.
 	if (len(ins.loads) > 0) && p.memory != ins {
-		p.link(ins, p.memory)
+		addDep(ins, p.memory)
 	}
-}
-
-func (*antiDepProcessor) link(first, second *instruction) {
-	first.depsFwd[second] = struct{}{}
-	second.depsBack[first] = struct{}{}
 }

@@ -9,6 +9,13 @@ import (
 )
 
 // Parse identifies basic blocks in a sequence of program instructions.
+//
+// The entrypoint argument is in a way special as it's the jump target which by
+// originates from outside of the program. Naturally there are as well other
+// jump targets comming from outside (for example intel SYSEXIT handler in
+// glibc). Unfortunately those require non trivial platform and OS knowledge to
+// identify. The entrypoint is the only well-defined jump target comming from
+// outside of the program.
 func Parse(entrypoint model.Addr, instrList []parser.Instruction) ([][]Instruction, error) {
 	instrs := convertInstructions(instrList)
 	sort.Slice(instrs, func(i, j int) bool { return instrs[i].Addr < instrs[j].Addr })

@@ -6,23 +6,18 @@ import (
 	"mltwist/pkg/model"
 )
 
-type Program struct {
-	Entrypoint   model.Addr
-	Memory       *memory.Memory
-	Instructions []Instruction
-}
-
+// Parse parses all instructions in a memory. This function fails if any of
+// parsings fails.
 func Parse(
-	entrypoint model.Addr,
 	m *memory.Memory,
 	p Parser,
-) (Program, error) {
+) ([]Instruction, error) {
 	instrs := make([]Instruction, 0, len(m.Blocks))
 	for _, block := range m.Blocks {
 		for addr := block.Begin(); addr < block.End(); {
 			ins, err := parseIns(p, block, addr)
 			if err != nil {
-				return Program{}, fmt.Errorf(
+				return nil, fmt.Errorf(
 					"cannot parse instruction at address 0x%x: %w",
 					addr, err)
 			}
@@ -32,11 +27,7 @@ func Parse(
 		}
 	}
 
-	return Program{
-		Entrypoint:   entrypoint,
-		Memory:       m,
-		Instructions: instrs,
-	}, nil
+	return instrs, nil
 }
 
 func parseIns(

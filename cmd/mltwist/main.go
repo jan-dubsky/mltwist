@@ -26,12 +26,12 @@ func run() error {
 	fmt.Printf("Bytes: %b\n", exec.Memory.Addr(exec.Entrypoint)[:4])
 
 	riscvParser := riscv.NewParser(riscv.Variant64, riscv.ExtM)
-	ins, err := parser.Parse(exec.Entrypoint, exec.Memory, riscvParser)
+	ins, err := parser.Parse(exec.Memory, riscvParser)
 	if err != nil {
 		return fmt.Errorf("instruction parsing failed: %w", err)
 	}
 
-	program, err := deps.NewProgram(ins.Entrypoint, ins.Instructions)
+	program, err := deps.NewProgram(exec.Entrypoint, ins)
 	if err != nil {
 		return fmt.Errorf("cannot parse model: %w", err)
 	}

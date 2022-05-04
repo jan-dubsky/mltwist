@@ -27,7 +27,7 @@ func (p *outputDepProcessor) processRegDeps(ins *instruction) {
 		}
 
 		// We are certain that i != ins.
-		p.link(ins, i)
+		addDep(ins, i)
 	}
 }
 
@@ -37,12 +37,7 @@ func (p *outputDepProcessor) processMemDeps(ins *instruction) {
 	}
 
 	for _, i := range p.memory {
-		p.link(ins, i)
+		addDep(ins, i)
 	}
 	p.memory = append(p.memory, ins)
-}
-
-func (*outputDepProcessor) link(first, second *instruction) {
-	first.depsFwd[second] = struct{}{}
-	second.depsBack[first] = struct{}{}
 }

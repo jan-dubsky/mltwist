@@ -1,13 +1,12 @@
 package deps
 
 import (
-	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 )
 
-func controlFlowInstruction(ins basicblock.Instruction) bool {
-	for _, t := range ins.JumpTargets {
+func controlFlowInstruction(ins *instruction) bool {
+	for _, t := range ins.jumpTargets {
 		if c, ok := t.(expr.Const); ok {
 			addr, ok := expr.ConstUint[model.Addr](c)
 			if ok && addr == ins.NextAddr() {
@@ -29,12 +28,11 @@ func processControlDeps(instrs []*instruction) {
 	// instruction will be the last in this basic block as none of them is
 	// control flow instruction and every single one will result in
 	// increment of instruction pointer -> no control dependency at all.
-	if !controlFlowInstruction(last.Instr) {
+	if !controlFlowInstruction(last) {
 		return
 	}
 
 	for _, ins := range instrs[:len(instrs)-1] {
-		ins.depsFwd[last] = struct{}{}
-		last.depsBack[ins] = struct{}{}
+		addDep(ins, last)
 	}
 }

@@ -28,7 +28,7 @@ func processTrueDeps(instrs []*instruction) {
 func (p *trueDepProcessor) processRegDeps(ins *instruction) {
 	for r := range ins.inRegs {
 		if dep, ok := p.regs[r]; ok {
-			p.link(dep, ins)
+			addDep(dep, ins)
 		}
 	}
 
@@ -39,15 +39,10 @@ func (p *trueDepProcessor) processRegDeps(ins *instruction) {
 
 func (p *trueDepProcessor) processMemDeps(ins *instruction) {
 	if p.memory != nil && len(ins.loads) > 0 {
-		p.link(p.memory, ins)
+		addDep(p.memory, ins)
 	}
 
 	if len(ins.stores) > 0 {
 		p.memory = ins
 	}
-}
-
-func (*trueDepProcessor) link(first, second *instruction) {
-	first.depsFwd[second] = struct{}{}
-	second.depsBack[first] = struct{}{}
 }

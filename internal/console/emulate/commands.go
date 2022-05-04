@@ -17,7 +17,7 @@ func commands(e *emulate) []ui.Command {
 					"cannot find instruction at address 0x%x", ip)
 			}
 
-			_ = e.emul.Step(ins.Instr)
+			_ = e.emul.Step(ins)
 
 			err := e.refreshCursor()
 			if err != nil {

@@ -17,6 +17,7 @@ type Emulator struct {
 	state *state.State
 }
 
+// New creates new emulator instance
 func New(prog *deps.Program, ip model.Addr, stateProv StateProvider) *Emulator {
 	return &Emulator{
 		prog:      prog,
@@ -27,10 +28,18 @@ func New(prog *deps.Program, ip model.Addr, stateProv StateProvider) *Emulator {
 	}
 }
 
+// IP returns current state of instruction pointer of the program.
 func (e *Emulator) IP() model.Addr { return e.ip }
 
+// State returns the internal instate of emulator.
+//
+// The state doesn't have to be treated as readonly, but its modifications will
+// be reflected in further steps of the emulation. analogously, any further step
+// of emulation will modify the state returned. Consequently, all reads and
+// modifications of the returned state must be synchronized with Step calls.
 func (e *Emulator) State() *state.State { return e.state }
 
+// Step performs a single instruction step of an emulation.
 func (e *Emulator) Step(ins Instruction) Evaluation {
 	efs := ins.Effects()
 
@@ -49,8 +58,12 @@ func (e *Emulator) Step(ins Instruction) Evaluation {
 			val := rStore.Value().(expr.Const)
 			nextIP, _ = expr.ConstUint[model.Addr](val)
 		}
+
 		eval.recordOutput(ef)
-		e.state.Apply(ef)
+		ok := e.state.Apply(ef)
+		if !ok {
+			panic(fmt.Errorf("bug: state change couldn't be applied: %v", ef))
+		}
 	}
 
 	e.ip = nextIP

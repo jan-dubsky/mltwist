@@ -12,8 +12,15 @@ type insSet map[*instruction]struct{}
 type regSet map[string]struct{}
 
 type instruction struct {
-	DynAddress model.Addr
-	Instr      basicblock.Instruction
+	typ      model.Type
+	origAddr model.Addr
+	bytes    []byte
+	details  model.PlatformDetails
+
+	effects     []expr.Effect
+	jumpTargets []expr.Expr
+
+	currAddr model.Addr
 
 	inRegs  regSet
 	outRegs regSet
@@ -29,8 +36,13 @@ type instruction struct {
 
 func newInstruction(ins basicblock.Instruction, index int) *instruction {
 	return &instruction{
-		DynAddress: ins.Addr,
-		Instr:      ins,
+		typ:      ins.Type,
+		origAddr: ins.Addr,
+		bytes:    ins.Bytes,
+		details:  ins.Details,
+
+		effects:     ins.Effs,
+		jumpTargets: ins.JumpTargets,
 
 		inRegs:  inputRegs(ins.Effs),
 		outRegs: outputRegs(ins.Effs),
@@ -42,13 +54,33 @@ func newInstruction(ins basicblock.Instruction, index int) *instruction {
 		depsBack: make(insSet, 5),
 
 		blockIdx: index,
+		currAddr: ins.Addr,
 	}
 }
 
 // Idx returns index of an instruction in its basic block.
 func (i *instruction) Idx() int { return i.blockIdx }
 
-func (i *instruction) setIndex(idx int) { i.blockIdx = idx }
+// Len returns length of an instruction in bytes.
+func (i *instruction) Len() model.Addr { return model.Addr(len(i.bytes)) }
+
+// NextAddr returns memory address of an instruction following this instruction.
+// The address taken into account is the one returned by Addr(), not OrigAddr().
+func (i *instruction) NextAddr() model.Addr { return i.currAddr + i.Len() }
+
+// Addr returns the in-memory address of the instruction in the current order of
+// the program - i.e. after all instruction moves.
+func (i *instruction) Addr() model.Addr { return i.currAddr }
+
+// OrigAddr returns the in-memory address of the instruction in the original
+// binary.
+func (i *instruction) OrigAddr() model.Addr { return i.origAddr }
+
+// Effects returns a list of all side effects if an instruction.
+func (i *instruction) Effects() []expr.Effect { return i.effects }
+
+func (i *instruction) setIndex(idx int)     { i.blockIdx = idx }
+func (i *instruction) setAddr(a model.Addr) { i.currAddr = a }
 
 func inputRegs(effects []expr.Effect) regSet {
 	// The 2 default value might be too little, but it's reasonable
@@ -94,4 +126,9 @@ func stores(effects []expr.Effect) []expr.MemStore {
 		}
 	}
 	return stores
+}
+
+func addDep(first, second *instruction) {
+	first.depsFwd[second] = struct{}{}
+	second.depsBack[first] = struct{}{}
 }

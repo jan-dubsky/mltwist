@@ -1,19 +1,18 @@
 package deps
 
-import "mltwist/pkg/model"
-
+// Instruction represents a single instruction in the program.
 type Instruction struct {
 	*instruction
 }
 
 func wrapInstruction(ins *instruction) Instruction { return Instruction{ins} }
 
-func (i Instruction) String() string { return i.Instr.Details.String() }
+// String returns string representation of an instruction. This representation
+// follows standard platform-specific way of assembler code syntax for a given
+// platform.
+func (i Instruction) String() string { return i.details.String() }
 
-// Address returns the in-memory address of the instruction in the original
-// binary.
-func (i Instruction) Address() model.Addr { return i.Instr.Addr }
-
+// Block represents a single basic-block in the program.
 type Block struct {
 	*block
 }

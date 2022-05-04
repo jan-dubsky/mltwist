@@ -1,6 +1,9 @@
 package deps
 
-import "fmt"
+import (
+	"fmt"
+	"mltwist/pkg/model"
+)
 
 // validateArrayIndex validates that variable called name with value val is
 // valid index into an array with length l.
@@ -25,37 +28,59 @@ func checkFromToIndex(from int, to int, l int) error {
 	return nil
 }
 
-// indexAware is any type which knows its position in an array and is able to
-// update it.
-type indexAware interface {
+// movable is any type which knows its position in an array and it's array. and
+// which is also able to update those values.
+type movable interface {
 	setIndex(i int)
+
+	Addr() model.Addr
+	NextAddr() model.Addr
+	setAddr(a model.Addr)
 }
 
-func move[T indexAware](arr []T, from int, to int) {
+func move[T movable](arr []T, from int, to int) {
 	if from == to {
 		return
 	}
 
-	f := arr[from]
 	if from < to {
 		moveFwd(arr, from, to)
 	} else {
 		moveBack(arr, from, to)
 	}
-	arr[to] = f
-	f.setIndex(to)
 }
 
-func moveFwd[T indexAware](arr []T, from int, to int) {
+func moveFwd[T movable](arr []T, from int, to int) {
+	f := arr[from]
+	a := f.Addr()
+
 	for i := from; i < to; i++ {
 		arr[i] = arr[i+1]
 		arr[i].setIndex(i)
+
+		arr[i].setAddr(a)
+		a = arr[i].NextAddr()
 	}
+
+	f.setIndex(to)
+	f.setAddr(a)
+	arr[to] = f
 }
 
-func moveBack[T indexAware](arr []T, from int, to int) {
+func moveBack[T movable](arr []T, from int, to int) {
+	f := arr[from]
+	a := arr[to].Addr()
+
 	for i := from; i > to; i-- {
 		arr[i] = arr[i-1]
 		arr[i].setIndex(i)
+	}
+
+	f.setIndex(to)
+	arr[to] = f
+
+	for i := to; i <= from; i++ {
+		arr[i].setAddr(a)
+		a = arr[i].NextAddr()
 	}
 }

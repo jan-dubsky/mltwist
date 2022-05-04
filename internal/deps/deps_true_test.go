@@ -3,7 +3,8 @@ package deps
 import (
 	"fmt"
 	"math"
-	"mltwist/internal/deps/internal/basicblock"
+	"mltwist/pkg/expr"
+	"mltwist/pkg/model"
 	"strconv"
 	"testing"
 
@@ -12,13 +13,13 @@ import (
 
 const regInvalid uint64 = math.MaxUint64
 
-func testIns(ins basicblock.Instruction) *instruction {
+func testIns(t model.Type, jumps []expr.Expr) *instruction {
 	return &instruction{
-		depsFwd:  make(insSet, numRegs),
-		depsBack: make(insSet, numRegs),
-		blockIdx: -1,
-
-		Instr: ins,
+		depsFwd:     make(insSet, numRegs),
+		depsBack:    make(insSet, numRegs),
+		blockIdx:    -1,
+		typ:         t,
+		jumpTargets: jumps,
 	}
 }
 
@@ -33,7 +34,7 @@ func testInsReg(out uint64, in ...uint64) *instruction {
 		inRegs[rStr] = struct{}{}
 	}
 
-	ins := testIns(basicblock.Instruction{})
+	ins := testIns(model.TypeAritm, nil)
 	ins.inRegs = inRegs
 	if out != regInvalid {
 		ins.outRegs = regSet{strconv.FormatUint(out, 10): struct{}{}}

@@ -80,7 +80,7 @@ func (p *Program) Move(from int, to int) error {
 	return nil
 }
 
-func (p *Program) Addr(a model.Addr) (Block, bool) {
+func (p *Program) Address(a model.Addr) (Block, bool) {
 	i := sort.Search(len(p.blocksByAddr), func(i int) bool {
 		return p.blocksByAddr[i].end > a
 	})
@@ -97,12 +97,12 @@ func (p *Program) Addr(a model.Addr) (Block, bool) {
 }
 
 func (p *Program) AddrIns(a model.Addr) (Instruction, bool) {
-	block, ok := p.Addr(a)
+	block, ok := p.Address(a)
 	if !ok {
 		return Instruction{}, false
 	}
 
-	ins, ok := block.Addr(a)
+	ins, ok := block.Address(a)
 	if !ok {
 		return Instruction{}, false
 	}

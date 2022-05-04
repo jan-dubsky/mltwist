@@ -1,14 +1,9 @@
 package deps
 
 import (
-	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/pkg/model"
 	"testing"
 )
-
-func testTypeIns(t model.Type) *instruction {
-	return testIns(basicblock.Instruction{Type: t})
-}
 
 func TestSpecialDeps(t *testing.T) {
 	tests := []testCase{
@@ -17,7 +12,7 @@ func TestSpecialDeps(t *testing.T) {
 			ins: []*instruction{
 				testInsReg(1),
 				testInsReg(2),
-				testTypeIns(model.TypeCPUStateChange),
+				testIns(model.TypeCPUStateChange, nil),
 				testInsReg(3, 2, 1),
 			},
 			deps: []dep{
@@ -30,13 +25,13 @@ func TestSpecialDeps(t *testing.T) {
 			ins: []*instruction{
 				testInsReg(1),
 				testInsReg(2),
-				testTypeIns(model.TypeCPUStateChange),
+				testIns(model.TypeCPUStateChange, nil),
 				testInsReg(3),
 				testInsReg(4, 1),
-				testTypeIns(model.TypeMemOrder),
+				testIns(model.TypeMemOrder, nil),
 				testInsReg(7, 3, 1),
 				testInsReg(8, 4, 2),
-				testTypeIns(model.TypeSyscall),
+				testIns(model.TypeSyscall, nil),
 			},
 			deps: []dep{
 				{0, 2},

@@ -6,6 +6,7 @@ import (
 	"mltwist/pkg/model"
 )
 
+// RegSet if a set of registers and their respective values.
 type RegSet map[expr.Key]expr.Const
 
 type MemAccess struct {

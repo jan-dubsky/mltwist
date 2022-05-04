@@ -7,11 +7,11 @@ import (
 	"sort"
 )
 
+// block represents a basic block of instructions.
 type block struct {
-	begin     model.Addr
-	end       model.Addr
-	seq       []*instruction
-	seqByAddr []*instruction
+	begin model.Addr
+	end   model.Addr
+	seq   []*instruction
 
 	// idx is zero-based index of the block in the program.
 	idx int
@@ -28,9 +28,6 @@ func newBlock(idx int, bbSeq []basicblock.Instruction) *block {
 		seq[i] = newInstruction(ins, i)
 	}
 
-	seqByAddr := make([]*instruction, len(seq))
-	copy(seqByAddr, seq)
-
 	processTrueDeps(seq)
 	processAntiDeps(seq)
 	processOutputDeps(seq)
@@ -38,10 +35,9 @@ func newBlock(idx int, bbSeq []basicblock.Instruction) *block {
 	processSpecialDeps(seq)
 
 	return &block{
-		begin:     bbSeq[0].Addr,
-		end:       bbSeq[0].Addr + length,
-		seq:       seq,
-		seqByAddr: seqByAddr,
+		begin: bbSeq[0].Addr,
+		end:   bbSeq[0].Addr + length,
+		seq:   seq,
 
 		idx: idx,
 	}
@@ -143,16 +139,28 @@ func (b *block) upperBound(i int) int {
 
 func (b *block) setIndex(i int) { b.idx = i }
 
-func (b *block) Addr(a model.Addr) (Instruction, bool) {
-	i := sort.Search(len(b.seqByAddr), func(i int) bool {
-		return b.seqByAddr[i].DynAddress >= a
+// setAddr is an empty implementation of address setter which allows us to use
+// the same algorithm for both instructions and blocks. As blocks are not
+// allowed to move in memory. no other (than empty) implementation of this
+// function makes sense.
+func (b *block) setAddr(_ model.Addr) {}
+
+// Addr returns the starting address of a basic block.
+func (b *block) Addr() model.Addr { return b.begin }
+
+// NextAddr returns an address following the the block.
+func (b *block) NextAddr() model.Addr { return b.end }
+
+func (b *block) Address(a model.Addr) (Instruction, bool) {
+	i := sort.Search(len(b.seq), func(i int) bool {
+		return b.seq[i].Addr() >= a
 	})
-	if i == len(b.seqByAddr) {
+	if i == len(b.seq) {
 		return Instruction{}, false
 	}
 
-	ins := b.seqByAddr[i]
-	if ins.DynAddress != a {
+	ins := b.seq[i]
+	if ins.Addr() != a {
 		return Instruction{}, false
 	}
 

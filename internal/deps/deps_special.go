@@ -1,7 +1,7 @@
 package deps
 
 func insSpecial(ins *instruction) bool {
-	t := ins.Instr.Type
+	t := ins.typ
 	return t.Syscall() || t.MemOrder() || t.CPUStateChange()
 }
 
@@ -14,8 +14,7 @@ func processSpecialDeps(instrs []*instruction) {
 	var last *instruction
 	for i, ins := range instrs {
 		if last != nil {
-			last.depsFwd[ins] = struct{}{}
-			ins.depsBack[last] = struct{}{}
+			addDep(last, ins)
 		}
 
 		if specials[i] {
@@ -27,8 +26,7 @@ func processSpecialDeps(instrs []*instruction) {
 	for i := len(instrs) - 1; i >= 0; i-- {
 		ins := instrs[i]
 		if last != nil {
-			ins.depsFwd[last] = struct{}{}
-			last.depsBack[ins] = struct{}{}
+			addDep(ins, last)
 		}
 
 		if specials[i] {

@@ -68,7 +68,12 @@ func TestBlock_New(t *testing.T) {
 			r.Equal(len(tt.seq), b.Len())
 
 			for i, ins := range tt.seq {
-				r.Equal(ins, b.index(i).Instr)
+				r.Equal(ins.Addr, b.index(i).OrigAddr())
+				r.Equal(ins.Bytes, b.index(i).bytes)
+				r.Equal(ins.Details, b.index(i).details)
+				r.Equal(ins.Effs, b.index(i).effects)
+				r.Equal(ins.JumpTargets, b.index(i).jumpTargets)
+				r.Equal(ins.Type, b.index(i).typ)
 			}
 		})
 	}
@@ -377,10 +382,12 @@ func TestBlock_Move(t *testing.T) {
 			seq := make([]*instruction, tt.numIns)
 			for i := range seq {
 				seq[i] = &instruction{
-					blockIdx:   i,
-					DynAddress: model.Addr(i),
-					depsFwd:    make(insSet),
-					depsBack:   make(insSet),
+					blockIdx: i,
+					origAddr: model.Addr(i),
+					currAddr: model.Addr(i),
+					bytes:    make([]byte, 1),
+					depsFwd:  make(insSet),
+					depsBack: make(insSet),
 				}
 			}
 
@@ -409,8 +416,7 @@ func TestBlock_Move(t *testing.T) {
 						r.Equal(i, ins.blockIdx)
 
 						addr := model.Addr(m.order[i])
-						t.Logf("instr addr: %d\n", ins.DynAddress)
-						r.Equal(addr, ins.DynAddress)
+						r.Equal(addr, ins.OrigAddr())
 					}
 				})
 			}

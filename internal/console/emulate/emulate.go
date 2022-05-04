@@ -30,7 +30,7 @@ func New(p *deps.Program, ip model.Addr) (*emulate, error) {
 	cursor := cursor.New(lines)
 
 	lineView := view.NewLinesView(lines, cursor)
-	regView := newValuesElement(emul.State())
+	regView := newRegView(emul.State())
 
 	e := &emulate{
 		p:    p,
@@ -55,12 +55,12 @@ func (e *emulate) Element() view.Element  { return e.view }
 func (e *emulate) refreshCursor() error {
 	ip := e.emul.IP()
 
-	block, ok := e.p.Addr(ip)
+	block, ok := e.p.Address(ip)
 	if !ok {
 		return fmt.Errorf("cannot find block containing address 0x%x", ip)
 	}
 
-	ins, ok := block.Addr(ip)
+	ins, ok := block.Address(ip)
 	if !ok {
 		return fmt.Errorf("cannot find instruction at address 0x%x", ip)
 	}

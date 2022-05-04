@@ -145,12 +145,12 @@ func commands(d *disassemble) []ui.Command {
 		Help: "Sets cursor to app entrypoint.",
 		Action: func(c *ui.Control, args ...interface{}) error {
 			a := d.prog.Entrypoint()
-			block, ok := d.prog.Addr(a)
+			block, ok := d.prog.Address(a)
 			if !ok {
 				return fmt.Errorf("cannot find block at address 0x%x", a)
 			}
 
-			ins, ok := block.Addr(a)
+			ins, ok := block.Address(a)
 			if !ok {
 				return fmt.Errorf("cannot find instruction at address 0x%x", a)
 			}
@@ -194,7 +194,7 @@ func commands(d *disassemble) []ui.Command {
 			}
 
 			ins := block.Index(insIdx)
-			emul, err := emulate.New(d.prog, ins.DynAddress)
+			emul, err := emulate.New(d.prog, ins.Addr())
 			if err != nil {
 				return fmt.Errorf("bug: cannot create emulation: %w", err)
 			}
