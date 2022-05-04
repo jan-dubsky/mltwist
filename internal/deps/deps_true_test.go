@@ -34,7 +34,7 @@ func testInsReg(out uint64, in ...uint64) *instruction {
 		inRegs[rStr] = struct{}{}
 	}
 
-	ins := testIns(model.TypeAritm, nil)
+	ins := testIns(model.TypeNone, nil)
 	ins.inRegs = inRegs
 	if out != regInvalid {
 		ins.outRegs = regSet{strconv.FormatUint(out, 10): struct{}{}}

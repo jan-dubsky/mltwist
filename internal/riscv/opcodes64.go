@@ -14,7 +14,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: true,
 		immediate:    immTypeU,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			imm, _ := immTypeU.parseValue(i.value)
 			val := sext32To64(expr.ConstFromInt(imm))
@@ -26,7 +25,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: true,
 		immediate:    immTypeU,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			imm, _ := immTypeU.parseValue(i.value)
 			val := expr.ConstFromUint(uint64(addrAddImm(i.address, imm)))
@@ -38,7 +36,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: true,
 		immediate:    immTypeJ,
-		instrType:    model.TypeJump,
 		effects: func(i Instruction) []expr.Effect {
 			target := addrImmConst(immTypeJ, i, width64)
 			// Address of following instruction.
@@ -54,7 +51,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		instrType:    model.TypeJumpDyn,
 		// FIXME: Find a way how to represent those jump targets.
 		effects: func(i Instruction) []expr.Effect {
 			target := regImmOp(expr.Add, immTypeI, i, width64)
@@ -71,7 +67,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		instrType:    model.TypeCJump,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Eq, true, i, width64)}
 		},
@@ -81,7 +76,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		instrType:    model.TypeCJump,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Eq, false, i, width64)}
 		},
@@ -91,7 +85,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		instrType:    model.TypeCJump,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Lts, true, i, width64)}
 		},
@@ -101,7 +94,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		instrType:    model.TypeCJump,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Lts, false, i, width64)}
 		},
@@ -111,7 +103,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		instrType:    model.TypeCJump,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Ltu, true, i, width64)}
 		},
@@ -121,7 +112,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		instrType:    model.TypeCJump,
 		effects: func(i Instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Ltu, false, i, width64)}
 		},
@@ -132,7 +122,6 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    1,
 		immediate:    immTypeI,
-		instrType:    model.TypeLoad,
 		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			val := sext(memLoad(addr, width8), 7, width64)
@@ -145,7 +134,6 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    2,
 		immediate:    immTypeI,
-		instrType:    model.TypeLoad,
 		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			val := sext(memLoad(addr, width16), 15, width64)
@@ -158,7 +146,6 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    4,
 		immediate:    immTypeI,
-		instrType:    model.TypeLoad,
 		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			val := sext(memLoad(addr, width32), 31, width64)
@@ -171,7 +158,6 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    8,
 		immediate:    immTypeI,
-		instrType:    model.TypeLoad,
 		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			val := memLoad(addr, width64)
@@ -185,7 +171,6 @@ var integer64 = []*instructionOpcode{
 		loadBytes:    1,
 		unsigned:     true,
 		immediate:    immTypeI,
-		instrType:    model.TypeLoad,
 		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			val := exprtools.NewWidthGadget(memLoad(addr, width8), width64)
@@ -199,7 +184,6 @@ var integer64 = []*instructionOpcode{
 		loadBytes:    2,
 		unsigned:     true,
 		immediate:    immTypeI,
-		instrType:    model.TypeLoad,
 		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			val := exprtools.NewWidthGadget(memLoad(addr, width16), width64)
@@ -213,7 +197,6 @@ var integer64 = []*instructionOpcode{
 		loadBytes:    4,
 		unsigned:     true,
 		immediate:    immTypeI,
-		instrType:    model.TypeLoad,
 		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			val := exprtools.NewWidthGadget(memLoad(addr, width32), width64)
@@ -226,7 +209,6 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   1,
 		immediate:    immTypeS,
-		instrType:    model.TypeStore,
 		effects: func(i Instruction) []expr.Effect {
 			val := regLoad(rs2, i, width64)
 			addr := regImmOp(expr.Add, immTypeS, i, width64)
@@ -239,7 +221,6 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   2,
 		immediate:    immTypeS,
-		instrType:    model.TypeStore,
 		effects: func(i Instruction) []expr.Effect {
 			val := regLoad(rs2, i, width64)
 			addr := regImmOp(expr.Add, immTypeS, i, width64)
@@ -252,7 +233,6 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   4,
 		immediate:    immTypeS,
-		instrType:    model.TypeStore,
 		effects: func(i Instruction) []expr.Effect {
 			val := regLoad(rs2, i, width64)
 			addr := regImmOp(expr.Add, immTypeS, i, width64)
@@ -265,7 +245,6 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   8,
 		immediate:    immTypeS,
-		instrType:    model.TypeStore,
 		effects: func(i Instruction) []expr.Effect {
 			val := regLoad(rs2, i, width64)
 			addr := regImmOp(expr.Add, immTypeS, i, width64)
@@ -277,7 +256,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := regImmOp(expr.Add, immTypeI, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -288,7 +266,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := expr.NewCond(
 				expr.Lts,
@@ -306,7 +283,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := expr.NewCond(
 				expr.Ltu,
@@ -324,7 +300,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := regImmOp(expr.Xor, immTypeI, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -335,7 +310,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := regImmOp(expr.Or, immTypeI, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -346,7 +320,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := regImmOp(expr.And, immTypeI, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -357,7 +330,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:         1,
 		hasOutputReg:        true,
 		additionalImmediate: addImmSh64,
-		instrType:           model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := regImmShift(expr.Lsh, i, 6, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -368,7 +340,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:         1,
 		hasOutputReg:        true,
 		additionalImmediate: addImmSh64,
-		instrType:           model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := regImmShift(expr.Rsh, i, 6, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -379,7 +350,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:         1,
 		hasOutputReg:        true,
 		additionalImmediate: addImmSh64,
-		instrType:           model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			reg := regLoad(rs1, i, width64)
 			val := exprtools.RshA(reg, immShift(6, i), width64)
@@ -390,7 +360,6 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b000, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := reg2Op(expr.Add, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -400,7 +369,6 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0100000, 0b000, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := reg2Op(expr.Sub, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -410,7 +378,6 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b010, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := expr.NewCond(
 				expr.Lts,
@@ -427,7 +394,6 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b011, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := expr.NewCond(
 				expr.Ltu,
@@ -444,7 +410,6 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b110, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := reg2Op(expr.Or, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -454,7 +419,6 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b111, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := reg2Op(expr.And, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -464,7 +428,6 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b100, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := reg2Op(expr.Xor, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -474,7 +437,6 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b001, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := maskedRegOp(expr.Lsh, i, 6, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -484,7 +446,6 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b101, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := maskedRegOp(expr.Rsh, i, 6, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -494,7 +455,6 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0100000, 0b101, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			shift := exprtools.MaskBits(regLoad(rs2, i, width64), 6, width64)
 			val := exprtools.RshA(regLoad(rs1, i, width64), shift, width64)
@@ -553,7 +513,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(regImmOp(expr.Add, immTypeI, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -564,7 +523,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:         1,
 		hasOutputReg:        true,
 		additionalImmediate: addImmSh32,
-		instrType:           model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(regImmShift(expr.Lsh, i, 5, width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -575,7 +533,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:         1,
 		hasOutputReg:        true,
 		additionalImmediate: addImmSh32,
-		instrType:           model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(regImmShift(expr.Rsh, i, 5, width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -586,7 +543,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:         1,
 		hasOutputReg:        true,
 		additionalImmediate: addImmSh32,
-		instrType:           model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			reg := regLoad(rs1, i, width32)
 			val := sext32To64(exprtools.RshA(reg, immShift(5, i), width32))
@@ -598,7 +554,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(reg2Op(expr.Add, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -609,7 +564,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(reg2Op(expr.Sub, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -620,7 +574,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(maskedRegOp(expr.Lsh, i, 5, width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -631,7 +584,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(maskedRegOp(expr.Rsh, i, 5, width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -642,7 +594,6 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			shift := exprtools.MaskBits(regLoad(rs2, i, width32), 5, width32)
 			val32 := exprtools.RshA(regLoad(rs1, i, width32), shift, width32)
@@ -658,7 +609,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := reg2Op(expr.Mul, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -669,7 +619,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			mul := exprtools.SignedMul(r1, r2, width64)
@@ -684,7 +633,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			mul := expr.NewBinary(expr.Mul, r1, r2, width128)
@@ -699,7 +647,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			r1Abs := exprtools.Abs(r1, width64)
@@ -722,7 +669,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			val := exprtools.SignedDiv(r1, r2, width64)
@@ -734,7 +680,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := reg2Op(expr.Div, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -745,7 +690,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			val := exprtools.SignedMod(r1, r2, width64)
@@ -757,7 +701,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := reg2Op(expr.Mod, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -771,7 +714,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(reg2Op(expr.Mul, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -782,7 +724,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			val := sext32To64(exprtools.SignedDiv(r1, r2, width32))
@@ -794,7 +735,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(reg2Op(expr.Div, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -805,7 +745,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			val := sext32To64(exprtools.SignedMod(r1, r2, width32))
@@ -817,7 +756,6 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		instrType:    model.TypeAritm,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(reg2Op(expr.Mod, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}

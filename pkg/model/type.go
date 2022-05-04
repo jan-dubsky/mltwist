@@ -17,38 +17,19 @@ package model
 // type.
 type Type uint64
 
-// TypeInvalid is an invalid value of Type.
-const TypeInvalid Type = 0
+// TypeNone describes an instruction which is not special in any way. In other
+// words, behaviour of such an instruction can be fully described using expr
+// package.
+const TypeNone Type = 0
 
 const (
-	TypeAritm Type = 1 << iota
-	// TypeJump represents an instruction type which execution will
-	// unconditionally modify the instruction pointer. In other words, if an
-	// instruction i is a jump instruction, it will never happen that
-	// execution would follow to instruction offset(i)+len(i), as I will
-	// jump elsewhere.
-	//
-	// Register move instruction is also considered an arithmetic
-	// instruction.
-	TypeJump
-	// TypeCJump represents a conditional jump. In other words a jump which
-	// might or might not happen based on a runtime condition.
-	TypeCJump
-	// TypeJumpDyn represents a jump to dynamic value (value from either
-	// register or memory). In other words, it's any jump which target
-	// cannot (in generic case) be identified using any sort of static
-	// analysis.
-	TypeJumpDyn
-	// TypeLoad describes an instruction which loads some sort of
-	// information from a memory.
-	TypeLoad
-	// TypeStore describes an instruction which stores some sort of
-	// information into a memory.
-	TypeStore
 	// TypeMemOrder is any instruction which enforces memory ordering. An
 	// example of such instructions are for example memory fences.
-	TypeMemOrder
-	// TypeCPUStateChange describe any
+	TypeMemOrder Type = 1 << iota
+	// TypeCPUStateChange describe any CPU state change that might have an
+	// impact on execution of further instructions. A typical example of
+	// such an instruction would be control registry change which can effect
+	// the way the machine code is interpretted.
 	TypeCPUStateChange
 	// TypeSyscall is any instruction which calls an operating system. This
 	// type describes not only syscall instructions, but also any kind of
@@ -70,12 +51,6 @@ const (
 // one bit set - i.e. those defined as constants in this package.
 func (t Type) Is(other Type) bool { return t&other != 0 }
 
-func (t Type) Aritm() bool          { return t.Is(TypeAritm) }
-func (t Type) Jump() bool           { return t.Is(TypeJump) }
-func (t Type) CJump() bool          { return t.Is(TypeCJump) }
-func (t Type) JumpDyn() bool        { return t.Is(TypeJumpDyn) }
-func (t Type) Load() bool           { return t.Is(TypeLoad) }
-func (t Type) Store() bool          { return t.Is(TypeStore) }
 func (t Type) MemOrder() bool       { return t.Is(TypeMemOrder) }
 func (t Type) CPUStateChange() bool { return t.Is(TypeCPUStateChange) }
 func (t Type) Syscall() bool        { return t.Is(TypeSyscall) }

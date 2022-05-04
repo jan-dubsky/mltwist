@@ -7,7 +7,7 @@ import (
 )
 
 func testInsJumpTarget(exprs ...expr.Expr) *instruction {
-	return testIns(model.TypeAritm, exprs)
+	return testIns(model.TypeNone, exprs)
 }
 
 func TestControlDeps(t *testing.T) {
