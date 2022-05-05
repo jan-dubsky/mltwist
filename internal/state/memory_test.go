@@ -227,14 +227,14 @@ func TestMemory_Store(t *testing.T) {
 
 			var last model.Addr
 			var i int
-			mem.t.Each(func(low, high model.Addr, val cutExpr) {
+			mem.t.Each(func(begin, end model.Addr, val cutExpr) {
 				t.Logf("entry: %d", i)
 
-				r.LessOrEqual(last, low)
-				last = high
+				r.LessOrEqual(last, begin)
+				last = end
 
-				r.Equal(tt.exp[i].begin, low)
-				r.Equal(tt.exp[i].end, high)
+				r.Equal(tt.exp[i].begin, begin)
+				r.Equal(tt.exp[i].end, end)
 
 				c := cutExpr{
 					ex:    tt.exp[i].ex,

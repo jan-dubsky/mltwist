@@ -15,14 +15,18 @@ var _ emulator.StateProvider = &stateProvider{}
 type stateProvider struct{}
 
 func (*stateProvider) Register(key expr.Key, w expr.Width) expr.Const {
-	p := fmt.Sprintf("Please enter value of register %s [%d bytes]: ", key, w)
-	return readValueNoErr(p, w)
+	return readRegister(key, w)
 }
 
 func (*stateProvider) Memory(key expr.Key, addr model.Addr, w expr.Width) expr.Const {
 	p := fmt.Sprintf(
 		"Please enter value of memory %s at address 0x%x (%d) [%d bytes]: ",
 		key, addr, addr, w)
+	return readValueNoErr(p, w)
+}
+
+func readRegister(key expr.Key, w expr.Width) expr.Const {
+	p := fmt.Sprintf("Please enter value of register %s [%d bytes]: ", key, w)
 	return readValueNoErr(p, w)
 }
 

@@ -1,39 +1,37 @@
 package cursor
 
 import (
-	"mltwist/internal/console/internal/lines"
 	"fmt"
 )
 
 type Cursor struct {
-	l *lines.Lines
-
-	value int
+	maxValue int
+	value    int
 }
 
-func New(l *lines.Lines) *Cursor {
+func New(maxOffset int) *Cursor {
 	return &Cursor{
-		l:     l,
-		value: 0,
+		maxValue: maxOffset,
+		value:    0,
 	}
 }
 
 func (c Cursor) Value() int { return c.value }
-func (c *Cursor) Set(o int) error {
-	if err := c.checkOffset(o); err != nil {
+func (c *Cursor) Set(v int) error {
+	if err := c.checkOffset(v); err != nil {
 		return fmt.Errorf("new offset value is invalid: %w", err)
 	}
 
-	c.value = o
+	c.value = v
 	return nil
 }
 
-func (c Cursor) checkOffset(offset int) error {
-	if offset < 0 {
-		return fmt.Errorf("offset cannot be negative: %d", offset)
+func (c Cursor) checkOffset(v int) error {
+	if v < 0 {
+		return fmt.Errorf("offset cannot be negative: %v", v)
 	}
-	if l := c.l.Len(); offset >= l {
-		return fmt.Errorf("offset is too high: %d > %d", offset, l)
+	if v >= c.maxValue {
+		return fmt.Errorf("offset is too high: %v >= %v", v, c.maxValue)
 	}
 
 	return nil

@@ -36,7 +36,7 @@ func (m MemMap) Store(key expr.Key, addr model.Addr, ex expr.Expr, w expr.Width)
 func (m MemMap) Missing(key expr.Key, addr model.Addr, w expr.Width) []Interval {
 	mem, ok := m[key]
 	if !ok {
-		return []Interval{newInterval(addr, addr+model.Addr(w))}
+		return []Interval{NewInterval(addr, addr+model.Addr(w))}
 	}
 
 	return mem.Missing(addr, w)
@@ -188,7 +188,7 @@ type Interval struct {
 	end   model.Addr
 }
 
-func newInterval(begin, end model.Addr) Interval {
+func NewInterval(begin, end model.Addr) Interval {
 	if width := end - begin; width != model.Addr(expr.Width(width)) {
 		panic(fmt.Sprintf("interval is too wide: %d", width))
 	}
@@ -201,7 +201,7 @@ func newInterval(begin, end model.Addr) Interval {
 
 func (i Interval) Begin() model.Addr { return i.begin }
 func (i Interval) End() model.Addr   { return i.end }
-func (i Interval) Width() expr.Width { return expr.Width(i.end - i.begin) }
+func (i Interval) Len() model.Addr   { return i.end - i.begin }
 
 // Missing return list of address intervals which are missing in memory to be
 // able to perform full load of width w from address addr.
@@ -210,25 +210,41 @@ func (m *Memory) Missing(addr model.Addr, w expr.Width) []Interval {
 
 	ints := m.t.Overlaps(addr, end)
 	if len(ints) == 0 {
-		return []Interval{newInterval(addr, end)}
+		return []Interval{NewInterval(addr, end)}
 	}
 
 	var intervals []Interval
 	if low := ints[0].Low; addr < low {
-		intervals = append(intervals, newInterval(addr, low))
+		intervals = append(intervals, NewInterval(addr, low))
 	}
 
 	lastEnd := ints[0].High
 	for _, o := range ints[1:] {
 		if o.Low != lastEnd {
-			intervals = append(intervals, newInterval(lastEnd, o.Low))
+			intervals = append(intervals, NewInterval(lastEnd, o.Low))
 		}
 		lastEnd = o.High
 	}
 
 	if lastEnd < end {
-		intervals = append(intervals, newInterval(lastEnd, end))
+		intervals = append(intervals, NewInterval(lastEnd, end))
 	}
 
 	return intervals
+}
+
+// Blocks returns a list of continuous blocks stored in the memory.
+func (m *Memory) Blocks() []Interval {
+	var blocks []Interval
+
+	m.t.Each(func(begin, end model.Addr, val cutExpr) {
+		if len(blocks) == 0 || blocks[len(blocks)-1].end != begin {
+			blocks = append(blocks, NewInterval(begin, end))
+			return
+		}
+
+		blocks[len(blocks)-1].end = end
+	})
+
+	return blocks
 }

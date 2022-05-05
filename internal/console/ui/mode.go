@@ -27,7 +27,7 @@ func newCmdMap(cmds []Command) (commandMap, error) {
 
 type Mode interface {
 	Commands() []Command
-	Element() view.Element
+	View() view.Element
 }
 
 type namedMode struct {

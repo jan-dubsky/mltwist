@@ -30,15 +30,15 @@ func NewLinesView(l *lines.Lines, c *cursor.Cursor) *LinesView {
 func (*LinesView) MinLines() int   { return 5 }
 func (v *LinesView) MaxLines() int { return v.l.Len() }
 
-func (v *LinesView) Print(lines int) error {
+func (v *LinesView) Print(n int) error {
 	offset := v.c.Value()
 
 	// Golden ratio calculation.
-	begin := offset - int(math.Floor(float64(lines)/(math.Phi+1)))
+	begin := offset - int(math.Floor(float64(n)/(math.Phi+1)))
 	if begin < 0 {
 		begin = 0
 	}
-	end := begin + lines
+	end := begin + n
 
 	for i := begin; i < end; i++ {
 		fmt.Print(v.Format(i))

@@ -112,7 +112,13 @@ func (e *Emulator) memValue(key expr.Key, addr model.Addr, w expr.Width) expr.Co
 	}
 
 	for _, intv := range e.state.Mems.Missing(key, addr, w) {
-		addr, w := intv.Begin(), intv.Width()
+		addr := intv.Begin()
+		// We are certain that length first expr.Width as we provided
+		// expr.Width to the missing call. The wort possible case is
+		// that the whole interval is missing, but the interval missing
+		// is then w long at most and w is expr.Width.
+		w := expr.Width(intv.Len())
+
 		val := e.stateProv.Memory(key, intv.Begin(), w)
 		val = exprtransform.SetWidthConst(val, w)
 

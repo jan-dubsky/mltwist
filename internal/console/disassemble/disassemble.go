@@ -8,20 +8,20 @@ import (
 	"mltwist/internal/deps"
 )
 
-var _ ui.Mode = &disassemble{}
+var _ ui.Mode = &mode{}
 
-type disassemble struct {
+type mode struct {
 	prog   *deps.Program
 	lines  *lines.Lines
 	cursor *cursor.Cursor
 	view   *view.LinesView
 }
 
-func New(p *deps.Program) *disassemble {
+func New(p *deps.Program) *mode {
 	lines := lines.New(p)
-	cursor := cursor.New(lines)
+	cursor := cursor.New(lines.Len())
 
-	return &disassemble{
+	return &mode{
 		prog:   p,
 		lines:  lines,
 		cursor: cursor,
@@ -29,5 +29,5 @@ func New(p *deps.Program) *disassemble {
 	}
 }
 
-func (d *disassemble) Commands() []ui.Command { return commands(d) }
-func (d *disassemble) Element() view.Element  { return d.view }
+func (d *mode) Commands() []ui.Command { return commands(d) }
+func (d *mode) View() view.Element     { return d.view }

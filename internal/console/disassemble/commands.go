@@ -10,7 +10,7 @@ import (
 	"regexp"
 )
 
-func commands(d *disassemble) []ui.Command {
+func commands(m *mode) []ui.Command {
 	return []ui.Command{{
 		Keys: []string{"down", "d"},
 		Help: "Move line cursor <N> lines down.",
@@ -18,7 +18,7 @@ func commands(d *disassemble) []ui.Command {
 			cmdtools.ParseNum(0, math.MaxInt),
 		},
 		Action: func(c *ui.Control, args ...interface{}) error {
-			return d.cursor.Set(d.cursor.Value() + args[0].(int))
+			return m.cursor.Set(m.cursor.Value() + args[0].(int))
 		},
 	}, {
 		Keys: []string{"up", "u"},
@@ -27,7 +27,7 @@ func commands(d *disassemble) []ui.Command {
 			cmdtools.ParseNum(0, math.MaxInt),
 		},
 		Action: func(c *ui.Control, args ...interface{}) error {
-			return d.cursor.Set(d.cursor.Value() + -args[0].(int))
+			return m.cursor.Set(m.cursor.Value() + -args[0].(int))
 		},
 	}, {
 		Keys: []string{"move", "mv", "m"},
@@ -38,17 +38,17 @@ func commands(d *disassemble) []ui.Command {
 		},
 		Action: func(c *ui.Control, args ...interface{}) error {
 			from, to := args[0].(int), args[1].(int)
-			d.lines.UnmarkAll()
+			m.lines.UnmarkAll()
 
-			err := d.lines.Move(from, to)
+			err := m.lines.Move(from, to)
 			if err != nil {
-				d.lines.SetMark(from, lines.MarkErrMovedFrom)
-				d.lines.SetMark(to, lines.MarkErrMovedTo)
+				m.lines.SetMark(from, lines.MarkErrMovedFrom)
+				m.lines.SetMark(to, lines.MarkErrMovedTo)
 				return err
 			}
 
-			d.lines.SetMark(from, lines.MarkMovedFrom)
-			d.lines.SetMark(to, lines.MarkMovedTo)
+			m.lines.SetMark(from, lines.MarkMovedFrom)
+			m.lines.SetMark(to, lines.MarkMovedTo)
 			return nil
 		},
 	}, {
@@ -59,29 +59,29 @@ func commands(d *disassemble) []ui.Command {
 		},
 		Action: func(c *ui.Control, args ...interface{}) error {
 			l := args[0].(int)
-			d.lines.UnmarkAll()
+			m.lines.UnmarkAll()
 
-			block, ok := d.lines.Block(l)
+			block, ok := m.lines.Block(l)
 			if !ok {
-				d.lines.SetMark(l, lines.MarkErr)
+				m.lines.SetMark(l, lines.MarkErr)
 				return fmt.Errorf("line doesn't belong to a block: %d", l)
 			}
 
-			ins, ok := d.lines.Index(l).Instruction()
+			ins, ok := m.lines.Index(l).Instruction()
 			if !ok {
-				d.lines.SetMark(l, lines.MarkErr)
+				m.lines.SetMark(l, lines.MarkErr)
 				return fmt.Errorf("line is not an instruction: %d", l)
 			}
 
 			lower := block.LowerBound(ins)
 			upper := block.UpperBound(ins)
-			lowerLine := d.lines.Line(block, lower)
-			upperLine := d.lines.Line(block, upper)
+			lowerLine := m.lines.Line(block, lower)
+			upperLine := m.lines.Line(block, upper)
 
 			// Lower and Upper indices are inclusive, but in
 			// visualization we want to have exclusive indices.
-			d.lines.SetMark(lowerLine-1, lines.MarkLowerBound)
-			d.lines.SetMark(upperLine+1, lines.MarkUpperBound)
+			m.lines.SetMark(lowerLine-1, lines.MarkLowerBound)
+			m.lines.SetMark(upperLine+1, lines.MarkUpperBound)
 
 			return nil
 		},
@@ -104,9 +104,9 @@ func commands(d *disassemble) []ui.Command {
 			}
 
 			var line int = -1
-			offset := d.cursor.Value()
-			for i := offset + 1; i != offset; i = (i + 1) % d.lines.Len() {
-				if regexp.MatchString(d.lines.Index(i).String()) {
+			offset := m.cursor.Value()
+			for i := offset + 1; i != offset; i = (i + 1) % m.lines.Len() {
+				if regexp.MatchString(m.lines.Index(i).String()) {
 					line = i
 					break
 				}
@@ -116,7 +116,7 @@ func commands(d *disassemble) []ui.Command {
 				return c.ErrMsgf("No line matching regex %q found.\n", r)
 			}
 
-			err = d.cursor.Set(line)
+			err = m.cursor.Set(line)
 			if err != nil {
 				return err
 			}
@@ -130,11 +130,11 @@ func commands(d *disassemble) []ui.Command {
 		},
 		Action: func(c *ui.Control, args ...interface{}) error {
 			n := args[0].(int)
-			if l := d.lines.Len(); n > l {
+			if l := m.lines.Len(); n > l {
 				return fmt.Errorf("line number too big: %d > %d", n, l)
 			}
 
-			if err := d.cursor.Set(n); err != nil {
+			if err := m.cursor.Set(n); err != nil {
 				return err
 			}
 
@@ -144,8 +144,8 @@ func commands(d *disassemble) []ui.Command {
 		Keys: []string{"entrypoint", "entry"},
 		Help: "Sets cursor to app entrypoint.",
 		Action: func(c *ui.Control, args ...interface{}) error {
-			a := d.prog.Entrypoint()
-			block, ok := d.prog.Address(a)
+			a := m.prog.Entrypoint()
+			block, ok := m.prog.Address(a)
 			if !ok {
 				return fmt.Errorf("cannot find block at address 0x%x", a)
 			}
@@ -155,8 +155,8 @@ func commands(d *disassemble) []ui.Command {
 				return fmt.Errorf("cannot find instruction at address 0x%x", a)
 			}
 
-			line := d.lines.Line(block, ins.Idx())
-			d.cursor.Set(line)
+			line := m.lines.Line(block, ins.Idx())
+			m.cursor.Set(line)
 			return nil
 		},
 	}, {
@@ -164,8 +164,8 @@ func commands(d *disassemble) []ui.Command {
 		Help: "Prints all lines of the code into console. " +
 			"Ignores current cursor position.",
 		Action: func(c *ui.Control, args ...interface{}) error {
-			for i := 0; i < d.lines.Len(); i++ {
-				fmt.Print(d.view.Format(i))
+			for i := 0; i < m.lines.Len(); i++ {
+				fmt.Print(m.view.Format(i))
 			}
 
 			if err := c.ErrMsgf("\n"); err != nil {
@@ -180,10 +180,10 @@ func commands(d *disassemble) []ui.Command {
 			"TIP: for emulation started at entrypoint, use 'entrypoint' " +
 			"command followed by this command.",
 		Action: func(c *ui.Control, args ...interface{}) error {
-			l := d.cursor.Value()
-			line := d.lines.Index(l)
+			l := m.cursor.Value()
+			line := m.lines.Index(l)
 
-			block, ok := d.lines.Block(l)
+			block, ok := m.lines.Block(l)
 			if !ok {
 				return fmt.Errorf("line %d belongs to no block", l)
 			}
@@ -194,7 +194,7 @@ func commands(d *disassemble) []ui.Command {
 			}
 
 			ins := block.Index(insIdx)
-			emul, err := emulate.New(d.prog, ins.Addr())
+			emul, err := emulate.New(m.prog, ins.Addr())
 			if err != nil {
 				return fmt.Errorf("bug: cannot create emulation: %w", err)
 			}
