@@ -1,38 +1,42 @@
 package expreval
 
 import (
-	"mltwist/pkg/expr"
 	"fmt"
 	"math"
 	"math/big"
+	"mltwist/pkg/expr"
 	"unsafe"
 )
 
 func init() {
 	// For bit shifts, we assume that we are able to represent any possible
 	// bit shift of register using uint64. To do so, possible width of
-	// register shifted must be less than 2^64 bits => 2^61 bytes.
+	// register shifted must be strictly less than 2^64 bits => 2^61 bytes.
+	// As 2^64 is not representable as uint64 and we have more than enough
+	// space, we have decided to use 2^63 bits as allowed maximum => 2^60
+	// bytes.
 	//
-	// Given that 2^61 bytes is more than 2EB (exabytes), we can consider
+	// Given that 2^60 bytes is more than 1EB (exabytes), we can consider
 	// this assumption to be reasonable. Current maximal widths of registers
 	// are at most tenths of bytes (i.e. AVX512), so we have more than
 	// enough spare capacity to grow to with this implementation.
-	if (unsafe.Sizeof(expr.Width(0)) * 8) > 60 {
+	if unsafe.Sizeof(expr.Width(0))*8 > 60 {
 		panic("precondition of this package is uint64 must be able to capture " +
 			"any number of bits expr.Width can express")
 	}
 }
 
+// Add calculates sum of val1 and val2 of width w.
 func Add(val1 Value, val2 Value, w expr.Width) Value {
-	sum := make(Value, w)
-	val1Ext, val2Ext := val1.SetWidth(w), val2.SetWidth(w)
+	sum := make([]byte, w)
+	bytes1, bytes2 := val1.SetWidth(w).bytes(), val2.SetWidth(w).bytes()
 
 	var carry bool
 	for i := range sum {
-		v1, v2 := val1Ext[i], val2Ext[i]
-		res := v1 + v2
+		b1, b2 := bytes1[i], bytes2[i]
+		res := b1 + b2
 
-		var newCarry = res < v1 || (carry && res == math.MaxUint8)
+		var newCarry = res < b1 || (carry && res == math.MaxUint8)
 		if carry {
 			res += 1
 		}
@@ -41,19 +45,20 @@ func Add(val1 Value, val2 Value, w expr.Width) Value {
 		carry = newCarry
 	}
 
-	return sum
+	return newValue(sum)
 }
 
+// Sub calculates difference of val1 and val2 of width w.
 func Sub(val1 Value, val2 Value, w expr.Width) Value {
-	diff := make(Value, w)
-	val1Ext, val2Ext := val1.SetWidth(w), val2.SetWidth(w)
+	diff := make([]byte, w)
+	bytes1, bytes2 := val1.SetWidth(w).bytes(), val2.SetWidth(w).bytes()
 
 	var carry bool
 	for i := range diff {
-		v1, v2 := val1Ext[i], val2Ext[i]
-		res := v1 - v2
+		b1, b2 := bytes1[i], bytes2[i]
+		res := b1 - b2
 
-		var newCarry = res > v1 || (carry && res == 0)
+		var newCarry = res > b1 || (carry && res == 0)
 		if carry {
 			res -= 1
 		}
@@ -62,11 +67,15 @@ func Sub(val1 Value, val2 Value, w expr.Width) Value {
 		carry = newCarry
 	}
 
-	return diff
+	return newValue(diff)
 }
 
 func shiftUint64(v Value, w expr.Width) (uint64, uint8, bool) {
 	vInt := v.bigInt(w)
+
+	// Is greater than any allowed width of value -> The whole shifted value
+	// will be shifted away -> result is always zero independently on the
+	// value.
 	if !vInt.IsUint64() {
 		return 0, 0, false
 	}
@@ -81,27 +90,29 @@ func shiftUint64(v Value, w expr.Width) (uint64, uint8, bool) {
 	return byteShift, uint8(rawShift % 8), true
 }
 
-func bitLsh(val Value, shift uint8) {
+func bitLsh(bs []byte, shift uint8) {
 	if shift >= 8 || shift == 0 {
 		panic(fmt.Sprintf("invalid bit shift: %d", shift))
 	}
 
 	antiShift := 8 - shift
-	val[len(val)-1] = val[len(val)-1] << shift
-	for i := len(val) - 2; i >= 0; i-- {
-		val[i+1] |= val[i] >> antiShift
-		val[i] <<= shift
+	bs[len(bs)-1] = bs[len(bs)-1] << shift
+	for i := len(bs) - 2; i >= 0; i-- {
+		bs[i+1] |= bs[i] >> antiShift
+		bs[i] <<= shift
 	}
 }
 
+// Lsh implements left shift of value val1 of val2 bits. Bottom-most val2 bits
+// are set to zeros.
 func Lsh(val1 Value, val2 Value, w expr.Width) Value {
 	byteShift, bitShift, ok := shiftUint64(val2, w)
 	if !ok {
 		return Value{}.SetWidth(w)
 	}
 
-	val1Ext := val1.SetWidth(w)
-	shifted := make(Value, w)
+	val1Ext := val1.SetWidth(w).bytes()
+	shifted := make([]byte, w)
 	for i := 0; i < int(w-expr.Width(byteShift)); i++ {
 		shifted[i+int(byteShift)] = val1Ext[i]
 	}
@@ -110,19 +121,19 @@ func Lsh(val1 Value, val2 Value, w expr.Width) Value {
 		bitLsh(shifted, bitShift)
 	}
 
-	return shifted
+	return newValue(shifted)
 }
 
-func bitRsh(val Value, shift uint8) {
+func bitRsh(bs []byte, shift uint8) {
 	if shift >= 8 || shift == 0 {
 		panic(fmt.Sprintf("invalid bit shift: %d", shift))
 	}
 
 	antiShift := 8 - shift
-	val[0] = val[0] >> shift
-	for i := 1; i < len(val); i++ {
-		val[i-1] |= val[i] << antiShift
-		val[i] >>= shift
+	bs[0] = bs[0] >> shift
+	for i := 1; i < len(bs); i++ {
+		bs[i-1] |= bs[i] << antiShift
+		bs[i] >>= shift
 	}
 }
 
@@ -132,16 +143,17 @@ func Rsh(val1 Value, val2 Value, w expr.Width) Value {
 		return Value{}.SetWidth(w)
 	}
 
-	val1Ext := val1.SetWidth(w)
-	shifted := make(Value, w-expr.Width(byteShift))
-	for i := range shifted {
-		shifted[i] = val1Ext[i+int(byteShift)]
+	bytes1 := val1.SetWidth(w).bytes()
+	shiftedLen := int(w - expr.Width(byteShift))
+	shifted := make([]byte, w)
+	for i := 0; i < shiftedLen; i++ {
+		shifted[i] = bytes1[i+int(byteShift)]
 	}
 
 	if bitShift != 0 {
-		bitRsh(shifted, bitShift)
+		bitRsh(shifted[:shiftedLen], bitShift)
 	}
-	return shifted.SetWidth(w)
+	return newValue(shifted)
 }
 
 func Mul(val1 Value, val2 Value, w expr.Width) Value {
@@ -155,11 +167,11 @@ func Div(val1 Value, val2 Value, w expr.Width) Value {
 
 	// Special-case division by zero.
 	if val2Int.Cmp(&big.Int{}) == 0 {
-		div := make(Value, w)
-		for i := range div {
-			div[i] = math.MaxUint8
+		bytes := make([]byte, w)
+		for i := range bytes {
+			bytes[i] = math.MaxUint8
 		}
-		return div
+		return newValue(bytes)
 	}
 
 	div := (&big.Int{}).Div(val1.bigInt(w), val2Int)
@@ -184,14 +196,14 @@ func bitOp(
 	w expr.Width,
 	byteFunc func(v1 byte, v2 byte) byte,
 ) Value {
-	result := make(Value, w)
-	val1Ext, val2Ext := val1.SetWidth(w), val2.SetWidth(w)
+	result := make([]byte, w)
+	bytes1, bytes2 := val1.SetWidth(w).bytes(), val2.SetWidth(w).bytes()
 
 	for i := range result {
-		result[i] = byteFunc(val1Ext[i], val2Ext[i])
+		result[i] = byteFunc(bytes1[i], bytes2[i])
 	}
 
-	return result
+	return newValue(result)
 }
 
 func And(val1 Value, val2 Value, w expr.Width) Value {
