@@ -31,7 +31,7 @@ func (b Binary) Arg1() Expr { return b.arg1 }
 // Arg2 returns second operang of a binary operation.
 func (b Binary) Arg2() Expr { return b.arg2 }
 
-// Width returns width of this operation.
+// Width returns width of b.
 func (b Binary) Width() Width { return b.w }
 func (Binary) internalExpr()  {}
 

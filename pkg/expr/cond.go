@@ -2,6 +2,9 @@ package expr
 
 var _ Expr = Cond{}
 
+// Cond represents a conditional expression comparing arg1 and arg2. This
+// operation returns trueExpr or falseExpr if condition result is true or false
+// respectively. The width of expression returned is always w.
 type Cond struct {
 	cond Condition
 	arg1 Expr
@@ -13,6 +16,9 @@ type Cond struct {
 	w Width
 }
 
+// NewCond returns new Cond matching cond for arg1 and arg2 and returning
+// trueExpr or falseExpr for true of false condition result respectively. The
+// width of expression returned is always w.
 func NewCond(
 	cond Condition,
 	arg1 Expr,
@@ -33,7 +39,7 @@ func NewCond(
 	}
 }
 
-// Condition returns condidion applies on Arg1 and Arg2.
+// Cond returns condidion applies on Arg1 and Arg2.
 func (c Cond) Cond() Condition { return c.cond }
 
 // Arg1 returns first argument of a condition.
@@ -48,6 +54,7 @@ func (c Cond) ExprTrue() Expr { return c.trueExpr }
 // ExprTrue returns the expression returned in case of condition being false.
 func (c Cond) ExprFalse() Expr { return c.falseExpr }
 
+// Width returns width of c.
 func (c Cond) Width() Width { return c.w }
 func (Cond) internalExpr()  {}
 

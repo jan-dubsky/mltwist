@@ -17,14 +17,13 @@ var (
 
 var _ Expr = Const{}
 
+// Const is a constant expression of arbitrary width.
 type Const struct {
-	b []byte
+	bs []byte
 }
 
-func newConst(b []byte) Const {
-	return Const{
-		b: b,
-	}
+func newConst(bs []byte) Const {
+	return Const{bs: bs}
 }
 
 // NewConst creates constant of width w out of bytes b. Bytes in b are encoded
@@ -95,11 +94,18 @@ func ConstFromInt[T constraints.Signed](val T) Const {
 	return NewConstInt(val, Width(unsafe.Sizeof(val)))
 }
 
-func (c Const) Bytes() []byte { return c.b }
-func (c Const) Width() Width  { return Width(len(c.b)) }
+// Bytes returns array of bytes stored in c.
+//
+// The value returned must be treated as read-only. Any modification of returned
+// value will modify c as well, which is prohibited given that expressions are
+// immutable.
+func (c Const) Bytes() []byte { return c.bs }
+
+// Width returns width of c.
+func (c Const) Width() Width { return Width(len(c.bs)) }
 
 // Equal checks constant equality.
-func (c1 Const) Equal(c2 Const) bool { return bytes.Equal(c1.b, c2.b) }
+func (c1 Const) Equal(c2 Const) bool { return bytes.Equal(c1.bs, c2.bs) }
 func (Const) internalExpr()          {}
 
 func nonzeroUpperIdx(b []byte) int {

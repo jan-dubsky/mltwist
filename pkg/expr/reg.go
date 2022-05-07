@@ -30,6 +30,7 @@ func (l1 RegLoad) Equal(l2 RegLoad) bool {
 	return l1.Key() == l2.Key() && l1.Width() == l2.Width()
 }
 
+// Width returns width of cl
 func (l RegLoad) Width() Width { return l.w }
 func (RegLoad) internalExpr()  {}
 
@@ -66,5 +67,6 @@ func (s1 RegStore) Equal(s2 MemStore) bool {
 	return s1.Key() == s2.Key() && s1.Width() == s2.Width()
 }
 
+// Width returns width of s.
 func (s RegStore) Width() Width  { return s.w }
 func (RegStore) internalEffect() {}
