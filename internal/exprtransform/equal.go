@@ -26,7 +26,7 @@ func Equal(ex1 expr.Expr, ex2 expr.Expr) bool {
 			return false
 		}
 
-		return e1.Condition() == e2.Condition() &&
+		return e1.Cond() == e2.Cond() &&
 			Equal(e1.Arg1(), e2.Arg1()) &&
 			Equal(e1.Arg2(), e2.Arg2()) &&
 			Equal(e1.ExprTrue(), e2.ExprTrue()) &&

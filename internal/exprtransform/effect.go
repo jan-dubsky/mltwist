@@ -28,11 +28,12 @@ func ExprsMany(effects []expr.Effect) []expr.Expr {
 	return exprs
 }
 
-type exprTransformFunc func(ex expr.Expr) expr.Expr
+// ExprTransformFunc is a function transforming one expression to another.
+type ExprTransformFunc func(ex expr.Expr) expr.Expr
 
 // EffectApply applies f to every expr.Expr in effect and produces a new effect
 // with the same type and width, but refering transformed expr.Exprs.
-func EffectApply(effect expr.Effect, f exprTransformFunc) expr.Effect {
+func EffectApply(effect expr.Effect, f ExprTransformFunc) expr.Effect {
 	switch e := effect.(type) {
 	case expr.MemStore:
 		return expr.NewMemStore(f(e.Value()), e.Key(), f(e.Addr()), e.Width())
@@ -45,7 +46,7 @@ func EffectApply(effect expr.Effect, f exprTransformFunc) expr.Effect {
 
 // EffectsApply calls EffectApply for every effect in effects and returns array
 // of modified effects. Both order and number of effects is preserved.
-func EffectsApply(effects []expr.Effect, f exprTransformFunc) []expr.Effect {
+func EffectsApply(effects []expr.Effect, f ExprTransformFunc) []expr.Effect {
 	applied := make([]expr.Effect, len(effects))
 	for i, e := range effects {
 		applied[i] = EffectApply(e, f)

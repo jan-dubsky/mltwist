@@ -54,9 +54,24 @@ func TestConstFold(t *testing.T) {
 			expr.Width32,
 		),
 	}, {
-		name: "eval_condition_no_cond_width",
+		name: "eval_condition__rue_no_cond_width",
 		e: expr.NewCond(
 			expr.Eq,
+			expr.NewBinary(expr.Lsh,
+				expr.ConstFromUint[uint8](5),
+				expr.NewBinary(expr.Sub, c1, c2, expr.Width8),
+				expr.Width32,
+			),
+			expr.ConstFromUint[uint32](5<<26),
+			expr.ConstFromUint[uint16](42),
+			expr.Zero,
+			expr.Width32,
+		),
+		exp: expr.ConstFromUint[uint32](42),
+	}, {
+		name: "eval_condition_false_no_cond_width",
+		e: expr.NewCond(
+			expr.Leu,
 			expr.NewBinary(expr.Lsh,
 				expr.ConstFromUint[uint8](5),
 				expr.NewBinary(expr.Sub, c1, c2, expr.Width8),

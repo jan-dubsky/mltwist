@@ -34,7 +34,7 @@ func NewCond(
 }
 
 // Condition returns condidion applies on Arg1 and Arg2.
-func (c Cond) Condition() Condition { return c.cond }
+func (c Cond) Cond() Condition { return c.cond }
 
 // Arg1 returns first argument of a condition.
 func (c Cond) Arg1() Expr { return c.arg1 }

@@ -39,8 +39,17 @@ func jumpAddrs(ex expr.Expr) []expr.Expr {
 		}
 
 		return es
-	case expr.Const, expr.MemLoad, expr.RegLoad:
+	case expr.Const, expr.RegLoad:
 		return []expr.Expr{ex}
+	case expr.MemLoad:
+		eAddrs := jumpAddrs(e.Addr())
+
+		es := make([]expr.Expr, len(eAddrs))
+		for i, eAddr := range eAddrs {
+			es[i] = expr.NewMemLoad(e.Key(), eAddr, e.Width())
+		}
+
+		return es
 	default:
 		panic(fmt.Sprintf("unknown expr.Expr type: %T", ex))
 	}

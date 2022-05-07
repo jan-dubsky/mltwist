@@ -85,13 +85,13 @@ func setWidth(ex expr.Expr, w expr.Width) (expr.Expr, bool) {
 }
 
 // PurgeWidthGadgets removes all unnecessary width gadgets in an expression
-// tree. No no-width gadget expression are not modified in any way.
+// tree. All no-width-gadget expression are left unchanged.
 //
 // In many algorithms or transformations, the algorithm doesn't know the full
 // context (i.e. consumer) of an expression. This absence of knowledge can
 // result in extensive usage of width gadget (defined by exprtools package).
 // This function performs context-based analysis of an expression which allows
-// it to remove unnecessary width gadgets.
+// to remove unnecessary width gadgets.
 func PurgeWidthGadgets(ex expr.Expr) expr.Expr {
 	e, _ := purgeWidthGadgetsKeepWidth(ex)
 	return e
@@ -122,7 +122,6 @@ func purgeWidthGadgets(ex expr.Expr) (expr.Expr, bool) {
 		e1, prunedArg1 := pruneUselessWidthGadgets(e1, e.Width())
 		e2, prunedArg2 := pruneUselessWidthGadgets(e2, e.Width())
 
-		// Performance (allocation) optimization.
 		if !(changedArg1 || changedArg2 || prunedArg1 || prunedArg2) {
 			return ex, false
 		}
@@ -139,17 +138,15 @@ func purgeWidthGadgets(ex expr.Expr) (expr.Expr, bool) {
 		et, prunedTrue := pruneUselessWidthGadgets(et, e.Width())
 		ef, prunedFalse := pruneUselessWidthGadgets(ef, e.Width())
 
-		// Performance (allocation) optimization.
 		if !(changed || prunedArg1 || prunedArg2 || prunedTrue || prunedFalse) {
 			return ex, false
 		}
-		return expr.NewCond(e.Condition(), c1, c2, et, ef, e.Width()), true
+		return expr.NewCond(e.Cond(), c1, c2, et, ef, e.Width()), true
 	case expr.MemLoad:
-		// Address keeps its width.
+		// Address keeps its width independently on width of MemLoad.
 		addr, changedAddr := purgeWidthGadgetsKeepWidth(e.Addr())
 		addr, prunedAddr := pruneUselessWidthGadgets(addr, e.Width())
 
-		// Performance (allocation) optimization.
 		if !(changedAddr || prunedAddr) {
 			return ex, false
 		}
