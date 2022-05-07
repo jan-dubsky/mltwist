@@ -96,7 +96,7 @@ func (p *Program) Address(a model.Addr) (Block, bool) {
 	return wrapBlock(b), true
 }
 
-func (p *Program) AddrIns(a model.Addr) (Instruction, bool) {
+func (p *Program) AddressIns(a model.Addr) (Instruction, bool) {
 	block, ok := p.Address(a)
 	if !ok {
 		return Instruction{}, false

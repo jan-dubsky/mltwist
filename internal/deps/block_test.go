@@ -423,3 +423,89 @@ func TestBlock_Move(t *testing.T) {
 		})
 	}
 }
+
+func TestBlock_Address(t *testing.T) {
+	addrIns := func(a model.Addr, id model.Addr) basicblock.Instruction {
+		return basicblock.Instruction{
+			Addr:  a,
+			Bytes: make([]byte, id),
+		}
+	}
+
+	tests := []struct {
+		name  string
+		block *block
+		addr  model.Addr
+		id    model.Addr
+	}{{
+		name: "first_ins",
+		block: newBlock(0, []basicblock.Instruction{
+			addrIns(0, 2),
+			addrIns(2, 4),
+			addrIns(6, 8),
+			addrIns(14, 16),
+		}),
+		addr: 0,
+		id:   2,
+	}, {
+		name: "last_ins",
+		block: newBlock(0, []basicblock.Instruction{
+			addrIns(0, 2),
+			addrIns(2, 4),
+			addrIns(6, 8),
+			addrIns(14, 16),
+		}),
+		addr: 14,
+		id:   16,
+	}, {
+		name: "middle_ins",
+		block: newBlock(0, []basicblock.Instruction{
+			addrIns(0, 2),
+			addrIns(2, 4),
+			addrIns(6, 8),
+			addrIns(14, 16),
+			addrIns(30, 32),
+		}),
+		addr: 6,
+		id:   8,
+	}, {
+		name: "in_between_instructions",
+		block: newBlock(0, []basicblock.Instruction{
+			addrIns(0, 2),
+			addrIns(2, 4),
+			addrIns(6, 8),
+			addrIns(14, 16),
+			addrIns(30, 32),
+		}),
+		addr: 8,
+		id:   model.MaxAddress,
+	}, {
+		name: "behind_last_addr",
+		block: newBlock(0, []basicblock.Instruction{
+			addrIns(0, 2),
+			addrIns(2, 4),
+			addrIns(6, 8),
+			addrIns(14, 16),
+			addrIns(30, 32),
+		}),
+		addr: 64,
+		id:   model.MaxAddress,
+	}}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			r := require.New(t)
+
+			ins, ok := tt.block.Address(tt.addr)
+			if tt.id == model.MaxAddress {
+				r.False(ok)
+				r.Zero(ins)
+				return
+			}
+
+			r.True(ok)
+			r.Equal(tt.id, ins.Len())
+		})
+	}
+}

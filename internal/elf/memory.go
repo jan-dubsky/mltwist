@@ -1,4 +1,4 @@
-package memory
+package elf
 
 import (
 	"fmt"
@@ -18,9 +18,9 @@ type Memory struct {
 	Blocks []Block
 }
 
-// New creates a new memory structure. This method return an error if blocks
-// overlap.
-func New(blocks ...Block) (*Memory, error) {
+// newMemory creates a new memory structure. This method return an error if
+// blocks overlap.
+func newMemory(blocks []Block) (*Memory, error) {
 	if len(blocks) == 0 {
 		return &Memory{}, nil
 	}
@@ -29,19 +29,21 @@ func New(blocks ...Block) (*Memory, error) {
 	sort.Slice(blocks, less)
 
 	for i := range blocks[1:] {
-		if e, b := blocks[i].End(), blocks[i+1].Begin(); e > b {
+		if blocks[i+1].Begin() < blocks[i].End() {
 			return nil, fmt.Errorf(
-				"block %d (ending 0x%x) and %d (starting 0x%x) overlap",
-				i, e, i+1, b)
+				"block %d (0x%x - 0x%x) and %d (0x%x - 0x%x) overlap",
+				i, blocks[i].Begin(), blocks[i].End(),
+				i+1, blocks[i+1].Begin(), blocks[i+i].End(),
+			)
 		}
 	}
 
 	return &Memory{Blocks: blocks}, nil
 }
 
-// Addr returns the longest available slice of memory starting at memory address
-// addr.
-func (m *Memory) Addr(addr model.Addr) []byte {
+// Address returns the longest available slice of memory starting at memory
+// address addr.
+func (m *Memory) Address(addr model.Addr) []byte {
 	idx := sort.Search(len(m.Blocks), func(i int) bool {
 		return m.Blocks[i].End() > addr
 	})
@@ -50,5 +52,5 @@ func (m *Memory) Addr(addr model.Addr) []byte {
 		return nil
 	}
 
-	return m.Blocks[idx].Addr(addr)
+	return m.Blocks[idx].Address(addr)
 }

@@ -63,7 +63,7 @@ func (m MemMap) Missing(key expr.Key, addr model.Addr, w expr.Width) []Interval 
 // already written and significantly lowering memory consumption by not storing
 // other bytes. Any representation of sparse memory also contains an information
 // which memory was written and which was not as those blocks which were not
-// written are just not included in the memory. Consequently we are able to
+// written are just not included in the memory. This way, we are able to
 // recognize memory addresses which were never written.
 //
 // The last challenge of our memory design in the fact that we don't store
@@ -72,8 +72,8 @@ func (m MemMap) Missing(key expr.Key, addr model.Addr, w expr.Width) []Interval 
 // cannot deduce their byte value. What we can do is to store raw expressions.
 // Storing expression instead of bytes brings some challenges in mapping the
 // expression model to a byte-oriented model. Namely a new write can rewrite
-// just part of an expression written before. Consequently, we have to store an
-// information which bytes of an expression are still valid and which of them
+// just part of an expression written before. For this reason, we have to store
+// an information which bytes of an expression are still valid and which of them
 // were rewritten. On read, we are able to compose any expression as combination
 // of written expression modified by bit shifts, ANDs and OSs.
 //
@@ -85,8 +85,8 @@ func (m MemMap) Missing(key expr.Key, addr model.Addr, w expr.Width) []Interval 
 // expression complexity is only linear in number of writes. Consequently the
 // overall number of expression used to represent the state of memory after n
 // writes is always O(n) independently on the fact whether expression splitting
-// happens or not. Consequently an expression splitting is not a problem as it
-// doesn't increase number of expressions to evaluate significantly.
+// happens or not. Given this, the expression splitting is not much of an issue
+// as it doesn't increase number of expressions to evaluate significantly.
 type Memory struct {
 	t *interval.Tree[model.Addr, cutExpr]
 }

@@ -1,45 +1,44 @@
-package memory_test
+package elf
 
 import (
-	"mltwist/internal/memory"
 	"mltwist/pkg/model"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestBlock_Addr(t *testing.T) {
+func TestBlock_Address(t *testing.T) {
 	tests := []struct {
 		name   string
-		block  memory.Block
+		block  Block
 		addr   model.Addr
 		length int
 	}{
 		{
 			name:   "block_beginning",
-			block:  memory.NewBlock(64, make([]byte, 32)),
+			block:  newBlock(64, make([]byte, 32), true),
 			addr:   64,
 			length: 32,
 		},
 		{
 			name:   "block_last_byte",
-			block:  memory.NewBlock(64, make([]byte, 32)),
+			block:  newBlock(64, make([]byte, 32), true),
 			addr:   64 + 31,
 			length: 1,
 		},
 		{
 			name:  "end",
-			block: memory.NewBlock(64, make([]byte, 32)),
+			block: newBlock(64, make([]byte, 32), true),
 			addr:  64 + 32,
 		},
 		{
 			name:  "before_begin",
-			block: memory.NewBlock(64, make([]byte, 32)),
+			block: newBlock(64, make([]byte, 32), true),
 			addr:  63,
 		},
 		{
 			name:   "middle_of_block",
-			block:  memory.NewBlock(64, make([]byte, 32)),
+			block:  newBlock(64, make([]byte, 32), true),
 			addr:   64 + 12,
 			length: 20,
 		},
@@ -50,7 +49,7 @@ func TestBlock_Addr(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			b := tt.block.Addr(tt.addr)
+			b := tt.block.Address(tt.addr)
 			r.Equal(tt.length, len(b))
 			if tt.length == 0 {
 				r.Nil(b)

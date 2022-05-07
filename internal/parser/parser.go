@@ -2,18 +2,22 @@ package parser
 
 import (
 	"fmt"
-	"mltwist/internal/memory"
+	"mltwist/internal/elf"
 	"mltwist/pkg/model"
 )
 
 // Parse parses all instructions in a memory. This function fails if any of
 // parsings fails.
 func Parse(
-	m *memory.Memory,
+	m *elf.Memory,
 	p Parser,
 ) ([]Instruction, error) {
 	instrs := make([]Instruction, 0, len(m.Blocks))
 	for _, block := range m.Blocks {
+		if !block.Executable() {
+			continue
+		}
+
 		for addr := block.Begin(); addr < block.End(); {
 			ins, err := parseIns(p, block, addr)
 			if err != nil {
@@ -32,10 +36,10 @@ func Parse(
 
 func parseIns(
 	p Parser,
-	block memory.Block,
+	block elf.Block,
 	addr model.Addr,
 ) (Instruction, error) {
-	b := block.Addr(addr)
+	b := block.Address(addr)
 
 	ins, err := p.Parse(addr, b)
 	if err != nil {

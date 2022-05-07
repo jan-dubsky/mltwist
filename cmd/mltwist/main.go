@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"mltwist/internal/console"
 	"mltwist/internal/deps"
-	"mltwist/internal/executable"
+	"mltwist/internal/elf"
 	"mltwist/internal/parser"
 	"mltwist/internal/riscv"
 	"os"
@@ -16,13 +16,13 @@ func run() error {
 	}
 	filename := os.Args[1]
 
-	exec, err := executable.Parse(filename)
+	exec, err := elf.Parse(filename)
 	if err != nil {
 		return fmt.Errorf("ELF parsing failed: %w", err)
 	}
 
 	fmt.Printf("Entrypoint: 0x%x\n", exec.Entrypoint)
-	fmt.Printf("Bytes: %b\n", exec.Memory.Addr(exec.Entrypoint)[:4])
+	fmt.Printf("Bytes: %b\n", exec.Memory.Address(exec.Entrypoint)[:4])
 
 	riscvParser := riscv.NewParser(riscv.Variant64, riscv.ExtM)
 	ins, err := parser.Parse(exec.Memory, riscvParser)

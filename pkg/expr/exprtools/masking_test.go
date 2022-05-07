@@ -39,6 +39,13 @@ func TestMaskBits(t *testing.T) {
 			w:    expr.Width128,
 			exp:  expr.NewConst([]byte{1, 2, 3, 4, 5, 6, 7, 8, 0xca, 0xff, 0x3}, expr.Width128),
 		},
+		{
+			name: "uint64_width",
+			e:    expr.ConstFromUint[uint64](0xfedcba9876543210),
+			cnt:  64,
+			w:    expr.Width64,
+			exp:  expr.ConstFromUint[uint64](0xfedcba9876543210),
+		},
 	}
 
 	for _, tt := range tests {
