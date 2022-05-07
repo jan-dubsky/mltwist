@@ -5,10 +5,10 @@ import (
 )
 
 type CompositeView struct {
-	elements []Element
+	elements []View
 }
 
-func NewCompositeView(elements ...Element) *CompositeView {
+func NewCompositeView(elements ...View) *CompositeView {
 	return &CompositeView{
 		elements: elements,
 	}

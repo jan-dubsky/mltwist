@@ -1,6 +1,6 @@
 package view
 
-type Element interface {
+type View interface {
 	// MinLines returns minimal number of lines the view needs to render.
 	// The returned number should be always non-negative. Negative number
 	// will be understood as zero.

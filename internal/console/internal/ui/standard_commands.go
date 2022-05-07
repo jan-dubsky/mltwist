@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"mltwist/internal/console/internal/linereader"
 	"strings"
 )
 
@@ -11,7 +12,7 @@ var ErrQuit = fmt.Errorf("app exit required")
 var standardCmds = []Command{{
 	Keys: []string{"quit", "q"},
 	Help: "Quit the app.",
-	Action: func(c *Control, args ...interface{}) error {
+	Action: func(c *UI, args ...interface{}) error {
 		fmt.Printf("\n")
 		return ErrQuit
 	}},
@@ -24,7 +25,7 @@ func addHelp(cmds []Command) []Command {
 	}
 	cmds = append([]Command{helpCmd}, cmds...)
 
-	cmds[0].Action = func(c *Control, _ ...interface{}) error {
+	cmds[0].Action = func(_ *UI, _ ...interface{}) error {
 		for _, cmd := range cmds {
 			fmt.Printf("%s\t(args: %d, additional_args: %t)\n",
 				strings.Join(cmd.Keys, ", "),
@@ -35,7 +36,7 @@ func addHelp(cmds []Command) []Command {
 			fmt.Printf("\n")
 		}
 
-		if err := c.ErrMsgf("\n"); err != nil {
+		if err := linereader.ErrMsgf("\n"); err != nil {
 			return err
 		}
 

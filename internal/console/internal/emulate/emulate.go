@@ -2,10 +2,9 @@ package emulate
 
 import (
 	"fmt"
-	"mltwist/internal/console/internal/cursor"
 	"mltwist/internal/console/internal/lines"
+	"mltwist/internal/console/internal/ui"
 	"mltwist/internal/console/internal/view"
-	"mltwist/internal/console/ui"
 	"mltwist/internal/deps"
 	"mltwist/internal/emulator"
 	"mltwist/pkg/model"
@@ -14,32 +13,24 @@ import (
 var _ ui.Mode = &mode{}
 
 type mode struct {
-	p    *deps.Program
-	emul *emulator.Emulator
-
-	lines  *lines.Lines
-	cursor *cursor.Cursor
-
-	view view.Element
+	p        *deps.Program
+	emul     *emulator.Emulator
+	lineView *lines.View
+	view     view.View
 }
 
 func New(p *deps.Program, ip model.Addr) (*mode, error) {
 	emul := emulator.New(p, ip, &stateProvider{})
 
-	lines := lines.New(p)
-	cursor := cursor.New(lines.Len())
-
-	lineView := view.NewLinesView(lines, cursor)
+	lineView := lines.NewView(p)
 	regView := newRegView(emul.State())
 
 	e := &mode{
 		p:    p,
 		emul: emul,
 
-		lines:  lines,
-		cursor: cursor,
-
-		view: view.NewCompositeView(lineView, regView),
+		lineView: lineView,
+		view:     view.NewCompositeView(lineView, regView),
 	}
 
 	if err := e.refreshCursor(); err != nil {
@@ -50,7 +41,7 @@ func New(p *deps.Program, ip model.Addr) (*mode, error) {
 }
 
 func (e *mode) Commands() []ui.Command { return commands(e) }
-func (e *mode) View() view.Element     { return e.view }
+func (e *mode) View() view.View        { return e.view }
 
 func (e *mode) refreshCursor() error {
 	ip := e.emul.IP()
@@ -65,6 +56,6 @@ func (e *mode) refreshCursor() error {
 		return fmt.Errorf("cannot find instruction at address 0x%x", ip)
 	}
 
-	e.cursor.Set(e.lines.Line(block, ins.Idx()))
+	e.lineView.Cursor.Set(e.lineView.Lines.Line(block, ins.Idx()))
 	return nil
 }

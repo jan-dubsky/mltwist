@@ -2,10 +2,10 @@ package emulate
 
 import (
 	"fmt"
-	"mltwist/internal/console/emulate/memview"
 	"mltwist/internal/console/internal/linereader"
-	"mltwist/internal/console/ui"
-	"mltwist/internal/console/ui/cmdtools"
+	"mltwist/internal/console/internal/memview"
+	"mltwist/internal/console/internal/ui"
+	"mltwist/internal/console/internal/ui/cmdtools"
 	"mltwist/pkg/expr"
 	"sort"
 )
@@ -14,9 +14,9 @@ func commands(m *mode) []ui.Command {
 	return []ui.Command{{
 		Keys: []string{"forward", "fwd", "f", "step", "s"},
 		Help: "Move emulation one instruction forward.",
-		Action: func(c *ui.Control, args ...interface{}) error {
+		Action: func(_ *ui.UI, args ...interface{}) error {
 			ip := m.emul.IP()
-			ins, ok := m.p.AddrIns(ip)
+			ins, ok := m.p.AddressIns(ip)
 			if !ok {
 				return fmt.Errorf(
 					"cannot find instruction at address 0x%x", ip)
@@ -34,7 +34,7 @@ func commands(m *mode) []ui.Command {
 	}, {
 		Keys: []string{"memories", "mems", "ms"},
 		Help: "List all memories the program wrote.",
-		Action: func(c *ui.Control, args ...interface{}) error {
+		Action: func(_ *ui.UI, args ...interface{}) error {
 			mems := m.emul.State().Mems
 			keys := make([]expr.Key, 0, len(mems))
 			for k := range mems {
@@ -59,13 +59,13 @@ func commands(m *mode) []ui.Command {
 		Keys: []string{"memory", "mem", "m"},
 		Help: "Show content of memory address space identified by <key>.",
 		Args: []ui.ArgParseFunc{cmdtools.ParseString},
-		Action: func(c *ui.Control, args ...interface{}) error {
+		Action: func(ui *ui.UI, args ...interface{}) error {
 			key := expr.Key(args[0].(string))
 			mem := m.emul.State().Mems[key]
 
 			mode := memview.New(mem)
 			name := fmt.Sprintf("memview(%s)", key)
-			return c.AddMode(name, mode)
+			return ui.AddMode(name, mode)
 		},
 	}, {
 		Keys: []string{"reqmod", "rmod"},
@@ -85,7 +85,7 @@ func commands(m *mode) []ui.Command {
 		// of this specific program run. This fact doesn't weaken the
 		// final statement that register width cannot be changed
 		// dynamically.
-		Action: func(c *ui.Control, args ...interface{}) error {
+		Action: func(_ *ui.UI, args ...interface{}) error {
 			key := expr.Key(args[0].(string))
 			regs := m.emul.State().Regs
 

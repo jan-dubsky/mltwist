@@ -1,8 +1,8 @@
 package memview
 
 import (
+	"mltwist/internal/console/internal/ui"
 	"mltwist/internal/console/internal/view"
-	"mltwist/internal/console/ui"
 	"mltwist/internal/state"
 )
 
@@ -20,4 +20,4 @@ func New(mem *state.Memory) *mode {
 
 func (m *mode) Commands() []ui.Command { return commands(m) }
 
-func (m *mode) View() view.Element { return m.view }
+func (m *mode) View() view.View { return m.view }

@@ -2,8 +2,8 @@ package memview
 
 import (
 	"math"
-	"mltwist/internal/console/ui"
-	"mltwist/internal/console/ui/cmdtools"
+	"mltwist/internal/console/internal/ui"
+	"mltwist/internal/console/internal/ui/cmdtools"
 )
 
 func commands(m *mode) []ui.Command {
@@ -13,7 +13,7 @@ func commands(m *mode) []ui.Command {
 		Args: []ui.ArgParseFunc{
 			cmdtools.ParseNum(0, math.MaxInt),
 		},
-		Action: func(c *ui.Control, args ...interface{}) error {
+		Action: func(_ *ui.UI, args ...interface{}) error {
 			return m.view.c.Set(m.view.c.Value() + args[0].(int))
 		},
 	}, {
@@ -22,8 +22,8 @@ func commands(m *mode) []ui.Command {
 		Args: []ui.ArgParseFunc{
 			cmdtools.ParseNum(0, math.MaxInt),
 		},
-		Action: func(c *ui.Control, args ...interface{}) error {
-			return m.view.c.Set(m.view.c.Value() + -args[0].(int))
+		Action: func(_ *ui.UI, args ...interface{}) error {
+			return m.view.c.Set(m.view.c.Value() - args[0].(int))
 		},
 	}}
 }

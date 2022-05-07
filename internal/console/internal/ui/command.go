@@ -8,5 +8,5 @@ type Command struct {
 	Help         string
 	Args         []ArgParseFunc
 	OptionalArgs OptArgParseFunc
-	Action       func(c *Control, args ...interface{}) error
+	Action       func(ui *UI, args ...interface{}) error
 }

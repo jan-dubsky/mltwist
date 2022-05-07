@@ -1,37 +1,39 @@
-package view
+package lines
 
 import (
 	"fmt"
 	"math"
 	"mltwist/internal/console/internal/cursor"
-	"mltwist/internal/console/internal/lines"
+	"mltwist/internal/deps"
 )
 
-type LinesView struct {
-	l *lines.Lines
-	c *cursor.Cursor
+type View struct {
+	Lines  *Lines
+	Cursor *cursor.Cursor
 
 	format string
 }
 
-func NewLinesView(l *lines.Lines, c *cursor.Cursor) *LinesView {
-	idFormat := fmt.Sprintf("%%%dd", numDigits(l.Len(), 10))
-	markFormat := fmt.Sprintf("%%%ds", lines.MaxMarkLen)
+func NewView(p *deps.Program) *View {
+	lns := newLines(p)
+
+	idFormat := fmt.Sprintf("%%%dd", numDigits(lns.Len(), 10))
+	markFormat := fmt.Sprintf("%%%ds", MaxMarkLen)
 	format := fmt.Sprintf("%%1s %s  | %s | %%s\n", idFormat, markFormat)
 
-	return &LinesView{
-		l: l,
-		c: c,
+	return &View{
+		Lines:  lns,
+		Cursor: cursor.New(lns.Len()),
 
 		format: format,
 	}
 }
 
-func (*LinesView) MinLines() int   { return 5 }
-func (v *LinesView) MaxLines() int { return v.l.Len() }
+func (*View) MinLines() int   { return 5 }
+func (v *View) MaxLines() int { return v.Lines.Len() }
 
-func (v *LinesView) Print(n int) error {
-	offset := v.c.Value()
+func (v *View) Print(n int) error {
+	offset := v.Cursor.Value()
 
 	// Golden ratio calculation.
 	begin := offset - int(math.Floor(float64(n)/(math.Phi+1)))
@@ -47,15 +49,17 @@ func (v *LinesView) Print(n int) error {
 	return nil
 }
 
-func (v *LinesView) Format(i int) string {
+func (v *View) Format(i int) string {
 	var cursor string
-	if i == v.c.Value() {
+	if i == v.Cursor.Value() {
 		cursor = ">"
 	}
 
-	l := v.l.Index(i)
+	l := v.Lines.Index(i)
 	return fmt.Sprintf(v.format, cursor, i, l.Mark(), l.String())
 }
+
+func (v *View) ShiftCursor(offset int) error { return v.Cursor.Set(v.Cursor.Value() + offset) }
 
 func numDigits(num int, base int) int {
 	if num == 0 {

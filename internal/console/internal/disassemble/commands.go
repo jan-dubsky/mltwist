@@ -3,10 +3,11 @@ package disassemble
 import (
 	"fmt"
 	"math"
-	"mltwist/internal/console/emulate"
+	"mltwist/internal/console/internal/emulate"
+	"mltwist/internal/console/internal/linereader"
 	"mltwist/internal/console/internal/lines"
-	"mltwist/internal/console/ui"
-	"mltwist/internal/console/ui/cmdtools"
+	"mltwist/internal/console/internal/ui"
+	"mltwist/internal/console/internal/ui/cmdtools"
 	"regexp"
 )
 
@@ -17,8 +18,8 @@ func commands(m *mode) []ui.Command {
 		Args: []ui.ArgParseFunc{
 			cmdtools.ParseNum(0, math.MaxInt),
 		},
-		Action: func(c *ui.Control, args ...interface{}) error {
-			return m.cursor.Set(m.cursor.Value() + args[0].(int))
+		Action: func(_ *ui.UI, args ...interface{}) error {
+			return m.view.Cursor.Set(m.view.Cursor.Value() + args[0].(int))
 		},
 	}, {
 		Keys: []string{"up", "u"},
@@ -26,8 +27,8 @@ func commands(m *mode) []ui.Command {
 		Args: []ui.ArgParseFunc{
 			cmdtools.ParseNum(0, math.MaxInt),
 		},
-		Action: func(c *ui.Control, args ...interface{}) error {
-			return m.cursor.Set(m.cursor.Value() + -args[0].(int))
+		Action: func(_ *ui.UI, args ...interface{}) error {
+			return m.view.Cursor.Set(m.view.Cursor.Value() + -args[0].(int))
 		},
 	}, {
 		Keys: []string{"move", "mv", "m"},
@@ -36,19 +37,19 @@ func commands(m *mode) []ui.Command {
 			cmdtools.ParseNum(0, math.MaxInt),
 			cmdtools.ParseNum(0, math.MaxInt),
 		},
-		Action: func(c *ui.Control, args ...interface{}) error {
+		Action: func(_ *ui.UI, args ...interface{}) error {
 			from, to := args[0].(int), args[1].(int)
-			m.lines.UnmarkAll()
+			m.view.Lines.UnmarkAll()
 
-			err := m.lines.Move(from, to)
+			err := m.view.Lines.Move(from, to)
 			if err != nil {
-				m.lines.SetMark(from, lines.MarkErrMovedFrom)
-				m.lines.SetMark(to, lines.MarkErrMovedTo)
+				m.view.Lines.SetMark(from, lines.MarkErrMovedFrom)
+				m.view.Lines.SetMark(to, lines.MarkErrMovedTo)
 				return err
 			}
 
-			m.lines.SetMark(from, lines.MarkMovedFrom)
-			m.lines.SetMark(to, lines.MarkMovedTo)
+			m.view.Lines.SetMark(from, lines.MarkMovedFrom)
+			m.view.Lines.SetMark(to, lines.MarkMovedTo)
 			return nil
 		},
 	}, {
@@ -57,31 +58,31 @@ func commands(m *mode) []ui.Command {
 		Args: []ui.ArgParseFunc{
 			cmdtools.ParseNum(0, math.MaxInt),
 		},
-		Action: func(c *ui.Control, args ...interface{}) error {
+		Action: func(_ *ui.UI, args ...interface{}) error {
 			l := args[0].(int)
-			m.lines.UnmarkAll()
+			m.view.Lines.UnmarkAll()
 
-			block, ok := m.lines.Block(l)
+			block, ok := m.view.Lines.Block(l)
 			if !ok {
-				m.lines.SetMark(l, lines.MarkErr)
+				m.view.Lines.SetMark(l, lines.MarkErr)
 				return fmt.Errorf("line doesn't belong to a block: %d", l)
 			}
 
-			ins, ok := m.lines.Index(l).Instruction()
+			ins, ok := m.view.Lines.Index(l).Instruction()
 			if !ok {
-				m.lines.SetMark(l, lines.MarkErr)
+				m.view.Lines.SetMark(l, lines.MarkErr)
 				return fmt.Errorf("line is not an instruction: %d", l)
 			}
 
 			lower := block.LowerBound(ins)
 			upper := block.UpperBound(ins)
-			lowerLine := m.lines.Line(block, lower)
-			upperLine := m.lines.Line(block, upper)
+			lowerLine := m.view.Lines.Line(block, lower)
+			upperLine := m.view.Lines.Line(block, upper)
 
 			// Lower and Upper indices are inclusive, but in
 			// visualization we want to have exclusive indices.
-			m.lines.SetMark(lowerLine-1, lines.MarkLowerBound)
-			m.lines.SetMark(upperLine+1, lines.MarkUpperBound)
+			m.view.Lines.SetMark(lowerLine-1, lines.MarkLowerBound)
+			m.view.Lines.SetMark(upperLine+1, lines.MarkUpperBound)
 
 			return nil
 		},
@@ -92,7 +93,7 @@ func commands(m *mode) []ui.Command {
 			cmdtools.ParseString,
 		},
 		OptionalArgs: cmdtools.JoinOptStrings,
-		Action: func(c *ui.Control, args ...interface{}) error {
+		Action: func(_ *ui.UI, args ...interface{}) error {
 			r := args[0].(string)
 			if len(args) > 1 {
 				r = r + " " + args[1].(string)
@@ -104,19 +105,20 @@ func commands(m *mode) []ui.Command {
 			}
 
 			var line int = -1
-			offset := m.cursor.Value()
-			for i := offset + 1; i != offset; i = (i + 1) % m.lines.Len() {
-				if regexp.MatchString(m.lines.Index(i).String()) {
+			offset := m.view.Cursor.Value()
+			for i := offset + 1; i != offset; i = (i + 1) % m.view.Lines.Len() {
+				if regexp.MatchString(m.view.Lines.Index(i).String()) {
 					line = i
 					break
 				}
 			}
 
 			if line == -1 {
-				return c.ErrMsgf("No line matching regex %q found.\n", r)
+				return linereader.ErrMsgf(
+					"No line matching regex %q found.\n", r)
 			}
 
-			err = m.cursor.Set(line)
+			err = m.view.Cursor.Set(line)
 			if err != nil {
 				return err
 			}
@@ -128,13 +130,13 @@ func commands(m *mode) []ui.Command {
 		Args: []ui.ArgParseFunc{
 			cmdtools.ParseNum(0, math.MaxInt),
 		},
-		Action: func(c *ui.Control, args ...interface{}) error {
+		Action: func(_ *ui.UI, args ...interface{}) error {
 			n := args[0].(int)
-			if l := m.lines.Len(); n > l {
+			if l := m.view.Lines.Len(); n > l {
 				return fmt.Errorf("line number too big: %d > %d", n, l)
 			}
 
-			if err := m.cursor.Set(n); err != nil {
+			if err := m.view.Cursor.Set(n); err != nil {
 				return err
 			}
 
@@ -143,7 +145,7 @@ func commands(m *mode) []ui.Command {
 	}, {
 		Keys: []string{"entrypoint", "entry"},
 		Help: "Sets cursor to app entrypoint.",
-		Action: func(c *ui.Control, args ...interface{}) error {
+		Action: func(_ *ui.UI, args ...interface{}) error {
 			a := m.prog.Entrypoint()
 			block, ok := m.prog.Address(a)
 			if !ok {
@@ -155,20 +157,20 @@ func commands(m *mode) []ui.Command {
 				return fmt.Errorf("cannot find instruction at address 0x%x", a)
 			}
 
-			line := m.lines.Line(block, ins.Idx())
-			m.cursor.Set(line)
+			line := m.view.Lines.Line(block, ins.Idx())
+			m.view.Cursor.Set(line)
 			return nil
 		},
 	}, {
 		Keys: []string{"alllines"},
 		Help: "Prints all lines of the code into console. " +
 			"Ignores current cursor position.",
-		Action: func(c *ui.Control, args ...interface{}) error {
-			for i := 0; i < m.lines.Len(); i++ {
+		Action: func(_ *ui.UI, args ...interface{}) error {
+			for i := 0; i < m.view.Lines.Len(); i++ {
 				fmt.Print(m.view.Format(i))
 			}
 
-			if err := c.ErrMsgf("\n"); err != nil {
+			if err := linereader.ErrMsgf("\n"); err != nil {
 				return err
 			}
 
@@ -179,11 +181,11 @@ func commands(m *mode) []ui.Command {
 		Help: "Start emulating the machine code at current line.\n\n" +
 			"TIP: for emulation started at entrypoint, use 'entrypoint' " +
 			"command followed by this command.",
-		Action: func(c *ui.Control, args ...interface{}) error {
-			l := m.cursor.Value()
-			line := m.lines.Index(l)
+		Action: func(ui *ui.UI, args ...interface{}) error {
+			l := m.view.Cursor.Value()
+			line := m.view.Lines.Index(l)
 
-			block, ok := m.lines.Block(l)
+			block, ok := m.view.Lines.Block(l)
 			if !ok {
 				return fmt.Errorf("line %d belongs to no block", l)
 			}
@@ -199,7 +201,7 @@ func commands(m *mode) []ui.Command {
 				return fmt.Errorf("bug: cannot create emulation: %w", err)
 			}
 
-			return c.AddMode("emulate", emul)
+			return ui.AddMode("emulate", emul)
 		},
 	},
 	}

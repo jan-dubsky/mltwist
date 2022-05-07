@@ -2,6 +2,7 @@ package linereader
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 )
@@ -30,4 +31,13 @@ func (r *lineReader) readLine() (string, error) {
 	}
 
 	return r.s.Text(), nil
+}
+
+func ErrMsgf(pattern string, args ...interface{}) error {
+	fmt.Printf(pattern, args...)
+	fmt.Printf("Press ENTER to continue\n")
+	if _, err := ReadLine(); err != nil {
+		return fmt.Errorf("readline error: %w", err)
+	}
+	return nil
 }

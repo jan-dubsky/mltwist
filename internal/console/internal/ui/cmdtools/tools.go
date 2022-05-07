@@ -2,7 +2,7 @@ package cmdtools
 
 import (
 	"fmt"
-	"mltwist/internal/console/ui"
+	"mltwist/internal/console/internal/ui"
 	"strconv"
 	"strings"
 )

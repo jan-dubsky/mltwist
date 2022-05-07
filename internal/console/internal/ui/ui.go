@@ -8,12 +8,12 @@ import (
 	"strings"
 )
 
-type Control struct {
+type UI struct {
 	modeStack []namedMode
 }
 
-func New(initialMode Mode) (*Control, error) {
-	c := &Control{}
+func New(initialMode Mode) (*UI, error) {
+	c := &UI{}
 	if err := c.AddMode("app", initialMode); err != nil {
 		return nil, fmt.Errorf("invalid initial mode: %w", err)
 	}
@@ -21,14 +21,14 @@ func New(initialMode Mode) (*Control, error) {
 	return c, nil
 }
 
-func (c *Control) mode() namedMode { return c.modeStack[len(c.modeStack)-1] }
+func (c *UI) mode() namedMode { return c.modeStack[len(c.modeStack)-1] }
 
-func (c *Control) cmd(s string) (Command, bool) {
+func (c *UI) cmd(s string) (Command, bool) {
 	cmd, ok := c.mode().cmdMap[s]
 	return cmd, ok
 }
 
-func (c *Control) AddMode(name string, mode Mode) error {
+func (c *UI) AddMode(name string, mode Mode) error {
 	m, err := newMode(name, mode)
 	if err != nil {
 		return fmt.Errorf("cannot process mode %q: %w", name, err)
@@ -38,7 +38,7 @@ func (c *Control) AddMode(name string, mode Mode) error {
 	return nil
 }
 
-func (c *Control) quitMode() error {
+func (c *UI) quitMode() error {
 	m := c.modeStack[len(c.modeStack)-1]
 	c.modeStack = c.modeStack[:len(c.modeStack)-1]
 
@@ -68,7 +68,7 @@ func dropEmptyStrs(strs []string) []string {
 	return filtered
 }
 
-func (c *Control) parseCommand(str string) (Command, []interface{}, error) {
+func (c *UI) parseCommand(str string) (Command, []interface{}, error) {
 	parts := dropEmptyStrs(strings.Split(str, " "))
 	cmdStr := parts[0]
 	parts = parts[1:]
@@ -108,7 +108,7 @@ func (c *Control) parseCommand(str string) (Command, []interface{}, error) {
 	return cmd, args, nil
 }
 
-func (c *Control) processCommand() error {
+func (c *UI) processCommand() error {
 	cmdStr, err := linereader.ReadLine()
 	if err != nil {
 		return err
@@ -142,7 +142,7 @@ func (c *Control) processCommand() error {
 	return nil
 }
 
-func (c *Control) Run() error {
+func (c *UI) Run() error {
 	for {
 		e := view.NewCompositeView(c.mode().mode.View(), commandPrompt{})
 		err := view.Print(e)
@@ -159,13 +159,4 @@ func (c *Control) Run() error {
 			return fmt.Errorf("cannot process command: %w", err)
 		}
 	}
-}
-
-func (c *Control) ErrMsgf(pattern string, args ...interface{}) error {
-	fmt.Printf(pattern, args...)
-	fmt.Printf("Press ENTER to continue\n")
-	if _, err := linereader.ReadLine(); err != nil {
-		return fmt.Errorf("readline error: %w", err)
-	}
-	return nil
 }

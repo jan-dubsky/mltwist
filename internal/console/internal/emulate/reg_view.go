@@ -14,7 +14,7 @@ const (
 	regsPerLine = 2
 )
 
-var _ view.Element = &regView{}
+var _ view.View = &regView{}
 
 type regView struct {
 	state *state.State
@@ -72,8 +72,8 @@ func (v *regView) printLine(line []expr.Key) error {
 
 	var maxWidth int
 	for _, r := range regs {
-		if l := len(r); maxWidth < l {
-			maxWidth = l
+		if ln := len(r); maxWidth < ln {
+			maxWidth = ln
 		}
 	}
 
@@ -102,12 +102,12 @@ func (v *regView) Print(n int) error {
 	for i := 0; i < len(keys); i += regsPerLine {
 		line := keys[i:]
 
-		l := regsPerLine
-		if len(line) < l {
-			l = len(line)
+		ln := regsPerLine
+		if len(line) < ln {
+			ln = len(line)
 		}
 
-		err := v.printLine(line[:l])
+		err := v.printLine(line[:ln])
 		if err != nil {
 			return fmt.Errorf("cannot print line %d: %w", i/regsPerLine, err)
 		}

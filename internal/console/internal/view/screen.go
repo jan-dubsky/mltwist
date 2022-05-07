@@ -6,7 +6,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-func Print(e Element) error {
+func Print(e View) error {
 	_, screenLines, err := terminal.GetSize(0)
 	if err != nil {
 		return fmt.Errorf("cannot get terminal size: %w", err)
