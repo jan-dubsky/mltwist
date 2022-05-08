@@ -8,7 +8,7 @@ import (
 
 // Map represents a set of non-overlapping intervals.
 type Map[T constraints.Integer] struct {
-	is []Interval[T]
+	intvs []Interval[T]
 }
 
 // NewMap creates new intervals from intvs. Intervals which follow one another
@@ -33,20 +33,36 @@ func NewMap[T constraints.Integer](intvs ...Interval[T]) Map[T] {
 		j--
 	}
 
-	return Map[T]{is: intvs[:j]}
+	return Map[T]{intvs: intvs[:j]}
 }
 
 // Idx returns idxth element in i. This function panics if idx < 0 or idx <
 // i.Len().
-func (i Map[T]) Index(idx int) Interval[T] { return i.is[idx] }
+func (m Map[T]) Index(idx int) Interval[T] { return m.intvs[idx] }
 
 // Len returns number of intervals stored in i.
-func (i Map[T]) Len() int { return len(i.is) }
+func (m Map[T]) Len() int { return len(m.intvs) }
 
 // Intervals returns sorted array of intervals in i. This array has to be
 // treated as readonly. Modification of the array returned can tresult in
 // undefined behaviour.
-func (i Map[T]) Intervals() []Interval[T] { return i.is }
+func (m Map[T]) Intervals() []Interval[T] { return m.intvs }
+
+// Equal compares m1 to m2 and informs if they are identical. Interval maps are
+// indencital if they contain the same intervals.
+func (m1 Map[T]) Equal(m2 Map[T]) bool {
+	if m1.Len() != m2.Len() {
+		return false
+	}
+
+	for i := 0; i < m1.Len(); i++ {
+		if m1.Index(i) != m2.Index(i) {
+			return false
+		}
+	}
+
+	return true
+}
 
 func addInterval[T constraints.Integer](is []Interval[T], i Interval[T]) []Interval[T] {
 	if len(is) == 0 {
@@ -66,9 +82,9 @@ func addInterval[T constraints.Integer](is []Interval[T], i Interval[T]) []Inter
 	return is
 }
 
-// Add produces new Map spanning both ranges from i1 and i2. Overlapping
+// MapUnion produces new Map spanning both ranges from i1 and i2. Overlapping
 // intervals are ignored, but continuous intervals are merged into a single one.
-func Add[T constraints.Integer](i1 Map[T], i2 Map[T]) Map[T] {
+func MapUnion[T constraints.Integer](i1 Map[T], i2 Map[T]) Map[T] {
 	added := make([]Interval[T], 0, i1.Len()+i2.Len())
 
 	i, j := 0, 0
@@ -86,16 +102,16 @@ func Add[T constraints.Integer](i1 Map[T], i2 Map[T]) Map[T] {
 	}
 
 	if i < i1.Len() {
-		for _, intv := range i1.is[i:] {
+		for _, intv := range i1.intvs[i:] {
 			added = addInterval(added, intv)
 		}
 	} else {
-		for _, intv := range i2.is[j:] {
+		for _, intv := range i2.intvs[j:] {
 			added = addInterval(added, intv)
 		}
 	}
 
-	return Map[T]{is: added}
+	return Map[T]{intvs: added}
 }
 
 func sub[T constraints.Integer](intv Interval[T], sub []Interval[T]) ([]Interval[T], int) {
@@ -128,16 +144,16 @@ func sub[T constraints.Integer](intv Interval[T], sub []Interval[T]) ([]Interval
 	return intvs, cnt - 1
 }
 
-// Sub creates new Map spanning those ranges from i1 which are not present in
-// i2.
-func Sub[T constraints.Integer](i1 Map[T], i2 Map[T]) Map[T] {
+// MapIntersect creates new Map spanning those ranges from i1 which are not
+// present in i2.
+func MapIntersect[T constraints.Integer](i1 Map[T], i2 Map[T]) Map[T] {
 	subtracted := make([]Interval[T], 0, i1.Len())
 
 	j := 0
 	for i := 0; i < i1.Len(); i++ {
 		var subList []Interval[T]
 		if j < i2.Len() {
-			subList = i2.is[j:]
+			subList = i2.intvs[j:]
 		}
 
 		intvs, cnt := sub(i1.Index(i), subList)
@@ -146,5 +162,5 @@ func Sub[T constraints.Integer](i1 Map[T], i2 Map[T]) Map[T] {
 		subtracted = append(subtracted, intvs...)
 	}
 
-	return Map[T]{is: subtracted}
+	return Map[T]{intvs: subtracted}
 }

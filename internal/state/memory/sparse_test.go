@@ -1,7 +1,8 @@
-package state
+package memory
 
 import (
 	"mltwist/internal/exprtransform"
+	"mltwist/internal/state/interval"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 	"testing"
@@ -17,7 +18,7 @@ type testInterval struct {
 	cutEnd   expr.Width
 }
 
-func TestMemory_Store(t *testing.T) {
+func TestSparse_Store(t *testing.T) {
 	tests := []struct {
 		name string
 		addr model.Addr
@@ -218,7 +219,7 @@ func TestMemory_Store(t *testing.T) {
 		}},
 	}}
 
-	mem := NewMemory()
+	mem := NewSparse()
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
@@ -249,7 +250,21 @@ func TestMemory_Store(t *testing.T) {
 	}
 }
 
-func TestMemory_Load(t *testing.T) {
+func testSparse(state []testInterval) *Sparse {
+	mem := NewSparse()
+	for _, i := range state {
+		c := cutExpr{
+			ex:    i.ex,
+			begin: i.cutBegin,
+			end:   i.cutEnd,
+		}
+		mem.t.Add(i.begin, i.end, c)
+	}
+
+	return mem
+}
+
+func TestSparse_Load(t *testing.T) {
 	tests := []struct {
 		name  string
 		state []testInterval
@@ -371,16 +386,7 @@ func TestMemory_Load(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
-
-			mem := NewMemory()
-			for _, i := range tt.state {
-				c := cutExpr{
-					ex:    i.ex,
-					begin: i.cutBegin,
-					end:   i.cutEnd,
-				}
-				mem.t.Add(i.begin, i.end, c)
-			}
+			mem := testSparse(tt.state)
 
 			ex, ok := mem.Load(tt.addr, tt.w)
 			if tt.exp == nil {
@@ -391,6 +397,64 @@ func TestMemory_Load(t *testing.T) {
 			r.True(ok)
 			r.Equal(tt.exp, exprtransform.ConstFold(ex))
 
+		})
+	}
+}
+
+func TestSparse_Missing(t *testing.T) {
+	tests := []struct {
+		name  string
+		state []testInterval
+		addr  model.Addr
+		w     expr.Width
+		exp   interval.Map[model.Addr]
+	}{{
+		name: "nothing_missing",
+		state: []testInterval{{
+			begin: 64,
+			end:   70,
+		}},
+		addr: 66,
+		w:    expr.Width32,
+		exp:  interval.NewMap[model.Addr](),
+	}, {
+		name: "missing_end",
+		state: []testInterval{{
+			begin: 64,
+			end:   70,
+		}},
+		addr: 64,
+		w:    expr.Width64,
+		exp:  interval.NewMap(interval.New[model.Addr](70, 72)),
+	}, {
+		name: "missing_begin",
+		state: []testInterval{{
+			begin: 64,
+			end:   70,
+		}},
+		addr: 62,
+		w:    expr.Width64,
+		exp:  interval.NewMap(interval.New[model.Addr](62, 64)),
+	}, {
+		name: "missing_middle",
+		state: []testInterval{{
+			begin: 64,
+			end:   67,
+		}, {
+			begin: 69,
+			end:   72,
+		}},
+		addr: 66,
+		w:    expr.Width32,
+		exp:  interval.NewMap(interval.New[model.Addr](67, 69)),
+	}}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			mem := testSparse(tt.state)
+			intvs := mem.Missing(tt.addr, tt.w)
+			require.Equal(t, tt.exp, intvs)
 		})
 	}
 }

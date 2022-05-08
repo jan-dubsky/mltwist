@@ -173,11 +173,11 @@ func TestMap_Add(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			is := interval.Add(tt.is1, tt.is2)
+			is := interval.MapUnion(tt.is1, tt.is2)
 			require.Equal(t, tt.exp, is)
 
 			// Add(a, b) is equivalent to Add(b, a).
-			is = interval.Add(tt.is2, tt.is1)
+			is = interval.MapUnion(tt.is2, tt.is1)
 			require.Equal(t, tt.exp, is)
 		})
 	}
@@ -243,7 +243,7 @@ func TestMap_Sub(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			is := interval.Sub(tt.is1, tt.is2)
+			is := interval.MapIntersect(tt.is1, tt.is2)
 			require.Equal(t, tt.exp, is)
 		})
 	}

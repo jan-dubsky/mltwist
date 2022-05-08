@@ -5,8 +5,8 @@ import (
 	"math"
 	"mltwist/internal/console/internal/cursor"
 	"mltwist/internal/exprtransform"
-	"mltwist/internal/state"
 	"mltwist/internal/state/interval"
+	"mltwist/internal/state/memory"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 	"strings"
@@ -18,7 +18,7 @@ const bytesSpace = 8
 const emptyByte = ".."
 
 type memoryView struct {
-	mem   *state.Memory
+	mem   memory.Memory
 	lines []memLine
 	c     *cursor.Cursor
 
@@ -26,7 +26,7 @@ type memoryView struct {
 	emptyLineFormat string
 }
 
-func newMemoryView(mem *state.Memory) *memoryView {
+func newMemoryView(mem memory.Memory) *memoryView {
 	var lines []memLine
 	if mem != nil {
 		blocks := mem.Blocks()

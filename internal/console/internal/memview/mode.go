@@ -3,7 +3,7 @@ package memview
 import (
 	"mltwist/internal/console/internal/ui"
 	"mltwist/internal/console/internal/view"
-	"mltwist/internal/state"
+	"mltwist/internal/state/memory"
 )
 
 var _ ui.Mode = &mode{}
@@ -12,7 +12,7 @@ type mode struct {
 	view *memoryView
 }
 
-func New(mem *state.Memory) *mode {
+func New(mem memory.Memory) *mode {
 	return &mode{
 		view: newMemoryView(mem),
 	}

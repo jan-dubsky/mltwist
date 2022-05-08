@@ -3,6 +3,7 @@ package state
 import (
 	"fmt"
 	"mltwist/internal/exprtransform"
+	"mltwist/internal/state/memory"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 )
@@ -11,7 +12,7 @@ type State struct {
 	// Regs represents state of registry file.
 	Regs RegMap
 	// Mems is set of memories and their respective states.
-	Mems MemMap
+	Mems memory.MemMap
 }
 
 // New creates a new state.
@@ -22,7 +23,7 @@ func New() *State {
 		// value.
 		Regs: make(RegMap, 32),
 		// We assume to have 1 address space - the real program memory.
-		Mems: make(MemMap, 1),
+		Mems: make(memory.MemMap, 1),
 	}
 }
 
