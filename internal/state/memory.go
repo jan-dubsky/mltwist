@@ -1,11 +1,11 @@
 package state
 
 import (
-	"fmt"
+	"mltwist/internal/state/interval"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 
-	"github.com/zyedidia/generic/interval"
+	intervaltree "github.com/zyedidia/generic/interval"
 )
 
 // MamMap is set of individual memory address spaces identified by a key.
@@ -33,10 +33,10 @@ func (m MemMap) Store(key expr.Key, addr model.Addr, ex expr.Expr, w expr.Width)
 	mem.Store(addr, ex, w)
 }
 
-func (m MemMap) Missing(key expr.Key, addr model.Addr, w expr.Width) []Interval {
+func (m MemMap) Missing(key expr.Key, addr model.Addr, w expr.Width) interval.Map[model.Addr] {
 	mem, ok := m[key]
 	if !ok {
-		return []Interval{NewInterval(addr, addr+model.Addr(w))}
+		return interval.NewMap(interval.New(addr, addr+model.Addr(w)))
 	}
 
 	return mem.Missing(addr, w)
@@ -88,16 +88,16 @@ func (m MemMap) Missing(key expr.Key, addr model.Addr, w expr.Width) []Interval 
 // happens or not. Given this, the expression splitting is not much of an issue
 // as it doesn't increase number of expressions to evaluate significantly.
 type Memory struct {
-	t *interval.Tree[model.Addr, cutExpr]
+	t *intervaltree.Tree[model.Addr, cutExpr]
 }
 
 func NewMemory() *Memory {
-	return &Memory{t: interval.New[model.Addr, cutExpr]()}
+	return &Memory{t: intervaltree.New[model.Addr, cutExpr]()}
 }
 
 // wholeInterval checks that a list of intervals ints spans the whole [begin,
 // end) interval.
-func wholeInterval(begin, end model.Addr, ints []interval.KV[model.Addr, cutExpr]) bool {
+func wholeInterval(begin, end model.Addr, ints []intervaltree.KV[model.Addr, cutExpr]) bool {
 	if len(ints) == 0 || ints[0].Low > begin {
 		return false
 	}
@@ -183,68 +183,42 @@ func (m *Memory) Store(addr model.Addr, ex expr.Expr, w expr.Width) {
 	m.t.Add(addr, addr+model.Addr(w), c)
 }
 
-type Interval struct {
-	begin model.Addr
-	end   model.Addr
-}
-
-func NewInterval(begin, end model.Addr) Interval {
-	if width := end - begin; width != model.Addr(expr.Width(width)) {
-		panic(fmt.Sprintf("interval is too wide: %d", width))
-	}
-
-	return Interval{
-		begin: begin,
-		end:   end,
-	}
-}
-
-func (i Interval) Begin() model.Addr { return i.begin }
-func (i Interval) End() model.Addr   { return i.end }
-func (i Interval) Len() model.Addr   { return i.end - i.begin }
-
 // Missing return list of address intervals which are missing in memory to be
 // able to perform full load of width w from address addr.
-func (m *Memory) Missing(addr model.Addr, w expr.Width) []Interval {
+func (m *Memory) Missing(addr model.Addr, w expr.Width) interval.Map[model.Addr] {
 	end := addr + model.Addr(w)
 
 	ints := m.t.Overlaps(addr, end)
 	if len(ints) == 0 {
-		return []Interval{NewInterval(addr, end)}
+		return interval.NewMap(interval.New(addr, end))
 	}
 
-	var intervals []Interval
+	var intervals []interval.Interval[model.Addr]
 	if low := ints[0].Low; addr < low {
-		intervals = append(intervals, NewInterval(addr, low))
+		intervals = append(intervals, interval.New(addr, low))
 	}
 
 	lastEnd := ints[0].High
 	for _, o := range ints[1:] {
 		if o.Low != lastEnd {
-			intervals = append(intervals, NewInterval(lastEnd, o.Low))
+			intervals = append(intervals, interval.New(lastEnd, o.Low))
 		}
 		lastEnd = o.High
 	}
 
 	if lastEnd < end {
-		intervals = append(intervals, NewInterval(lastEnd, end))
+		intervals = append(intervals, interval.New(lastEnd, end))
 	}
 
-	return intervals
+	return interval.NewMap(intervals...)
 }
 
 // Blocks returns a list of continuous blocks stored in the memory.
-func (m *Memory) Blocks() []Interval {
-	var blocks []Interval
-
+func (m *Memory) Blocks() interval.Map[model.Addr] {
+	blocks := make([]interval.Interval[model.Addr], 0, m.t.Size())
 	m.t.Each(func(begin, end model.Addr, val cutExpr) {
-		if len(blocks) == 0 || blocks[len(blocks)-1].end != begin {
-			blocks = append(blocks, NewInterval(begin, end))
-			return
-		}
-
-		blocks[len(blocks)-1].end = end
+		blocks = append(blocks, interval.New(begin, end))
 	})
 
-	return blocks
+	return interval.NewMap(blocks...)
 }

@@ -35,6 +35,7 @@ func NewProgram(entrypoint model.Addr, seq []parser.Instruction) (*Program, erro
 	}, nil
 }
 
+// Entrypoint returns address of program entrypoint.
 func (p *Program) Entrypoint() model.Addr { return p.entrypoint }
 
 // Len returns number of basic blocks in the program.

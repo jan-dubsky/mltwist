@@ -151,6 +151,9 @@ func (b *block) Addr() model.Addr { return b.begin }
 // NextAddr returns an address following the the block.
 func (b *block) NextAddr() model.Addr { return b.end }
 
+// Address finds an instruction with address a in the block. If a is not in the
+// block or a is not start of an instruction (is in the middle of an
+// instruction), this function returns zero value of instruction and false.
 func (b *block) Address(a model.Addr) (Instruction, bool) {
 	i := sort.Search(len(b.seq), func(i int) bool {
 		return b.seq[i].Addr() >= a

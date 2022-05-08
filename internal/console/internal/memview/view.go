@@ -6,6 +6,7 @@ import (
 	"mltwist/internal/console/internal/cursor"
 	"mltwist/internal/exprtransform"
 	"mltwist/internal/state"
+	"mltwist/internal/state/interval"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 	"strings"
@@ -142,9 +143,9 @@ type memLine struct {
 	ranges []memRange
 }
 
-func memoryLines(blocks []state.Interval) []memLine {
-	lines := make([]memLine, 0, len(blocks))
-	for _, b := range blocks {
+func memoryLines(blocks interval.Map[model.Addr]) []memLine {
+	lines := make([]memLine, 0, blocks.Len())
+	for _, b := range blocks.Intervals() {
 		lines = append(lines, block2Lines(b)...)
 	}
 
@@ -179,7 +180,7 @@ func addEmptyLines(lines []memLine) []memLine {
 	return lns
 }
 
-func block2Lines(block state.Interval) []memLine {
+func block2Lines(block interval.Interval[model.Addr]) []memLine {
 	begin := block.Begin() / bytesPerLine * bytesPerLine
 	end := (block.End() + bytesPerLine - 1) / bytesPerLine * bytesPerLine
 
