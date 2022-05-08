@@ -1,7 +1,6 @@
 package emulator
 
 import (
-	"mltwist/internal/exprtransform"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 )
@@ -49,7 +48,7 @@ func (e *Evaluation) recordOutput(effect expr.Effect) {
 	switch ef := effect.(type) {
 	case expr.MemStore:
 		addr, _ := expr.ConstUint[model.Addr](ef.Addr().(expr.Const))
-		val := exprtransform.SetWidthConst(ef.Value().(expr.Const), ef.Width())
+		val := ef.Value().(expr.Const).WithWidth(ef.Width())
 		e.OutMem = append(e.OutMem, newMemAccess(ef.Key(), addr, val))
 	case expr.RegStore:
 		e.OutputRegs[ef.Key()] = ef.Value().(expr.Const)

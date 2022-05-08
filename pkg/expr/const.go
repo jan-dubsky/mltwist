@@ -108,6 +108,19 @@ func (c Const) Width() Width { return Width(len(c.bs)) }
 func (c1 Const) Equal(c2 Const) bool { return bytes.Equal(c1.bs, c2.bs) }
 func (Const) internalExpr()          {}
 
+// WithWidth returns new Const with same content as c but with width w.
+func (c Const) WithWidth(w Width) Const {
+	// Those 2 branches are performance optimization to avoid unnecessary
+	// allocations.
+	if c.Width() == w {
+		return c
+	} else if c.Width() > w {
+		return newConst(c.bs[:w])
+	}
+
+	return NewConst(c.Bytes(), w)
+}
+
 func nonzeroUpperIdx(b []byte) int {
 	for i := len(b) - 1; i >= 0; i-- {
 		if b[i] != 0 {

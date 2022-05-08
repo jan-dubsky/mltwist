@@ -26,15 +26,6 @@ func SetWidth(ex expr.Expr, w expr.Width) expr.Expr {
 	return exprtools.NewWidthGadget(ex, w)
 }
 
-// SetWidthConst changes width of ex to w and returns the new constant. If ex is
-// already a constant of width w, ex is returned.
-func SetWidthConst(ex expr.Const, w expr.Width) expr.Const {
-	if ex.Width() == w {
-		return ex
-	}
-	return expr.NewConst(ex.Bytes(), w)
-}
-
 // setWidth tries to directly change ex width to w - i.e. it creates a new
 // expression  of the same type but with width w. This function returns (nil,
 // false) in case it's not possible to create such a new expression which would

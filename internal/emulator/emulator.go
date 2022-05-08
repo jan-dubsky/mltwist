@@ -85,7 +85,7 @@ func (e *Emulator) regValue(key expr.Key, w expr.Width) expr.Const {
 	}
 
 	val := e.stateProv.Register(key, w)
-	val = exprtransform.SetWidthConst(val, w)
+	val = val.WithWidth(w)
 
 	e.state.Regs[key] = val
 	return val
@@ -120,7 +120,7 @@ func (e *Emulator) memValue(key expr.Key, addr model.Addr, w expr.Width) expr.Co
 		w := expr.Width(intv.Len())
 
 		val := e.stateProv.Memory(key, intv.Begin(), w)
-		val = exprtransform.SetWidthConst(val, w)
+		val = val.WithWidth(w)
 
 		e.state.Mems.Store(key, addr, val, w)
 	}
