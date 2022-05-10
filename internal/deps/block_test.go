@@ -71,7 +71,7 @@ func TestBlock_New(t *testing.T) {
 				r.Equal(ins.Addr, b.index(i).OrigAddr())
 				r.Equal(ins.Bytes, b.index(i).bytes)
 				r.Equal(ins.Details, b.index(i).details)
-				r.Equal(ins.Effs, b.index(i).effects)
+				r.Equal(ins.Effects, b.index(i).effects)
 				r.Equal(ins.JumpTargets, b.index(i).jumpTargets)
 				r.Equal(ins.Type, b.index(i).typ)
 			}
@@ -102,7 +102,7 @@ func testInputInsReg(out uint64, in ...uint64) basicblock.Instruction {
 		effects = append(effects, expr.NewRegStore(expr.Zero, key, expr.Width8))
 	}
 
-	return basicblock.Instruction{Effs: effects}
+	return basicblock.Instruction{Effects: effects}
 }
 
 func TestBlock_Bounds(t *testing.T) {

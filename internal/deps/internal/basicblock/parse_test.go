@@ -27,7 +27,7 @@ func jumpEffects(jumpAddrs []model.Addr) []expr.Effect {
 
 func insInput(addr model.Addr, desc string, jumpAddrs ...model.Addr) parser.Instruction {
 	return parser.Instruction{
-		Address: addr,
+		Addr:    addr,
 		Bytes:   make([]byte, instrLen),
 		Details: detail(desc),
 		Effects: jumpEffects(jumpAddrs),
@@ -44,7 +44,7 @@ func ins(addr model.Addr, desc string, jumpAddrs ...model.Addr) basicblock.Instr
 		Addr:        addr,
 		Bytes:       make([]byte, instrLen),
 		Details:     detail(desc),
-		Effs:        jumpEffects(jumpAddrs),
+		Effects:     jumpEffects(jumpAddrs),
 		JumpTargets: jumps,
 	}
 }
@@ -172,12 +172,19 @@ func TestParse_Succ(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			seqs, err := basicblock.Parse(tt.instrs[0].Address, tt.instrs)
+			seqs, err := basicblock.Parse(tt.instrs[0].Addr, tt.instrs)
 			r.NoError(err)
 			r.Equal(len(tt.expected), len(seqs), "Unexpected output length.")
 
+			// Jump targets of instructions can differ as we remove
+			// those targets which jump to the following
+			// instruction.
 			for i, e := range tt.expected {
-				r.Equal(e, seqs[i])
+				r.Equal(len(e), len(seqs[i]))
+				for j, e := range e {
+					r.Equal(e.Addr, seqs[i][j].Addr)
+					r.Equal(e.Details, seqs[i][j].Details)
+				}
 			}
 		})
 	}
@@ -218,7 +225,7 @@ func TestParse_Fail(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			seqs, err := basicblock.Parse(tt.instrs[0].Address, tt.instrs)
+			seqs, err := basicblock.Parse(tt.instrs[0].Addr, tt.instrs)
 			r.Error(err)
 			r.Nil(seqs)
 		})

@@ -8,7 +8,9 @@ import (
 	"sort"
 )
 
-// Parse identifies basic blocks in a sequence of program instructions.
+// Parse identifies basic blocks in a sequence of program instructions. This
+// function returns sorted (by increasing address) list of basic blocks where
+// every basic block is represented as a sorted list of instructions.
 //
 // The entrypoint argument is in a way special as it's the jump target which by
 // originates from outside of the program. Naturally there are as well other
@@ -69,31 +71,12 @@ func splitByAddress(seq []Instruction) [][]Instruction {
 	return seqs
 }
 
-func isJumpInstr(ins Instruction) bool {
-	for _, e := range ins.JumpTargets {
-		// Exclude those jumps which provably always jump to a following
-		// instruction - There doesn't seem to be any reason for such
-		// jumps, but they exist in real codes (for example in grep
-		// compiled for riscv64).
-		if c, ok := e.(expr.Const); ok {
-			addr, ok := expr.ConstUint[model.Addr](c)
-			if ok && addr == ins.NextAddr() {
-				continue
-			}
-		}
-
-		return true
-	}
-
-	return false
-}
-
 func splitByJumps(seq []Instruction) [][]Instruction {
 	seqs := make([][]Instruction, 0, 1)
 	begin := 0
 
 	for i, ins := range seq {
-		if isJumpInstr(ins) {
+		if len(ins.JumpTargets) > 0 {
 			seqs = append(seqs, seq[begin:i+1])
 			begin = i + 1
 		}

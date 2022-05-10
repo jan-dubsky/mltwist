@@ -22,7 +22,7 @@ func testInputInsJump(
 	}
 
 	return parser.Instruction{
-		Address: addr,
+		Addr:    addr,
 		Bytes:   make([]byte, bytes),
 		Effects: jumps,
 	}
@@ -48,7 +48,7 @@ func TestProgram_New(t *testing.T) {
 			seq: []parser.Instruction{
 				testInputInsJump(128, 4),
 				testInputInsJump(132, 4),
-				testInputInsJump(136, 4, 140),
+				testInputInsJump(136, 4, 128),
 
 				testInputInsJump(140, 2),
 				testInputInsJump(142, 2),
@@ -67,7 +67,7 @@ func TestProgram_New(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			p, err := NewProgram(tt.seq[0].Address, tt.seq)
+			p, err := NewProgram(tt.seq[0].Addr, tt.seq)
 			r.NoError(err)
 
 			r.Equal(len(tt.blocks), p.Len())

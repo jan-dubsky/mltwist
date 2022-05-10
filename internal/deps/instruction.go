@@ -41,14 +41,14 @@ func newInstruction(ins basicblock.Instruction, index int) *instruction {
 		bytes:    ins.Bytes,
 		details:  ins.Details,
 
-		effects:     ins.Effs,
+		effects:     ins.Effects,
 		jumpTargets: ins.JumpTargets,
 
-		inRegs:  inputRegs(ins.Effs),
-		outRegs: outputRegs(ins.Effs),
+		inRegs:  inputRegs(ins.Effects),
+		outRegs: outputRegs(ins.Effects),
 
-		loads:  loads(ins.Effs),
-		stores: stores(ins.Effs),
+		loads:  loads(ins.Effects),
+		stores: stores(ins.Effects),
 
 		depsFwd:  make(insSet, 5),
 		depsBack: make(insSet, 5),
