@@ -10,37 +10,52 @@ import (
 )
 
 type Emulator struct {
-	prog      *deps.Program
-	ip        model.Addr
-	stateProv StateProvider
-
+	prog  *deps.Program
+	ip    model.Addr
 	state *state.State
+
+	stateProv StateProvider
 }
 
-// New creates new emulator instance
-func New(prog *deps.Program, ip model.Addr, stateProv StateProvider) *Emulator {
+// New creates new emulator instance.
+//
+// The newly created emulator emulates instructions in prog and starts emulation
+// at address ip. The initial state of program memory and registers is given by
+// stat. If value of any memory bytes or a register is unknown to the emulator,
+// such value is obtained using stateProv.
+//
+// Argument prog is treated as read-only value, but it must not be modified
+// during the Emulator lifetime.
+//
+// Argument stat will be used by the Emulator to store writes the emulated
+// program performs. Consequently it can be used to read/change the state of the
+// emulation. For the very same reason, an yaccess of stat must be synchronized
+// with Step method calls.
+func New(
+	prog *deps.Program,
+	ip model.Addr,
+	stat *state.State,
+	stateProv StateProvider,
+) *Emulator {
 	return &Emulator{
 		prog:      prog,
 		ip:        ip,
 		stateProv: stateProv,
-
-		state: state.New(),
+		state:     stat,
 	}
 }
 
 // IP returns current state of instruction pointer of the program.
 func (e *Emulator) IP() model.Addr { return e.ip }
 
-// State returns the internal instate of emulator.
-//
-// The state doesn't have to be treated as readonly, but its modifications will
-// be reflected in further steps of the emulation. analogously, any further step
-// of emulation will modify the state returned. Consequently, all reads and
-// modifications of the returned state must be synchronized with Step calls.
-func (e *Emulator) State() *state.State { return e.state }
-
 // Step performs a single instruction step of an emulation.
-func (e *Emulator) Step(ins Instruction) Evaluation {
+func (e *Emulator) Step() (Evaluation, error) {
+	ins, ok := e.prog.AddressIns(e.ip)
+	if !ok {
+		err := fmt.Errorf("cannot find instruction at address 0x%x", e.ip)
+		return Evaluation{}, err
+	}
+
 	efs := ins.Effects()
 
 	eval := Evaluation{
@@ -67,7 +82,7 @@ func (e *Emulator) Step(ins Instruction) Evaluation {
 	}
 
 	e.ip = nextIP
-	return eval
+	return eval, nil
 }
 
 func (e *Emulator) eval(ex expr.Expr, eval *Evaluation) expr.Const {

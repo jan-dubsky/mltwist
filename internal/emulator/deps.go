@@ -5,11 +5,6 @@ import (
 	"mltwist/pkg/model"
 )
 
-type Instruction interface {
-	Effects() []expr.Effect
-	Len() model.Addr
-}
-
 // StateProvider provides any state of the program which is not known to a
 // program emulation.
 type StateProvider interface {

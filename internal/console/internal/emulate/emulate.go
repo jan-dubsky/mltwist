@@ -7,26 +7,31 @@ import (
 	"mltwist/internal/console/internal/view"
 	"mltwist/internal/deps"
 	"mltwist/internal/emulator"
+	"mltwist/internal/state"
 	"mltwist/pkg/model"
 )
 
 var _ ui.Mode = &mode{}
 
 type mode struct {
-	p        *deps.Program
-	emul     *emulator.Emulator
+	p    *deps.Program
+	stat *state.State
+	emul *emulator.Emulator
+
 	lineView *lines.View
 	view     view.View
 }
 
 func New(p *deps.Program, ip model.Addr) (*mode, error) {
-	emul := emulator.New(p, ip, &stateProvider{})
+	stat := state.New()
+	emul := emulator.New(p, ip, stat, &stateProvider{})
 
 	lineView := lines.NewView(p)
-	regView := newRegView(emul.State())
+	regView := newRegView(stat)
 
 	e := &mode{
 		p:    p,
+		stat: stat,
 		emul: emul,
 
 		lineView: lineView,

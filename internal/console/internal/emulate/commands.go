@@ -15,16 +15,12 @@ func commands(m *mode) []ui.Command {
 		Keys: []string{"forward", "fwd", "f", "step", "s"},
 		Help: "Move emulation one instruction forward.",
 		Action: func(_ *ui.UI, args ...interface{}) error {
-			ip := m.emul.IP()
-			ins, ok := m.p.AddressIns(ip)
-			if !ok {
-				return fmt.Errorf(
-					"cannot find instruction at address 0x%x", ip)
+			_, err := m.emul.Step()
+			if err != nil {
+				return fmt.Errorf("cannot emulate instruction: %w", err)
 			}
 
-			_ = m.emul.Step(ins)
-
-			err := m.refreshCursor()
+			err = m.refreshCursor()
 			if err != nil {
 				return fmt.Errorf("cannot refresh cursor: %w", err)
 			}
@@ -35,7 +31,7 @@ func commands(m *mode) []ui.Command {
 		Keys: []string{"memories", "mems", "ms"},
 		Help: "List all memories the program wrote.",
 		Action: func(_ *ui.UI, args ...interface{}) error {
-			mems := m.emul.State().Mems
+			mems := m.stat.Mems
 			keys := make([]expr.Key, 0, len(mems))
 			for k := range mems {
 				keys = append(keys, k)
@@ -61,7 +57,7 @@ func commands(m *mode) []ui.Command {
 		Args: []ui.ArgParseFunc{cmdtools.ParseString},
 		Action: func(ui *ui.UI, args ...interface{}) error {
 			key := expr.Key(args[0].(string))
-			mem := m.emul.State().Mems[key]
+			mem := m.stat.Mems[key]
 
 			mode := memview.New(mem)
 			name := fmt.Sprintf("memview(%s)", key)
@@ -87,7 +83,7 @@ func commands(m *mode) []ui.Command {
 		// dynamically.
 		Action: func(_ *ui.UI, args ...interface{}) error {
 			key := expr.Key(args[0].(string))
-			regs := m.emul.State().Regs
+			regs := m.stat.Regs
 
 			r, ok := regs[key]
 			if !ok {
