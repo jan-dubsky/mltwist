@@ -84,7 +84,7 @@ func addInterval[T constraints.Integer](is []Interval[T], i Interval[T]) []Inter
 
 // MapUnion produces new Map spanning both ranges from i1 and i2. Overlapping
 // intervals are ignored, but continuous intervals are merged into a single one.
-func MapUnion[T constraints.Integer](i1 Map[T], i2 Map[T]) Map[T] {
+func MapUnion[T constraints.Integer](i1, i2 Map[T]) Map[T] {
 	added := make([]Interval[T], 0, i1.Len()+i2.Len())
 
 	i, j := 0, 0
@@ -114,8 +114,8 @@ func MapUnion[T constraints.Integer](i1 Map[T], i2 Map[T]) Map[T] {
 	return Map[T]{intvs: added}
 }
 
-func sub[T constraints.Integer](intv Interval[T], sub []Interval[T]) ([]Interval[T], int) {
-	intvs := make([]Interval[T], 0, 1)
+func complement[T constraints.Integer](intv Interval[T], sub []Interval[T]) ([]Interval[T], int) {
+	var intvs []Interval[T]
 
 	var cnt int
 	for _, s := range sub {
@@ -125,7 +125,7 @@ func sub[T constraints.Integer](intv Interval[T], sub []Interval[T]) ([]Interval
 			continue
 		}
 
-		if intv.end < s.begin {
+		if intv.end <= s.begin {
 			break
 		}
 
@@ -144,10 +144,10 @@ func sub[T constraints.Integer](intv Interval[T], sub []Interval[T]) ([]Interval
 	return intvs, cnt - 1
 }
 
-// MapIntersect creates new Map spanning those ranges from i1 which are not
+// MapComplement creates new Map spanning those ranges from i1 which are not
 // present in i2.
-func MapIntersect[T constraints.Integer](i1 Map[T], i2 Map[T]) Map[T] {
-	subtracted := make([]Interval[T], 0, i1.Len())
+func MapComplement[T constraints.Integer](i1, i2 Map[T]) Map[T] {
+	complements := make([]Interval[T], 0, i1.Len())
 
 	j := 0
 	for i := 0; i < i1.Len(); i++ {
@@ -156,11 +156,70 @@ func MapIntersect[T constraints.Integer](i1 Map[T], i2 Map[T]) Map[T] {
 			subList = i2.intvs[j:]
 		}
 
-		intvs, cnt := sub(i1.Index(i), subList)
+		intvs, cnt := complement(i1.Index(i), subList)
 		j += cnt
 
-		subtracted = append(subtracted, intvs...)
+		complements = append(complements, intvs...)
 	}
 
-	return Map[T]{intvs: subtracted}
+	return Map[T]{intvs: complements}
+}
+
+func max[T constraints.Integer](v1, v2 T) T {
+	if v1 > v2 {
+		return v1
+	}
+
+	return v2
+}
+
+func min[T constraints.Integer](v1, v2 T) T {
+	if v1 < v2 {
+		return v1
+	}
+
+	return v2
+}
+
+func intersect[T constraints.Integer](intv Interval[T], inters []Interval[T]) ([]Interval[T], int) {
+	intvs := make([]Interval[T], 0, 1)
+
+	var cnt int
+	for _, inter := range inters {
+		cnt++
+
+		if inter.End() <= intv.Begin() {
+			continue
+		}
+
+		if intv.End() <= inter.Begin() {
+			break
+		}
+
+		begin := max(intv.Begin(), inter.Begin())
+		end := min(intv.End(), inter.End())
+		intvs = append(intvs, New(begin, end))
+	}
+
+	return intvs, cnt - 1
+}
+
+func MapIntersect[T constraints.Integer](i1, i2 Map[T]) Map[T] {
+	var intersections []Interval[T]
+
+	j := 0
+	for i := 0; i < i1.Len(); i++ {
+		if j >= i2.Len() {
+			break
+		}
+
+		intv := i1.Index(i)
+		intvs, cnt := intersect(intv, i2.intvs[j:])
+
+		intersections = append(intersections, intvs...)
+		j += cnt
+
+	}
+
+	return Map[T]{intvs: intersections}
 }

@@ -94,7 +94,7 @@ func TestMap_New(t *testing.T) {
 	}
 }
 
-func TestMap_Add(t *testing.T) {
+func TestMap_Union(t *testing.T) {
 	tests := []struct {
 		name string
 		is1  interval.Map[int]
@@ -176,14 +176,14 @@ func TestMap_Add(t *testing.T) {
 			is := interval.MapUnion(tt.is1, tt.is2)
 			require.Equal(t, tt.exp, is)
 
-			// Add(a, b) is equivalent to Add(b, a).
+			// Union(a, b) is equivalent to Union(b, a).
 			is = interval.MapUnion(tt.is2, tt.is1)
 			require.Equal(t, tt.exp, is)
 		})
 	}
 }
 
-func TestMap_Sub(t *testing.T) {
+func TestMap_Complement(t *testing.T) {
 	tests := []struct {
 		name string
 		is1  interval.Map[int]
@@ -243,7 +243,76 @@ func TestMap_Sub(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			is := interval.MapComplement(tt.is1, tt.is2)
+			require.Equal(t, tt.exp, is)
+		})
+	}
+}
+
+func TestMap_Intersect(t *testing.T) {
+	tests := []struct {
+		name string
+		is1  interval.Map[int]
+		is2  interval.Map[int]
+		exp  interval.Map[int]
+	}{
+		{
+			name: "non_overlapping",
+			is1: interval.NewMap(
+				interval.New(1, 2),
+				interval.New(3, 5),
+				interval.New(6, 7),
+			),
+			is2: interval.NewMap(
+				interval.New(-1, 0),
+				interval.New(8, 13),
+			),
+			exp: interval.NewMap[int](),
+		},
+		{
+			name: "identical",
+			is1: interval.NewMap(
+				interval.New(1, 2),
+				interval.New(3, 5),
+				interval.New(6, 7),
+			),
+			is2: interval.NewMap(
+				interval.New(1, 2),
+				interval.New(3, 5),
+				interval.New(6, 7),
+			),
+			exp: interval.NewMap(
+				interval.New(1, 2),
+				interval.New(3, 5),
+				interval.New(6, 7),
+			),
+		},
+		{
+			name: "overlapping",
+			is1: interval.NewMap(
+				interval.New(1, 2),
+				interval.New(3, 5),
+				interval.New(6, 7),
+			),
+			is2: interval.NewMap(
+				interval.New(0, 1),
+				interval.New(4, 7),
+			),
+			exp: interval.NewMap(
+				interval.New(4, 5),
+				interval.New(6, 7),
+			),
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
 			is := interval.MapIntersect(tt.is1, tt.is2)
+			require.Equal(t, tt.exp, is)
+
+			// Intersect(a, b) is equivalent to Intersect(b, a).
+			is = interval.MapIntersect(tt.is2, tt.is1)
 			require.Equal(t, tt.exp, is)
 		})
 	}

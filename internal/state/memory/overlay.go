@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"fmt"
 	"mltwist/internal/state/interval"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
@@ -79,11 +80,11 @@ func (o *Overlay) Load(addr model.Addr, w expr.Width) (expr.Expr, bool) {
 		return o.base.Load(addr, w)
 	}
 
-	overlay := interval.MapIntersect(wholeRange, missing)
+	overlay := interval.MapComplement(wholeRange, missing)
 
 	reads := make([]rangeRead, 0, missing.Len()+overlay.Len())
 	for _, intv := range missing.Intervals() {
-		ex, ok := o.base.Load(intv.Begin(), expr.Width(intv.End()))
+		ex, ok := o.base.Load(intv.Begin(), expr.Width(intv.Len()))
 		if !ok {
 			return nil, false
 		}
@@ -91,9 +92,11 @@ func (o *Overlay) Load(addr model.Addr, w expr.Width) (expr.Expr, bool) {
 		reads = append(reads, rangeRead{intv: intv, ex: ex})
 	}
 	for _, intv := range overlay.Intervals() {
-		ex, ok := o.overlay.Load(intv.Begin(), expr.Width(intv.End()))
+		ex, ok := o.overlay.Load(intv.Begin(), expr.Width(intv.Len()))
 		if !ok {
-			return nil, false
+			panic(fmt.Sprintf(
+				"bug: read from overlay memory range [0x%x, 0x%x) failed",
+				intv.Begin(), intv.End()))
 		}
 
 		reads = append(reads, rangeRead{intv: intv, ex: ex})
@@ -105,7 +108,7 @@ func (o *Overlay) Load(addr model.Addr, w expr.Width) (expr.Expr, bool) {
 
 	finalEx := reads[0].ex
 	for _, r := range reads[1:] {
-		ex := offsetExpr(r.ex, expr.Width(r.intv.Begin()), w)
+		ex := offsetExpr(r.ex, expr.Width(r.intv.Begin()-addr), w)
 		finalEx = expr.NewBinary(expr.Or, finalEx, ex, w)
 	}
 

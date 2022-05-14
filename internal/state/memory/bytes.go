@@ -180,7 +180,7 @@ func (b *Bytes) intervalMap() interval.Map[model.Addr] {
 
 func (b *Bytes) Missing(addr model.Addr, w expr.Width) interval.Map[model.Addr] {
 	intv := interval.New(addr, addr+model.Addr(w))
-	return interval.MapIntersect(interval.NewMap(intv), b.intervalMap())
+	return interval.MapComplement(interval.NewMap(intv), b.intervalMap())
 }
 
 func (b *Bytes) Blocks() interval.Map[model.Addr] {
