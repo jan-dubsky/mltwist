@@ -1,4 +1,4 @@
-package ui
+package consoleui
 
 type ArgParseFunc func(s string) (interface{}, error)
 type OptArgParseFunc func(s []string) ([]interface{}, error)

@@ -14,8 +14,9 @@ type regSet map[string]struct{}
 type instruction struct {
 	typ      model.Type
 	origAddr model.Addr
-	bytes    []byte
-	details  model.PlatformDetails
+
+	bytes   []byte
+	details model.PlatformDetails
 
 	effects     []expr.Effect
 	jumpTargets []expr.Expr

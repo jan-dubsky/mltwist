@@ -2,7 +2,7 @@ package cmdtools
 
 import (
 	"fmt"
-	"mltwist/internal/console/internal/ui"
+	"mltwist/internal/consoleui"
 	"strconv"
 	"strings"
 )
@@ -10,7 +10,7 @@ import (
 // ParseNum parses an integer parameter out of string and then validates that
 // the value is in between min and max. Both min and max are inclusive
 // boundaries.
-func ParseNum(min, max int) ui.ArgParseFunc {
+func ParseNum(min, max int) consoleui.ArgParseFunc {
 	return func(s string) (interface{}, error) {
 		v, err := strconv.Atoi(s)
 		if err != nil {

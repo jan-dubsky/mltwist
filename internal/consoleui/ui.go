@@ -1,10 +1,10 @@
-package ui
+package consoleui
 
 import (
 	"errors"
 	"fmt"
-	"mltwist/internal/console/internal/linereader"
-	"mltwist/internal/console/internal/view"
+	"mltwist/internal/consoleui/internal/linereader"
+	"mltwist/internal/consoleui/internal/view"
 	"strings"
 )
 

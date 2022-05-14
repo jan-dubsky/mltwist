@@ -3,7 +3,7 @@ package emulate
 import (
 	"fmt"
 	"math/big"
-	"mltwist/internal/console/internal/linereader"
+	"mltwist/internal/consoleui/internal/linereader"
 	"mltwist/internal/emulator"
 	"mltwist/internal/exprtransform"
 	"mltwist/pkg/expr"

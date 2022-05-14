@@ -1,8 +1,8 @@
-package ui
+package consoleui
 
 import (
 	"fmt"
-	"mltwist/internal/console/internal/linereader"
+	"mltwist/internal/consoleui/internal/linereader"
 	"strings"
 )
 

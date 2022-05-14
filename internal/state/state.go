@@ -18,10 +18,7 @@ type State struct {
 // New creates a new state.
 func New() *State {
 	return &State{
-		// We need to set some value as 100 registers (default map size
-		// in Go) is too many. So 32 is thumbsucked, but more reasonable
-		// value.
-		Regs: make(RegMap, 32),
+		Regs: NewRegMap(),
 		// We assume to have 1 address space - the real program memory.
 		Mems: make(memory.MemMap, 1),
 	}

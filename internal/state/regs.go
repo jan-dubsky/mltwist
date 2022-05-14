@@ -13,3 +13,11 @@ import (
 // overlapping writes, we can use a single key-value store to represent any
 // state of register file,
 type RegMap map[expr.Key]expr.Expr
+
+// NewRegMap creates a new instance of RegMap scaled to contain reasonable
+// number of registers.
+func NewRegMap() RegMap {
+	// We need to set some value as 100 registers (default map size in Go)
+	// is too many. So 32 is thumbsucked, but more reasonable value.
+	return make(RegMap, 32)
+}

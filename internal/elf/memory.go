@@ -20,25 +20,23 @@ type Memory struct {
 
 // newMemory creates a new memory structure. This method return an error if
 // blocks overlap.
-func newMemory(blocks []Block) (*Memory, error) {
-	if len(blocks) == 0 {
+func newMemory(bs []Block) (*Memory, error) {
+	if len(bs) == 0 {
 		return &Memory{}, nil
 	}
 
-	less := func(i, j int) bool { return blocks[i].Begin() < blocks[j].Begin() }
-	sort.Slice(blocks, less)
-
-	for i := range blocks[1:] {
-		if blocks[i+1].Begin() < blocks[i].End() {
+	sort.Slice(bs, func(i, j int) bool { return bs[i].Begin() < bs[j].Begin() })
+	for i := range bs[1:] {
+		if bs[i+1].Begin() < bs[i].End() {
 			return nil, fmt.Errorf(
-				"block %d (0x%x - 0x%x) and %d (0x%x - 0x%x) overlap",
-				i, blocks[i].Begin(), blocks[i].End(),
-				i+1, blocks[i+1].Begin(), blocks[i+i].End(),
+				"blocks %d [0x%x, 0x%x) and %d [0x%x, 0x%x) overlap",
+				i, bs[i].Begin(), bs[i].End(),
+				i+1, bs[i+1].Begin(), bs[i+1].End(),
 			)
 		}
 	}
 
-	return &Memory{Blocks: blocks}, nil
+	return &Memory{Blocks: bs}, nil
 }
 
 // Address returns the longest available slice of memory starting at memory

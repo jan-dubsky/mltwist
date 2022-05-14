@@ -2,19 +2,19 @@ package emulate
 
 import (
 	"fmt"
-	"mltwist/internal/console/internal/linereader"
-	"mltwist/internal/console/internal/memview"
-	"mltwist/internal/console/internal/ui"
-	"mltwist/internal/console/internal/ui/cmdtools"
+	"mltwist/internal/consoleui"
+	"mltwist/internal/consoleui/internal/cmdtools"
+	"mltwist/internal/consoleui/internal/linereader"
+	"mltwist/internal/consoleui/internal/memview"
 	"mltwist/pkg/expr"
 	"sort"
 )
 
-func commands(m *mode) []ui.Command {
-	return []ui.Command{{
+func commands(m *mode) []consoleui.Command {
+	return []consoleui.Command{{
 		Keys: []string{"forward", "fwd", "f", "step", "s"},
 		Help: "Move emulation one instruction forward.",
-		Action: func(_ *ui.UI, args ...interface{}) error {
+		Action: func(_ *consoleui.UI, args ...interface{}) error {
 			_, err := m.emul.Step()
 			if err != nil {
 				return fmt.Errorf("cannot emulate instruction: %w", err)
@@ -30,7 +30,7 @@ func commands(m *mode) []ui.Command {
 	}, {
 		Keys: []string{"memories", "mems", "ms"},
 		Help: "List all memories the program wrote.",
-		Action: func(_ *ui.UI, args ...interface{}) error {
+		Action: func(_ *consoleui.UI, args ...interface{}) error {
 			mems := m.stat.Mems
 			keys := make([]expr.Key, 0, len(mems))
 			for k := range mems {
@@ -54,8 +54,8 @@ func commands(m *mode) []ui.Command {
 	}, {
 		Keys: []string{"memory", "mem", "m"},
 		Help: "Show content of memory address space identified by <key>.",
-		Args: []ui.ArgParseFunc{cmdtools.ParseString},
-		Action: func(ui *ui.UI, args ...interface{}) error {
+		Args: []consoleui.ArgParseFunc{cmdtools.ParseString},
+		Action: func(ui *consoleui.UI, args ...interface{}) error {
 			key := expr.Key(args[0].(string))
 			mem := m.stat.Mems[key]
 
@@ -66,7 +66,7 @@ func commands(m *mode) []ui.Command {
 	}, {
 		Keys: []string{"reqmod", "rmod"},
 		Help: "Modify register of the running application.",
-		Args: []ui.ArgParseFunc{cmdtools.ParseString},
+		Args: []consoleui.ArgParseFunc{cmdtools.ParseString},
 		// Please note that it makes absolutely no sense to change the
 		// register width. The register width is given by instructions
 		// preceding the current instruction. Consequently the register
@@ -81,7 +81,7 @@ func commands(m *mode) []ui.Command {
 		// of this specific program run. This fact doesn't weaken the
 		// final statement that register width cannot be changed
 		// dynamically.
-		Action: func(_ *ui.UI, args ...interface{}) error {
+		Action: func(_ *consoleui.UI, args ...interface{}) error {
 			key := expr.Key(args[0].(string))
 			regs := m.stat.Regs
 

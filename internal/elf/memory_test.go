@@ -18,39 +18,39 @@ func TestMemory_New(t *testing.T) {
 		{
 			name: "single_block",
 			blocks: []Block{
-				newBlock(50, make([]byte, 42), true),
+				newBlock(50, make([]byte, 42)),
 			},
 			blockCnt: 1,
 		},
 		{
 			name: "two_blocks",
 			blocks: []Block{
-				newBlock(50, make([]byte, 42), true),
-				newBlock(100, make([]byte, 30), true),
+				newBlock(50, make([]byte, 42)),
+				newBlock(100, make([]byte, 30)),
 			},
 			blockCnt: 2,
 		},
 		{
 			name: "two_blocks_unsorted",
 			blocks: []Block{
-				newBlock(100, make([]byte, 30), true),
-				newBlock(50, make([]byte, 42), true),
+				newBlock(100, make([]byte, 30)),
+				newBlock(50, make([]byte, 42)),
 			},
 			blockCnt: 2,
 		},
 		{
 			name: "overlapping_blocks",
 			blocks: []Block{
-				newBlock(100, make([]byte, 30), true),
-				newBlock(50, make([]byte, 52), true),
+				newBlock(100, make([]byte, 30)),
+				newBlock(50, make([]byte, 52)),
 			},
 			hasErr: true,
 		},
 		{
 			name: "blocks_touching_one_another",
 			blocks: []Block{
-				newBlock(102, make([]byte, 30), true),
-				newBlock(50, make([]byte, 52), true),
+				newBlock(102, make([]byte, 30)),
+				newBlock(50, make([]byte, 52)),
 			},
 			blockCnt: 2,
 		},
@@ -92,9 +92,9 @@ func TestMemory_Address(t *testing.T) {
 		{
 			name: "full_block",
 			blocks: []Block{
-				newBlock(52, make([]byte, 48), true),
-				newBlock(120, make([]byte, 60), true),
-				newBlock(240, make([]byte, 20), true),
+				newBlock(52, make([]byte, 48)),
+				newBlock(120, make([]byte, 60)),
+				newBlock(240, make([]byte, 20)),
 			},
 			addr:   52,
 			length: 48,
@@ -102,9 +102,9 @@ func TestMemory_Address(t *testing.T) {
 		{
 			name: "out_of_blocks",
 			blocks: []Block{
-				newBlock(52, make([]byte, 48), true),
-				newBlock(120, make([]byte, 60), true),
-				newBlock(240, make([]byte, 20), true),
+				newBlock(52, make([]byte, 48)),
+				newBlock(120, make([]byte, 60)),
+				newBlock(240, make([]byte, 20)),
 			},
 			addr:   110,
 			length: 0,
@@ -112,9 +112,9 @@ func TestMemory_Address(t *testing.T) {
 		{
 			name: "middle_of_block",
 			blocks: []Block{
-				newBlock(52, make([]byte, 48), true),
-				newBlock(120, make([]byte, 60), true),
-				newBlock(240, make([]byte, 20), true),
+				newBlock(52, make([]byte, 48)),
+				newBlock(120, make([]byte, 60)),
+				newBlock(240, make([]byte, 20)),
 			},
 			addr:   145,
 			length: 35,
@@ -122,9 +122,9 @@ func TestMemory_Address(t *testing.T) {
 		{
 			name: "in_last_block",
 			blocks: []Block{
-				newBlock(52, make([]byte, 48), true),
-				newBlock(120, make([]byte, 60), true),
-				newBlock(240, make([]byte, 20), true),
+				newBlock(52, make([]byte, 48)),
+				newBlock(120, make([]byte, 60)),
+				newBlock(240, make([]byte, 20)),
 			},
 			addr:   250,
 			length: 10,
@@ -132,9 +132,9 @@ func TestMemory_Address(t *testing.T) {
 		{
 			name: "behind_the_last_block",
 			blocks: []Block{
-				newBlock(52, make([]byte, 48), true),
-				newBlock(120, make([]byte, 60), true),
-				newBlock(240, make([]byte, 20), true),
+				newBlock(52, make([]byte, 48)),
+				newBlock(120, make([]byte, 60)),
+				newBlock(240, make([]byte, 20)),
 			},
 			addr:   300,
 			length: 0,

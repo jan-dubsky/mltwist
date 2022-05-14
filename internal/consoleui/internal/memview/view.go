@@ -3,7 +3,7 @@ package memview
 import (
 	"fmt"
 	"math"
-	"mltwist/internal/console/internal/cursor"
+	"mltwist/internal/consoleui/internal/cursor"
 	"mltwist/internal/exprtransform"
 	"mltwist/internal/state/interval"
 	"mltwist/internal/state/memory"

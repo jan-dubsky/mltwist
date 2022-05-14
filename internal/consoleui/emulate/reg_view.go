@@ -2,7 +2,7 @@ package emulate
 
 import (
 	"fmt"
-	"mltwist/internal/console/internal/view"
+	"mltwist/internal/consoleui/internal/view"
 	"mltwist/internal/state"
 	"mltwist/pkg/expr"
 	"sort"

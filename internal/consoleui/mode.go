@@ -1,8 +1,8 @@
-package ui
+package consoleui
 
 import (
 	"fmt"
-	"mltwist/internal/console/internal/view"
+	"mltwist/internal/consoleui/internal/view"
 )
 
 type commandMap map[string]Command

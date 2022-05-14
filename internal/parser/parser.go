@@ -14,10 +14,6 @@ func Parse(
 ) ([]Instruction, error) {
 	instrs := make([]Instruction, 0, len(m.Blocks))
 	for _, block := range m.Blocks {
-		if !block.Executable() {
-			continue
-		}
-
 		for addr := block.Begin(); addr < block.End(); {
 			ins, err := parseIns(p, block, addr)
 			if err != nil {

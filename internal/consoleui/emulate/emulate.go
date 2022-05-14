@@ -2,16 +2,16 @@ package emulate
 
 import (
 	"fmt"
-	"mltwist/internal/console/internal/lines"
-	"mltwist/internal/console/internal/ui"
-	"mltwist/internal/console/internal/view"
+	"mltwist/internal/consoleui"
+	"mltwist/internal/consoleui/internal/lines"
+	"mltwist/internal/consoleui/internal/view"
 	"mltwist/internal/deps"
 	"mltwist/internal/emulator"
 	"mltwist/internal/state"
 	"mltwist/pkg/model"
 )
 
-var _ ui.Mode = &mode{}
+var _ consoleui.Mode = &mode{}
 
 type mode struct {
 	p    *deps.Program
@@ -22,8 +22,7 @@ type mode struct {
 	view     view.View
 }
 
-func New(p *deps.Program, ip model.Addr) (*mode, error) {
-	stat := state.New()
+func New(p *deps.Program, ip model.Addr, stat *state.State) (*mode, error) {
 	emul := emulator.New(p, ip, stat, &stateProvider{})
 
 	lineView := lines.NewView(p)
@@ -45,8 +44,8 @@ func New(p *deps.Program, ip model.Addr) (*mode, error) {
 	return e, nil
 }
 
-func (e *mode) Commands() []ui.Command { return commands(e) }
-func (e *mode) View() view.View        { return e.view }
+func (e *mode) Commands() []consoleui.Command { return commands(e) }
+func (e *mode) View() view.View               { return e.view }
 
 func (e *mode) refreshCursor() error {
 	ip := e.emul.IP()

@@ -16,29 +16,29 @@ func TestBlock_Address(t *testing.T) {
 	}{
 		{
 			name:   "block_beginning",
-			block:  newBlock(64, make([]byte, 32), true),
+			block:  newBlock(64, make([]byte, 32)),
 			addr:   64,
 			length: 32,
 		},
 		{
 			name:   "block_last_byte",
-			block:  newBlock(64, make([]byte, 32), true),
+			block:  newBlock(64, make([]byte, 32)),
 			addr:   64 + 31,
 			length: 1,
 		},
 		{
 			name:  "end",
-			block: newBlock(64, make([]byte, 32), true),
+			block: newBlock(64, make([]byte, 32)),
 			addr:  64 + 32,
 		},
 		{
 			name:  "before_begin",
-			block: newBlock(64, make([]byte, 32), true),
+			block: newBlock(64, make([]byte, 32)),
 			addr:  63,
 		},
 		{
 			name:   "middle_of_block",
-			block:  newBlock(64, make([]byte, 32), true),
+			block:  newBlock(64, make([]byte, 32)),
 			addr:   64 + 12,
 			length: 20,
 		},

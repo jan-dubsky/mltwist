@@ -21,7 +21,7 @@ $(GREP_BUILD): $(GIT_DIR)
 		set -x;								\
 										\
 		./bootstrap;							\
-		./configure --host=riscv64-unknown-linux-gnu; 			\
+		./configure --host=riscv64-unknown-linux-gnu LDFLAGS=-static;   \
 		make CFLAGS=-Wno-cast-align all; 				\
 	'
 
