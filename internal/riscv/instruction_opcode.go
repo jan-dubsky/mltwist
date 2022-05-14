@@ -31,10 +31,6 @@ type instructionOpcode struct {
 	// storeBytes is number of bytes the instruction stores into memory.
 	storeBytes uint8
 
-	// unsigned marks if load from memory which is shorter than XLEN bits is
-	// unsigned or signed (default).
-	unsigned bool
-
 	// immediate describes an immediate value encoding format in an
 	// instruction.
 	immediate           immType
@@ -79,17 +75,14 @@ func (i instructionOpcode) validate(xlenBytes uint8) error {
 		return fmt.Errorf("store width is not power of 2: %d", s)
 	}
 
-	if i.loadBytes > 0 && i.storeBytes > 0 {
-		return fmt.Errorf("instruction can be either load or store")
-	}
-	if i.unsigned && (i.loadBytes == 0 || i.loadBytes == xlenBytes) {
-		return fmt.Errorf("unsigned is allowed for loads shorter than XLEN bytes")
+	if i.loadBytes > 0 && i.storeBytes > 0 && !i.instrType.MemOrder() {
+		return fmt.Errorf("non-atomic instruction can be either load or store")
 	}
 
-	if cnt := i.inputRegCnt; i.loadBytes > 0 && cnt != 1 {
-		return fmt.Errorf("load must have exactly one input register: %d", cnt)
-	} else if i.storeBytes > 0 && cnt != 2 {
-		return fmt.Errorf("store must have exactly two input registers: %d", cnt)
+	if cnt := i.inputRegCnt; !i.instrType.MemOrder() && i.loadBytes > 0 && cnt != 1 {
+		return fmt.Errorf("non-atomic load must have 1 input register: %d", cnt)
+	} else if !i.instrType.MemOrder() && i.storeBytes > 0 && cnt != 2 {
+		return fmt.Errorf("non-atomic store must have 2 input registers: %d", cnt)
 	}
 
 	if i.effects == nil {

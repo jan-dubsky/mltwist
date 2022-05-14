@@ -8,8 +8,11 @@ import (
 	"mltwist/pkg/model"
 )
 
-// memoryKey is identifier of CPU memory address space.
-const memoryKey = expr.Key("memory")
+// MemoryKey is identifier of the memory address space.
+//
+// Given that RISCV specification defines only one memory space, there is no
+// reason to explain which memory is identified by this key.
+const MemoryKey = expr.Key("memory")
 
 const (
 	// low7Bits is a byte (mask) with bottom 7 bits set and last bit unset.
@@ -17,6 +20,9 @@ const (
 	// low3Bits is a byte (mask) with bottom 3 bits set and all higher bits
 	// unset.
 	low3Bits byte = 0x7
+	// low5Bits is a byte (mask) with bottom 5 bits set and all higher bits
+	// unset.
+	low5Bits byte = 0x1f
 )
 
 // assertMask checks that only bits set in mask are set in b. This method will
@@ -163,6 +169,27 @@ func opcodeShiftImm(arithmetic bool, shiftBits uint8, mid byte, low byte) opcode
 	}
 }
 
+// opcodeAtomic creates an opcode definition for atomic-type instruction.
+//
+// As atomic instructions contain acquire and release bits in bits [25] and [24]
+// respectively. As those 2 bits doesn't matter for instruction opcode matching,
+// we have to exclude those from opcode matching.
+func opcodeAtomic(high byte, mid byte, low byte) opcode.Opcode {
+	assertMask(low, low7Bits)
+	assertMask(mid, low3Bits)
+	assertMask(high, low5Bits)
+
+	return opcode.Opcode{
+		Bytes: []byte{low, mid << 4, 0, high << 3},
+		Mask: []byte{
+			low7Bits,
+			low3Bits << 4,
+			0,
+			low5Bits << 3,
+		},
+	}
+}
+
 func addrAddImm(a model.Addr, imm int32) model.Addr {
 	if imm >= 0 {
 		return a + model.Addr(imm)
@@ -228,11 +255,11 @@ func sext(e expr.Expr, signBit uint8, w expr.Width) expr.Expr {
 func sext32To64(e expr.Expr) expr.Expr { return sext(e, 31, expr.Width64) }
 
 func memLoad(addr expr.Expr, w expr.Width) expr.Expr {
-	return expr.NewMemLoad(memoryKey, addr, w)
+	return expr.NewMemLoad(MemoryKey, addr, w)
 }
 
 func memStore(e expr.Expr, addr expr.Expr, w expr.Width) expr.Effect {
-	return expr.NewMemStore(e, memoryKey, addr, w)
+	return expr.NewMemStore(e, MemoryKey, addr, w)
 }
 
 func regStore(e expr.Expr, i Instruction, w expr.Width) expr.Effect {
@@ -269,14 +296,61 @@ func branchCmp(
 	return expr.NewRegStore(ip, expr.IPKey, w)
 }
 
+type binaryExprFunc func(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr
+
+func atomicBinaryOp(op expr.BinaryOp) binaryExprFunc {
+	return func(e1, e2 expr.Expr, w expr.Width) expr.Expr {
+		return expr.NewBinary(op, e1, e2, w)
+	}
+}
+
+func atomicMinMax(c expr.Condition, negate bool) binaryExprFunc {
+	return func(e1, e2 expr.Expr, w expr.Width) expr.Expr {
+		t, f := e1, e2
+		if negate {
+			t, f = e2, e1
+		}
+
+		return expr.NewCond(c, e1, e2, t, f, w)
+	}
+}
+
+func atomicOp(f binaryExprFunc, i Instruction, w expr.Width) []expr.Effect {
+	addr := regLoad(rs1, i, w)
+	ld := memLoad(addr, w)
+
+	val := f(ld, regLoad(rs2, i, w), w)
+	return []expr.Effect{
+		regStore(ld, i, w),
+		memStore(val, addr, w),
+	}
+}
+
+func atomicOpWidth(f binaryExprFunc, i Instruction, addrW, opW expr.Width) []expr.Effect {
+	if opW >= width64 {
+		panic(fmt.Sprintf("bug: expression too wide: %d", opW))
+	}
+
+	addr := regLoad(rs1, i, addrW)
+	ld := memLoad(addr, opW)
+
+	val := f(ld, regLoad(rs2, i, opW), opW)
+	return []expr.Effect{
+		regStore(sext32To64(ld), i, addrW),
+		memStore(val, addr, opW),
+	}
+}
+
 var instructions = map[Variant]map[Extension][]*instructionOpcode{
 	Variant32: {
 		extI: integer32,
 		ExtM: mul32,
+		ExtA: atomic32,
 	},
 	Variant64: {
 		extI: integer64,
 		ExtM: mul64,
+		ExtA: atomic64,
 	},
 }
 

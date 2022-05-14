@@ -157,12 +157,10 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		loadBytes:    1,
-		unsigned:     true,
 		immediate:    immTypeI,
 		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width32)
-			val := exprtools.NewWidthGadget(memLoad(addr, width8), width32)
-			return []expr.Effect{regStore(val, i, width32)}
+			return []expr.Effect{regStore(memLoad(addr, width8), i, width32)}
 		},
 	}, {
 		name:         "lhu",
@@ -170,12 +168,10 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		loadBytes:    2,
-		unsigned:     true,
 		immediate:    immTypeI,
 		effects: func(i Instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width32)
-			val := exprtools.NewWidthGadget(memLoad(addr, width16), width32)
-			return []expr.Effect{regStore(val, i, width32)}
+			return []expr.Effect{regStore(memLoad(addr, width16), i, width32)}
 		},
 	}, {
 		name:         "sb",
@@ -626,6 +622,146 @@ var mul32 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect {
 			val := reg2Op(expr.Mod, i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
+		},
+	},
+}
+
+var atomic32 = []*instructionOpcode{
+	{
+		name: "lr.w",
+		// LR.W is special as rs2 is always r0 - otherwise the
+		// instruction opcode is undefined as zeros are defined in an
+		// instruction encoding.
+		opcode: opcode.Opcode{
+			Bytes: []byte{0b0101111, 0b010 << 4, 0, 0b00010 << 3},
+			Mask:  []byte{0x7f, 0b111 << 4, 0xf0, 0xf9},
+		},
+		inputRegCnt:  1,
+		hasOutputReg: true,
+		loadBytes:    4,
+		instrType:    model.TypeMemOrder,
+		effects: func(i Instruction) []expr.Effect {
+			val := memLoad(regLoad(rs1, i, width32), width32)
+			return []expr.Effect{regStore(val, i, width32)}
+		},
+	}, {
+		name:         "sc.w",
+		opcode:       opcodeAtomic(0b00011, 0b010, 0b0101111),
+		inputRegCnt:  2,
+		hasOutputReg: true,
+		storeBytes:   4,
+		instrType:    model.TypeMemOrder,
+		effects: func(i Instruction) []expr.Effect {
+			val := regLoad(rs2, i, width32)
+			addr := regLoad(rs1, i, width32)
+			// TODO: Find a way how to emulate the race check.
+			return []expr.Effect{
+				memStore(val, addr, width32),
+				regStore(expr.Zero, i, width32),
+			}
+		},
+	}, {
+		name:         "amoswap.w",
+		opcode:       opcodeAtomic(0b00001, 0b010, 0b0101111),
+		inputRegCnt:  2,
+		hasOutputReg: true,
+		loadBytes:    4,
+		storeBytes:   4,
+		instrType:    model.TypeMemOrder,
+		effects: func(i Instruction) []expr.Effect {
+			addr := regLoad(rs1, i, width32)
+			return []expr.Effect{
+				regStore(memLoad(addr, width32), i, width32),
+				memStore(regLoad(rs2, i, width32), addr, width32),
+			}
+		},
+	}, {
+		name:         "amoadd.W",
+		opcode:       opcodeAtomic(0, 0b010, 0b0101111),
+		inputRegCnt:  2,
+		hasOutputReg: true,
+		loadBytes:    4,
+		storeBytes:   4,
+		instrType:    model.TypeMemOrder,
+		effects: func(i Instruction) []expr.Effect {
+			return atomicOp(atomicBinaryOp(expr.Add), i, width32)
+		},
+	}, {
+		name:         "amoxor.w",
+		opcode:       opcodeAtomic(0b00100, 0b010, 0b0101111),
+		inputRegCnt:  2,
+		hasOutputReg: true,
+		loadBytes:    4,
+		storeBytes:   4,
+		instrType:    model.TypeMemOrder,
+		effects: func(i Instruction) []expr.Effect {
+			return atomicOp(atomicBinaryOp(expr.Xor), i, width32)
+		},
+	}, {
+		name:         "amoand.w",
+		opcode:       opcodeAtomic(0b01100, 0b010, 0b0101111),
+		inputRegCnt:  2,
+		hasOutputReg: true,
+		loadBytes:    4,
+		storeBytes:   4,
+		instrType:    model.TypeMemOrder,
+		effects: func(i Instruction) []expr.Effect {
+			return atomicOp(atomicBinaryOp(expr.And), i, width32)
+		},
+	}, {
+		name:         "amoor.w",
+		opcode:       opcodeAtomic(0b01000, 0b010, 0b0101111),
+		inputRegCnt:  2,
+		hasOutputReg: true,
+		loadBytes:    4,
+		storeBytes:   4,
+		instrType:    model.TypeMemOrder,
+		effects: func(i Instruction) []expr.Effect {
+			return atomicOp(atomicBinaryOp(expr.Or), i, width32)
+		},
+	}, {
+		name:         "amomin.w",
+		opcode:       opcodeAtomic(0b10000, 0b010, 0b0101111),
+		inputRegCnt:  2,
+		hasOutputReg: true,
+		loadBytes:    4,
+		storeBytes:   4,
+		instrType:    model.TypeMemOrder,
+		effects: func(i Instruction) []expr.Effect {
+			return atomicOp(atomicMinMax(expr.Lts, false), i, width32)
+		},
+	}, {
+		name:         "amomax.w",
+		opcode:       opcodeAtomic(0b10100, 0b010, 0b0101111),
+		inputRegCnt:  2,
+		hasOutputReg: true,
+		loadBytes:    4,
+		storeBytes:   4,
+		instrType:    model.TypeMemOrder,
+		effects: func(i Instruction) []expr.Effect {
+			return atomicOp(atomicMinMax(expr.Lts, true), i, width32)
+		},
+	}, {
+		name:         "amominu.w",
+		opcode:       opcodeAtomic(0b11000, 0b010, 0b0101111),
+		inputRegCnt:  2,
+		hasOutputReg: true,
+		loadBytes:    4,
+		storeBytes:   4,
+		instrType:    model.TypeMemOrder,
+		effects: func(i Instruction) []expr.Effect {
+			return atomicOp(atomicMinMax(expr.Ltu, false), i, width32)
+		},
+	}, {
+		name:         "amomaxu.w",
+		opcode:       opcodeAtomic(0b11100, 0b010, 0b0101111),
+		inputRegCnt:  2,
+		hasOutputReg: true,
+		loadBytes:    4,
+		storeBytes:   4,
+		instrType:    model.TypeMemOrder,
+		effects: func(i Instruction) []expr.Effect {
+			return atomicOp(atomicMinMax(expr.Ltu, true), i, width32)
 		},
 	},
 }

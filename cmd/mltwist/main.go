@@ -86,7 +86,7 @@ func run() error {
 		return fmt.Errorf("ELF parsing failed: %w", err)
 	}
 
-	riscvParser := riscv.NewParser(riscv.Variant64, riscv.ExtM)
+	riscvParser := riscv.NewParser(riscv.Variant64, riscv.ExtM, riscv.ExtA)
 	ins, err := parser.Parse(code, riscvParser)
 	if err != nil {
 		return fmt.Errorf("instruction parsing failed: %w", err)

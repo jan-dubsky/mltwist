@@ -37,6 +37,9 @@ const (
 	// RISC-V ISA.
 	ExtM
 
+	// ExtA represents atomic instruction extension of RISC-V ISA.
+	ExtA
+
 	// extEnd marks first invalid value of extension.
 	extEnd
 )

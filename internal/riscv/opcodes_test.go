@@ -1,8 +1,8 @@
 package riscv
 
 import (
-	"mltwist/internal/opcode"
 	"fmt"
+	"mltwist/internal/opcode"
 	"strings"
 	"testing"
 
@@ -119,7 +119,6 @@ func TestRV32ToRV64(t *testing.T) {
 
 				r.Equal(opc32.inputRegCnt, opc64.inputRegCnt)
 				r.Equal(opc32.hasOutputReg, opc64.hasOutputReg)
-				r.Equal(opc32.unsigned, opc64.unsigned)
 				r.Equal(opc32.immediate, opc64.immediate)
 				r.Equal(opc32.instrType, opc64.instrType)
 			}

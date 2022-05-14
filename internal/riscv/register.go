@@ -14,7 +14,7 @@ const (
 // (i.e. [0..regCnt-1]).
 type regNum uint8
 
-func (r regNum) String() string { return fmt.Sprintf("r%d", r) }
+func (r regNum) String() string { return fmt.Sprintf("x%d", r) }
 
 // reg represents a register number position in an instruction opcode. Valid
 // values are rd (output register), rs1 (input register 1) and rs2 (input
