@@ -39,7 +39,7 @@ func newLines(code *deps.Code) *Lines {
 }
 
 func blockToLines(b deps.Block) []Line {
-	lines := make([]Line, 1, b.Len()+1)
+	lines := make([]Line, 1, b.Num()+1)
 	lines[0] = newBlockLine(b)
 
 	for _, ins := range b.Instructions() {

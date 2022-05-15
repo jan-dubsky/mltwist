@@ -8,12 +8,28 @@ import (
 	"sort"
 )
 
+// Code represents analyzed set of instructions from a single program which are
+// split into basic blocks and have dependencies in between one another.
+//
+// The program code is represented as a list of basic blocks where every basic
+// block contains some instructions. Dependencies in between instructions are
+// then tracked only within the basic block.
 type Code struct {
-	entrypoint   model.Addr
-	blocks       []*block
+	entrypoint model.Addr
+	blocks     []*block
+
+	// blocksByAddr is list of blocks sorted by their ascending begin
+	// addresses. This list is used for O(log(n)) search in blocks based on
+	// the address. Blocks field cannot be used for such a purpose as it can
+	// be modified by Move method.
 	blocksByAddr []*block
+
+	// instrCnt is number of instructions in all basic blocks.
+	instrCnt int
 }
 
+// NewCode finds basic blocks in the program and identifies instruction
+// dependencies within basic blocks.
 func NewCode(entrypoint model.Addr, seq []parser.Instruction) (*Code, error) {
 	seqs, err := basicblock.Parse(entrypoint, seq)
 	if err != nil {
@@ -25,6 +41,11 @@ func NewCode(entrypoint model.Addr, seq []parser.Instruction) (*Code, error) {
 		blocks[i] = newBlock(i, seq)
 	}
 
+	var instrCnt int
+	for _, b := range blocks {
+		instrCnt += b.Num()
+	}
+
 	blocksByAddr := make([]*block, len(blocks))
 	copy(blocksByAddr, blocks)
 
@@ -32,6 +53,8 @@ func NewCode(entrypoint model.Addr, seq []parser.Instruction) (*Code, error) {
 		entrypoint:   entrypoint,
 		blocks:       blocks,
 		blocksByAddr: blocksByAddr,
+
+		instrCnt: instrCnt,
 	}, nil
 }
 
@@ -60,18 +83,17 @@ func (c *Code) Blocks() []Block {
 	return blocks
 }
 
-// NumInstr counts number of instructions in all all basic blocks in the
-// program.
-func (c *Code) NumInstr() int {
-	var instrs int
-	for _, b := range c.blocks {
-		instrs += b.Len()
-	}
-
-	return instrs
-}
+// NumInstr counts number of instructions in all all basic blocks in the code.
+func (c *Code) NumInstr() int { return c.instrCnt }
 
 // Move moves basic block at index from to index to.
+//
+// Unlike for instructions within a single basic block, move of a basic block
+// has no effect on it's address in the program.
+//
+// For detailed explanation why we don't move basic blocks and which effect such
+// a move could have to relative jump instructions, please read doc-comment of
+// Move method of Block in this package.
 func (c *Code) Move(from int, to int) error {
 	if err := checkFromToIndex(from, to, len(c.blocks)); err != nil {
 		return fmt.Errorf("cannot move %d to %d: %w", from, to, err)
@@ -81,6 +103,8 @@ func (c *Code) Move(from int, to int) error {
 	return nil
 }
 
+// Address find a block containing address a. If no such block exists in the
+// code, this method returns zero value of block and false.
 func (c *Code) Address(a model.Addr) (Block, bool) {
 	i := sort.Search(len(c.blocksByAddr), func(i int) bool {
 		return c.blocksByAddr[i].end > a
@@ -95,18 +119,4 @@ func (c *Code) Address(a model.Addr) (Block, bool) {
 	}
 
 	return wrapBlock(b), true
-}
-
-func (c *Code) AddressIns(a model.Addr) (Instruction, bool) {
-	block, ok := c.Address(a)
-	if !ok {
-		return Instruction{}, false
-	}
-
-	ins, ok := block.Address(a)
-	if !ok {
-		return Instruction{}, false
-	}
-
-	return ins, true
 }

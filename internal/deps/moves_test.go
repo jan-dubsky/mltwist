@@ -24,8 +24,8 @@ func newMock(id uint, length model.Addr) *mockMovable {
 
 func (m *mockMovable) setIndex(i int)       { m.idx = i }
 func (m *mockMovable) setAddr(a model.Addr) { m.addr = a }
-func (m mockMovable) Addr() model.Addr      { return m.addr }
-func (m mockMovable) NextAddr() model.Addr  { return m.addr + m.length }
+func (m mockMovable) Begin() model.Addr     { return m.addr }
+func (m mockMovable) End() model.Addr       { return m.addr + m.length }
 
 func TestMove(t *testing.T) {
 	tests := []struct {

@@ -9,29 +9,57 @@ import (
 
 type insSet map[*instruction]struct{}
 
-type regSet map[string]struct{}
+type regSet map[expr.Key]struct{}
 
 type instruction struct {
-	typ      model.Type
+	// typ is an instruction special type.
+	typ model.Type
+	// origAddr is original address of the instruction in the code. This
+	// value remains constant even in case the instruction is moved to other
+	// place.
 	origAddr model.Addr
 
-	bytes   []byte
+	// bytes are instruction bytes in the code.
+	bytes []byte
+	// details provide platform-specific instruction methods.
 	details model.PlatformDetails
 
-	effects     []expr.Effect
+	// effects contains all side effects the instruction has.
+	effects []expr.Effect
+	// jumpTargets is list of expressions which describe jump targets of
+	// this instruction. If this array is non-empty, the instruction is some
+	// form of jump (control flow instruction).
+	//
+	// Constant expressions jumping to following instructions are omitted as
+	// those are not real jumps. This is important as those expressions will
+	// be typically constants which cannot be adjusted by instruction
+	// moving. So if this array contained jumps to the following
+	// instructions as well, those could be interpreted as real jump if the
+	// instruction would be moved to other position (memory address).
 	jumpTargets []expr.Expr
 
+	// currAddr is current address of the instruction in the moved code.
 	currAddr model.Addr
 
-	inRegs  regSet
+	// inRegs is a set of instruction input (loaded) registers.
+	inRegs regSet
+	// outRegs is a set of registers written by the instruction.
 	outRegs regSet
 
-	loads  []expr.MemLoad
+	// loads is list of all memory loads the instruction does in all its
+	// effects.
+	loads []expr.MemLoad
+	// stores is list of all memory stores the instruction does.
 	stores []expr.MemStore
 
-	depsFwd  insSet
+	// depsFwd is a set of references to all instructions in the basic block
+	// which have to be executed after this instruction.
+	depsFwd insSet
+	// depsBack is a set of references to all instructions in the basic
+	// block which have to be executed before this instruction.
 	depsBack insSet
 
+	// blockIdx is index of instruction in a basic block.
 	blockIdx int
 }
 
@@ -45,6 +73,8 @@ func newInstruction(ins basicblock.Instruction, index int) *instruction {
 		effects:     ins.Effects,
 		jumpTargets: ins.JumpTargets,
 
+		currAddr: ins.Addr,
+
 		inRegs:  inputRegs(ins.Effects),
 		outRegs: outputRegs(ins.Effects),
 
@@ -55,23 +85,22 @@ func newInstruction(ins basicblock.Instruction, index int) *instruction {
 		depsBack: make(insSet, 5),
 
 		blockIdx: index,
-		currAddr: ins.Addr,
 	}
 }
 
 // Idx returns index of an instruction in its basic block.
 func (i *instruction) Idx() int { return i.blockIdx }
 
+// Begin returns the in-memory address of the instruction in the current order
+// of the program - i.e. after all instruction moves.
+func (i *instruction) Begin() model.Addr { return i.currAddr }
+
 // Len returns length of an instruction in bytes.
 func (i *instruction) Len() model.Addr { return model.Addr(len(i.bytes)) }
 
-// NextAddr returns memory address of an instruction following this instruction.
-// The address taken into account is the one returned by Addr(), not OrigAddr().
-func (i *instruction) NextAddr() model.Addr { return i.currAddr + i.Len() }
-
-// Addr returns the in-memory address of the instruction in the current order of
-// the program - i.e. after all instruction moves.
-func (i *instruction) Addr() model.Addr { return i.currAddr }
+// End returns memory address of an instruction following this instruction. The
+// address taken into account is the one returned by Begin(), not OrigAddr().
+func (i *instruction) End() model.Addr { return i.currAddr + i.Len() }
 
 // OrigAddr returns the in-memory address of the instruction in the original
 // binary.
@@ -92,7 +121,7 @@ func inputRegs(effects []expr.Effect) regSet {
 
 	for _, ex := range exprtransform.ExprsMany(effects) {
 		for _, l := range exprtransform.FindAll[expr.RegLoad](ex) {
-			regs[string(l.Key())] = struct{}{}
+			regs[l.Key()] = struct{}{}
 		}
 	}
 
@@ -104,7 +133,7 @@ func outputRegs(effects []expr.Effect) regSet {
 
 	for _, effect := range effects {
 		if e, ok := effect.(expr.RegStore); ok {
-			regs[string(e.Key())] = struct{}{}
+			regs[e.Key()] = struct{}{}
 		}
 	}
 

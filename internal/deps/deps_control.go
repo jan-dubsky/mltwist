@@ -9,7 +9,7 @@ func controlFlowInstruction(ins *instruction) bool {
 	for _, t := range ins.jumpTargets {
 		if c, ok := t.(expr.Const); ok {
 			addr, ok := expr.ConstUint[model.Addr](c)
-			if ok && addr == ins.NextAddr() {
+			if ok && addr == ins.End() {
 				continue
 			}
 		}

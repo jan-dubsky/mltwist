@@ -33,8 +33,8 @@ func checkFromToIndex(from int, to int, l int) error {
 type movable interface {
 	setIndex(i int)
 
-	Addr() model.Addr
-	NextAddr() model.Addr
+	Begin() model.Addr
+	End() model.Addr
 	setAddr(a model.Addr)
 }
 
@@ -52,14 +52,14 @@ func move[T movable](arr []T, from int, to int) {
 
 func moveFwd[T movable](arr []T, from int, to int) {
 	f := arr[from]
-	a := f.Addr()
+	a := f.Begin()
 
 	for i := from; i < to; i++ {
 		arr[i] = arr[i+1]
 		arr[i].setIndex(i)
 
 		arr[i].setAddr(a)
-		a = arr[i].NextAddr()
+		a = arr[i].End()
 	}
 
 	f.setIndex(to)
@@ -69,7 +69,7 @@ func moveFwd[T movable](arr []T, from int, to int) {
 
 func moveBack[T movable](arr []T, from int, to int) {
 	f := arr[from]
-	a := arr[to].Addr()
+	a := arr[to].Begin()
 
 	for i := from; i > to; i-- {
 		arr[i] = arr[i-1]
@@ -81,6 +81,6 @@ func moveBack[T movable](arr []T, from int, to int) {
 
 	for i := to; i <= from; i++ {
 		arr[i].setAddr(a)
-		a = arr[i].NextAddr()
+		a = arr[i].End()
 	}
 }

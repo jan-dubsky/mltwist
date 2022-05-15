@@ -63,9 +63,9 @@ func TestBlock_New(t *testing.T) {
 
 			r.Equal(i, b.Idx())
 			r.Equal(tt.begin, b.Begin())
-			r.Equal(tt.bytes, b.Bytes())
+			r.Equal(tt.bytes, b.Len())
 			r.Equal(tt.begin+tt.bytes, b.End())
-			r.Equal(len(tt.seq), b.Len())
+			r.Equal(len(tt.seq), b.Num())
 
 			for i, ins := range tt.seq {
 				r.Equal(ins.Addr, b.index(i).OrigAddr())
@@ -200,10 +200,10 @@ func TestBlock_Bounds(t *testing.T) {
 			}
 
 			for i, b := range tt.bounds {
-				l, u := block.lowerBound(i), block.upperBound(i)
+				l, u := block.LowerBound(i), block.UpperBound(i)
 				r.LessOrEqual(l, u)
 				r.GreaterOrEqual(l, 0)
-				r.Less(u, block.Len())
+				r.Less(u, block.Num())
 
 				ins := block.index(i)
 				t.Logf("Index: %d\n", i)

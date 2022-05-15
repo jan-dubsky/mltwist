@@ -1,43 +1,42 @@
 package deps
 
-type outputDepProcessor struct {
-	regs map[string]*instruction
-
-	memory []*instruction
-}
+import "mltwist/pkg/expr"
 
 func processOutputDeps(instrs []*instruction) {
-	p := outputDepProcessor{
-		regs: make(map[string]*instruction, numRegs),
-	}
+	regs := make(map[expr.Key]*instruction, numRegs)
+	memory := make(map[expr.Key]*instruction, 1)
 
 	for i := len(instrs) - 1; i >= 0; i-- {
 		ins := instrs[i]
-		p.processRegDeps(ins)
-		p.processMemDeps(ins)
+		processOutputDepsReg(ins, regs)
+		processOutputDepsMemory(ins, memory)
 	}
 }
 
-func (p *outputDepProcessor) processRegDeps(ins *instruction) {
+func processOutputDepsReg(ins *instruction, regs keyInsMap) {
 	for r := range ins.outRegs {
-		i, ok := p.regs[r]
+		dep, ok := regs[r]
 		if !ok {
-			p.regs[r] = ins
+			regs[r] = ins
 			continue
 		}
 
 		// We are certain that i != ins.
-		addDep(ins, i)
+		addDep(ins, dep)
 	}
 }
 
-func (p *outputDepProcessor) processMemDeps(ins *instruction) {
-	if len(ins.stores) == 0 {
-		return
+func processOutputDepsMemory(ins *instruction, memory keyInsMap) {
+	for _, l := range ins.stores {
+		dep, ok := memory[l.Key()]
+		if !ok {
+			continue
+		}
+
+		addDep(ins, dep)
 	}
 
-	for _, i := range p.memory {
-		addDep(ins, i)
+	for _, s := range ins.stores {
+		memory[s.Key()] = ins
 	}
-	p.memory = append(p.memory, ins)
 }

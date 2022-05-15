@@ -48,11 +48,26 @@ func New(
 // IP returns current state of instruction pointer of the program.
 func (e *Emulator) IP() model.Addr { return e.ip }
 
-// Step performs a single instruction step of an emulation.
-func (e *Emulator) Step() (Evaluation, error) {
-	ins, ok := e.code.AddressIns(e.ip)
+func (e *Emulator) instruction() (deps.Instruction, error) {
+	block, ok := e.code.Address(e.ip)
+	if !ok {
+		err := fmt.Errorf("cannot find block at address 0x%x", e.ip)
+		return deps.Instruction{}, err
+	}
+
+	ins, ok := block.Address(e.ip)
 	if !ok {
 		err := fmt.Errorf("cannot find instruction at address 0x%x", e.ip)
+		return deps.Instruction{}, err
+	}
+
+	return ins, nil
+}
+
+// Step performs a single instruction step of an emulation.
+func (e *Emulator) Step() (Evaluation, error) {
+	ins, err := e.instruction()
+	if err != nil {
 		return Evaluation{}, err
 	}
 

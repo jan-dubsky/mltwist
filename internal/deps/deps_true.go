@@ -1,5 +1,7 @@
 package deps
 
+import "mltwist/pkg/expr"
+
 // numRegs is expected number of registers in a platform.
 //
 // The purpose of this value is to allow optimistic pre-allocation of maps and
@@ -8,41 +10,39 @@ package deps
 // it can serve as a performance optimization.
 const numRegs = 32
 
-type trueDepProcessor struct {
-	regs map[string]*instruction
-
-	memory *instruction
-}
-
 func processTrueDeps(instrs []*instruction) {
-	p := trueDepProcessor{
-		regs: make(map[string]*instruction, numRegs),
-	}
+	regs := make(map[expr.Key]*instruction, numRegs)
+	memory := make(map[expr.Key]*instruction, 1)
 
 	for _, ins := range instrs {
-		p.processRegDeps(ins)
-		p.processMemDeps(ins)
+		processTrueDepsReg(ins, regs)
+		processTrueDepsMemory(ins, memory)
 	}
 }
 
-func (p *trueDepProcessor) processRegDeps(ins *instruction) {
+func processTrueDepsReg(ins *instruction, regs keyInsMap) {
 	for r := range ins.inRegs {
-		if dep, ok := p.regs[r]; ok {
+		if dep, ok := regs[r]; ok {
 			addDep(dep, ins)
 		}
 	}
 
 	for r := range ins.outRegs {
-		p.regs[r] = ins
+		regs[r] = ins
 	}
 }
 
-func (p *trueDepProcessor) processMemDeps(ins *instruction) {
-	if p.memory != nil && len(ins.loads) > 0 {
-		addDep(p.memory, ins)
+func processTrueDepsMemory(ins *instruction, memory keyInsMap) {
+	for _, l := range ins.loads {
+		dep, ok := memory[l.Key()]
+		if !ok {
+			continue
+		}
+
+		addDep(dep, ins)
 	}
 
-	if len(ins.stores) > 0 {
-		p.memory = ins
+	for _, s := range ins.stores {
+		memory[s.Key()] = ins
 	}
 }

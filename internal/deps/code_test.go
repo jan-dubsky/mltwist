@@ -75,7 +75,7 @@ func TestCode_New(t *testing.T) {
 			r.Equal(len(tt.seq), p.NumInstr())
 			for i, b := range p.Blocks() {
 				r.Equal(b, p.Index(i))
-				r.Equal(tt.blocks[i], b.Len())
+				r.Equal(tt.blocks[i], b.Num())
 			}
 		})
 	}

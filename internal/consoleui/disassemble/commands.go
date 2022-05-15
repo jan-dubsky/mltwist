@@ -195,7 +195,7 @@ func commands(m *mode) []consoleui.Command {
 			}
 
 			ins := block.Index(insIdx)
-			emul, err := m.emulFunc(m.code, ins.Addr())
+			emul, err := m.emulFunc(m.code, ins.Begin())
 			if err != nil {
 				return fmt.Errorf("bug: cannot create emulation: %w", err)
 			}

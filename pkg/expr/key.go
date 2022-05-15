@@ -5,6 +5,12 @@ import "fmt"
 const (
 	// IPKey identifies instruction pointer registers. Writes to this
 	// register will be interpreted as jumps.
+	//
+	// As the effect signature doesn't allow to express "conditional write"
+	// operation, a conditional jump has to unconditionally write this
+	// register key. This is not an issue as jump to following instruction
+	// address is equivalent to no jump at all, register write of a
+	// conditional expression can be used to represent conditional jump.
 	IPKey Key = "#r:ip"
 )
 
