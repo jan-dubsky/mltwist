@@ -30,8 +30,14 @@ $(GREP_BUILD): $(GIT_DIR)/Makefile
 	# -Wno-cast-align is necessary for the build not to fail.
 	#
 	# The --whole-archive bypass with -lpthread is necessary for the
-	# compiler not tp produce jumpts to address zero:
+	# compiler not tp produce jumps to address zero:
 	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=33960#c9
+	#
+	# Even after linking whole pthread, there were still a few zero symbols
+	# coming from libc. So we fully link libc as well even though there is
+	# no text discussing linking of whole libc... But as libc as linked by
+	# default already, we need to specify -u to avoid symbol collision
+	# problems.
 	
 	cd $(GIT_DIR) && ../../../riscv_gcc/run.sh /bin/sh -c ' \
 		set -eu;                                        \
@@ -40,8 +46,8 @@ $(GREP_BUILD): $(GIT_DIR)/Makefile
 	'
 
 $(GIT_DIR)/bootstrap:
-	git clone --depth=1 https://git.savannah.gnu.org/git/grep.git $@
-	chmod -R o+w $@
+	git clone --depth=1 https://git.savannah.gnu.org/git/grep.git $(GIT_DIR)
+	chmod -R o+w $(GIT_DIR)
 
 prune:
 	rm -rf $(GIT_DIR)

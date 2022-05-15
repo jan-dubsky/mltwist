@@ -8,13 +8,13 @@ import (
 	"sort"
 )
 
-type Program struct {
+type Code struct {
 	entrypoint   model.Addr
 	blocks       []*block
 	blocksByAddr []*block
 }
 
-func NewProgram(entrypoint model.Addr, seq []parser.Instruction) (*Program, error) {
+func NewCode(entrypoint model.Addr, seq []parser.Instruction) (*Code, error) {
 	seqs, err := basicblock.Parse(entrypoint, seq)
 	if err != nil {
 		return nil, fmt.Errorf("cannot find basic blocks: %w", err)
@@ -28,7 +28,7 @@ func NewProgram(entrypoint model.Addr, seq []parser.Instruction) (*Program, erro
 	blocksByAddr := make([]*block, len(blocks))
 	copy(blocksByAddr, blocks)
 
-	return &Program{
+	return &Code{
 		entrypoint:   entrypoint,
 		blocks:       blocks,
 		blocksByAddr: blocksByAddr,
@@ -36,25 +36,25 @@ func NewProgram(entrypoint model.Addr, seq []parser.Instruction) (*Program, erro
 }
 
 // Entrypoint returns address of program entrypoint.
-func (p *Program) Entrypoint() model.Addr { return p.entrypoint }
+func (c *Code) Entrypoint() model.Addr { return c.entrypoint }
 
 // Len returns number of basic blocks in the program.
-func (p *Program) Len() int { return len(p.blocks) }
+func (c *Code) Len() int { return len(c.blocks) }
 
 // Index returns ith basic block in the program.
 //
 // This method panics for negative values of i as well as for i greater or equal
 // to p.Len().
-func (p *Program) Index(i int) Block { return wrapBlock(p.blocks[i]) }
+func (c *Code) Index(i int) Block { return wrapBlock(c.blocks[i]) }
 
 // Blocks returns list of all basic blocks in the program. Caller is allowed to
 // modify the returned array.
 //
 // This function allocates a new array of Blocks, so its cost is O(n). In case
 // you need to access just a few blocks (not all), prefer using p.Index method.
-func (p *Program) Blocks() []Block {
-	blocks := make([]Block, len(p.blocks))
-	for i, b := range p.blocks {
+func (c *Code) Blocks() []Block {
+	blocks := make([]Block, len(c.blocks))
+	for i, b := range c.blocks {
 		blocks[i] = wrapBlock(b)
 	}
 	return blocks
@@ -62,9 +62,9 @@ func (p *Program) Blocks() []Block {
 
 // NumInstr counts number of instructions in all all basic blocks in the
 // program.
-func (p *Program) NumInstr() int {
+func (c *Code) NumInstr() int {
 	var instrs int
-	for _, b := range p.blocks {
+	for _, b := range c.blocks {
 		instrs += b.Len()
 	}
 
@@ -72,24 +72,24 @@ func (p *Program) NumInstr() int {
 }
 
 // Move moves basic block at index from to index to.
-func (p *Program) Move(from int, to int) error {
-	if err := checkFromToIndex(from, to, len(p.blocks)); err != nil {
+func (c *Code) Move(from int, to int) error {
+	if err := checkFromToIndex(from, to, len(c.blocks)); err != nil {
 		return fmt.Errorf("cannot move %d to %d: %w", from, to, err)
 	}
 
-	move(p.blocks, from, to)
+	move(c.blocks, from, to)
 	return nil
 }
 
-func (p *Program) Address(a model.Addr) (Block, bool) {
-	i := sort.Search(len(p.blocksByAddr), func(i int) bool {
-		return p.blocksByAddr[i].end > a
+func (c *Code) Address(a model.Addr) (Block, bool) {
+	i := sort.Search(len(c.blocksByAddr), func(i int) bool {
+		return c.blocksByAddr[i].end > a
 	})
-	if i == len(p.blocksByAddr) {
+	if i == len(c.blocksByAddr) {
 		return Block{}, false
 	}
 
-	b := p.blocksByAddr[i]
+	b := c.blocksByAddr[i]
 	if b.begin > a {
 		return Block{}, false
 	}
@@ -97,8 +97,8 @@ func (p *Program) Address(a model.Addr) (Block, bool) {
 	return wrapBlock(b), true
 }
 
-func (p *Program) AddressIns(a model.Addr) (Instruction, bool) {
-	block, ok := p.Address(a)
+func (c *Code) AddressIns(a model.Addr) (Instruction, bool) {
+	block, ok := c.Address(a)
 	if !ok {
 		return Instruction{}, false
 	}

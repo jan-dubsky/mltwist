@@ -145,8 +145,8 @@ func commands(m *mode) []consoleui.Command {
 		Keys: []string{"entrypoint", "entry"},
 		Help: "Sets cursor to app entrypoint.",
 		Action: func(_ *consoleui.UI, args ...interface{}) error {
-			a := m.prog.Entrypoint()
-			block, ok := m.prog.Address(a)
+			a := m.code.Entrypoint()
+			block, ok := m.code.Address(a)
 			if !ok {
 				return fmt.Errorf("cannot find block at address 0x%x", a)
 			}
@@ -195,7 +195,7 @@ func commands(m *mode) []consoleui.Command {
 			}
 
 			ins := block.Index(insIdx)
-			emul, err := m.emulFunc(m.prog, ins.Addr())
+			emul, err := m.emulFunc(m.code, ins.Addr())
 			if err != nil {
 				return fmt.Errorf("bug: cannot create emulation: %w", err)
 			}

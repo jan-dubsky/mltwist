@@ -10,7 +10,7 @@ import (
 )
 
 type Emulator struct {
-	prog  *deps.Program
+	code  *deps.Code
 	ip    model.Addr
 	state *state.State
 
@@ -32,13 +32,13 @@ type Emulator struct {
 // emulation. For the very same reason, an yaccess of stat must be synchronized
 // with Step method calls.
 func New(
-	prog *deps.Program,
+	code *deps.Code,
 	ip model.Addr,
 	stat *state.State,
 	stateProv StateProvider,
 ) *Emulator {
 	return &Emulator{
-		prog:      prog,
+		code:      code,
 		ip:        ip,
 		stateProv: stateProv,
 		state:     stat,
@@ -50,7 +50,7 @@ func (e *Emulator) IP() model.Addr { return e.ip }
 
 // Step performs a single instruction step of an emulation.
 func (e *Emulator) Step() (Evaluation, error) {
-	ins, ok := e.prog.AddressIns(e.ip)
+	ins, ok := e.code.AddressIns(e.ip)
 	if !ok {
 		err := fmt.Errorf("cannot find instruction at address 0x%x", e.ip)
 		return Evaluation{}, err

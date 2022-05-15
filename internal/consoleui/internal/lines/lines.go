@@ -7,19 +7,19 @@ import (
 
 type Lines struct {
 	lines []Line
-	p     *deps.Program
+	code  *deps.Code
 
 	blockStarts []int
 	marks       map[int]struct{}
 }
 
-func newLines(p *deps.Program) *Lines {
+func newLines(code *deps.Code) *Lines {
 	// Each block will have a header and will be delimited by a blank line.
 	// Each instruction will be a single line. In the end, there will be a
 	// single empty line.
-	lns := make([]Line, 0, 2*p.Len()+p.NumInstr()+1)
-	blockStarts := make([]int, p.Len())
-	for i, b := range p.Blocks() {
+	lns := make([]Line, 0, 2*code.Len()+code.NumInstr()+1)
+	blockStarts := make([]int, code.Len())
+	for i, b := range code.Blocks() {
 		if i != 0 {
 			lns = append(lns, newEmptyLine())
 		}
@@ -32,7 +32,7 @@ func newLines(p *deps.Program) *Lines {
 
 	return &Lines{
 		lines:       lns,
-		p:           p,
+		code:        code,
 		blockStarts: blockStarts,
 		marks:       make(map[int]struct{}, 2),
 	}
@@ -65,7 +65,7 @@ func (l *Lines) UnmarkAll() {
 }
 
 func (l *Lines) Reload(blockIdx int) {
-	newBlock := blockToLines(l.p.Index(blockIdx))
+	newBlock := blockToLines(l.code.Index(blockIdx))
 	lines := l.lines[l.blockStarts[blockIdx]:]
 	lines = lines[:len(newBlock)]
 	copy(lines, newBlock)
@@ -100,7 +100,7 @@ func (l *Lines) Move(fromLine int, toLine int) error {
 	}
 
 	if !fromInsOK {
-		err := l.p.Move(fromBlock, toBlock)
+		err := l.code.Move(fromBlock, toBlock)
 		if err != nil {
 			return fmt.Errorf("block move failed: %w", err)
 		}
@@ -111,7 +111,7 @@ func (l *Lines) Move(fromLine int, toLine int) error {
 			return fmt.Errorf("instructions cannot be moved among blocks")
 		}
 
-		err := l.p.Index(fromBlock).Move(fromIns, toIns)
+		err := l.code.Index(fromBlock).Move(fromIns, toIns)
 		if err != nil {
 			return fmt.Errorf("instruction move failed: %w", err)
 		}
@@ -127,7 +127,7 @@ func (l Lines) Block(lineIdx int) (deps.Block, bool) {
 	if !ok {
 		return deps.Block{}, false
 	}
-	return l.p.Index(idx), true
+	return l.code.Index(idx), true
 }
 
 func (l Lines) Line(block deps.Block, ins int) int {

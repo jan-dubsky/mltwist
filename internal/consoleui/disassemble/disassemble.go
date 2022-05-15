@@ -10,7 +10,7 @@ import (
 var _ consoleui.Mode = &mode{}
 
 type mode struct {
-	prog *deps.Program
+	code *deps.Code
 	view *lines.View
 
 	emulFunc EmulFunc
@@ -18,10 +18,10 @@ type mode struct {
 
 // New creates a new disassembler UI mode displaying and manipulating
 // instructions from p.
-func New(p *deps.Program, emulF EmulFunc) consoleui.Mode {
+func New(code *deps.Code, emulF EmulFunc) consoleui.Mode {
 	return &mode{
-		prog:     p,
-		view:     lines.NewView(p),
+		code:     code,
+		view:     lines.NewView(code),
 		emulFunc: emulF,
 	}
 }

@@ -37,7 +37,7 @@ func parseElf(filename string) (*elf.Memory, model.Addr, *elf.Memory, error) {
 	return code, p.Entrypoint(), mem, nil
 }
 
-func runIU(p *deps.Program, mem *elf.Memory) error {
+func runIU(p *deps.Code, mem *elf.Memory) error {
 	memBlocks := make([]memory.ByteBlock, len(mem.Blocks))
 	for i, b := range mem.Blocks {
 		memBlocks[i] = b
@@ -48,7 +48,7 @@ func runIU(p *deps.Program, mem *elf.Memory) error {
 		return fmt.Errorf("cannot create byte memory of a program: %w", err)
 	}
 
-	emulF := func(p *deps.Program, ip model.Addr) (consoleui.Mode, error) {
+	emulF := func(p *deps.Code, ip model.Addr) (consoleui.Mode, error) {
 		m := memory.NewOverlay(byteMem, memory.NewSparse())
 
 		stat := &state.State{
@@ -92,7 +92,7 @@ func run() error {
 		return fmt.Errorf("instruction parsing failed: %w", err)
 	}
 
-	program, err := deps.NewProgram(entrypoint, ins)
+	program, err := deps.NewCode(entrypoint, ins)
 	if err != nil {
 		return fmt.Errorf("cannot parse model: %w", err)
 	}

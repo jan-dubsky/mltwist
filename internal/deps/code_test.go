@@ -28,7 +28,7 @@ func testInputInsJump(
 	}
 }
 
-func TestProgram_New(t *testing.T) {
+func TestCode_New(t *testing.T) {
 	tests := []struct {
 		name   string
 		seq    []parser.Instruction
@@ -67,7 +67,7 @@ func TestProgram_New(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			p, err := NewProgram(tt.seq[0].Addr, tt.seq)
+			p, err := NewCode(tt.seq[0].Addr, tt.seq)
 			r.NoError(err)
 
 			r.Equal(len(tt.blocks), p.Len())
@@ -81,7 +81,7 @@ func TestProgram_New(t *testing.T) {
 	}
 }
 
-func TestProgram_Move(t *testing.T) {
+func TestCode_Move(t *testing.T) {
 	const numBlocks = 10
 
 	tests := []struct {
@@ -129,7 +129,7 @@ func TestProgram_Move(t *testing.T) {
 			}
 
 			r := require.New(t)
-			p := &Program{blocks: blocks}
+			p := &Code{blocks: blocks}
 			r.Equal(numBlocks, p.Len())
 
 			err := p.Move(tt.from, tt.to)

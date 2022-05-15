@@ -26,7 +26,7 @@ func (m *mem) Load(addr model.Addr, w expr.Width) (expr.Expr, bool) {
 	return expr.NewConst(bs, w), true
 }
 
-func (m *mem) Store(_ model.Addr, _ expr.Expr, _expr.Width) {}
+func (m *mem) Store(_ model.Addr, _ expr.Expr, _ expr.Width) {}
 
 func (m *mem) Missing(addr model.Addr, w expr.Width) interval.Map[model.Addr] {
 	intv := interval.NewMap(interval.New(addr, addr+model.Addr(w)))
@@ -114,6 +114,4 @@ func TestOverlay_Load(t *testing.T) {
 			r.Equal(tt.exp, c.Bytes())
 		})
 	}
-
-	require.Equal(t, 0, len(base.writes))
 }

@@ -14,7 +14,7 @@ type View struct {
 	format string
 }
 
-func NewView(p *deps.Program) *View {
+func NewView(p *deps.Code) *View {
 	lns := newLines(p)
 
 	idFormat := fmt.Sprintf("%%%dd", numDigits(lns.Len(), 10))
