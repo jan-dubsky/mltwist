@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 
+readonly TAG=latest
+
 usage(){
 	cat <<EOF
 Usage: compile.sh COMMANDS [[OPTIONS] ARGS]
@@ -24,4 +26,4 @@ fi
 ID="$(id -u)"
 readonly ID
 
-docker run --rm -v "$DIR:/build" -u "$ID" google2/riscv-gnu-toolchain-rv64ima:latest "$@"
+docker run --rm -v "$DIR:/build" -u "$ID" google2/riscv-gnu-toolchain-rv64ima:"$TAG" "$@"
