@@ -341,6 +341,16 @@ func atomicOpWidth(f binaryExprFunc, i Instruction, addrW, opW expr.Width) []exp
 	}
 }
 
+func csrKey(i Instruction) expr.Key {
+	csrNum, _ := immTypeI.parseValue(i.value)
+	return expr.Key(csr(csrNum).String())
+}
+
+func csrImm(i Instruction) expr.Const {
+	val := uint8((i.value >> 15) & 0x1f)
+	return expr.ConstFromUint(val)
+}
+
 var instructions = map[Variant]map[Extension][]*instructionOpcode{
 	Variant32: {
 		extI: integer32,

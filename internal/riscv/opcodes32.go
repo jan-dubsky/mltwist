@@ -284,31 +284,28 @@ var integer32 = []*instructionOpcode{
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
-		name:                "slli",
-		opcode:              opcodeShiftImm(false, 5, 0b001, 0b0010011),
-		inputRegCnt:         1,
-		hasOutputReg:        true,
-		additionalImmediate: addImmSh32,
+		name:         "slli",
+		opcode:       opcodeShiftImm(false, 5, 0b001, 0b0010011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
 		effects: func(i Instruction) []expr.Effect {
 			val := regImmShift(expr.Lsh, i, 5, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
-		name:                "srli",
-		opcode:              opcodeShiftImm(false, 5, 0b101, 0b0010011),
-		inputRegCnt:         1,
-		hasOutputReg:        true,
-		additionalImmediate: addImmSh32,
+		name:         "srli",
+		opcode:       opcodeShiftImm(false, 5, 0b101, 0b0010011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
 		effects: func(i Instruction) []expr.Effect {
 			val := regImmShift(expr.Rsh, i, 5, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
-		name:                "srai",
-		opcode:              opcodeShiftImm(true, 5, 0b101, 0b0010011),
-		inputRegCnt:         1,
-		hasOutputReg:        true,
-		additionalImmediate: addImmSh32,
+		name:         "srai",
+		opcode:       opcodeShiftImm(true, 5, 0b101, 0b0010011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
 		effects: func(i Instruction) []expr.Effect {
 			reg := regLoad(rs1, i, width32)
 			val := exprtools.RshA(reg, immShift(5, i), width32)
@@ -428,8 +425,7 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: false,
 		instrType:    model.TypeMemOrder,
-		// FIXME: How to represent memory order?
-		effects: func(i Instruction) []expr.Effect { return nil },
+		effects:      func(i Instruction) []expr.Effect { return nil },
 	}, {
 		name: "fence.i",
 		opcode: opcode.Opcode{
@@ -439,8 +435,7 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: false,
 		instrType:    model.TypeMemOrder,
-		// FIXME: How to represent memory order?
-		effects: func(i Instruction) []expr.Effect { return nil },
+		effects:      func(i Instruction) []expr.Effect { return nil },
 	}, {
 		name: "ecall",
 		opcode: opcode.Opcode{
@@ -450,8 +445,7 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: false,
 		instrType:    model.TypeSyscall,
-		// FIXME: How to represent syscall?
-		effects: func(i Instruction) []expr.Effect { return nil },
+		effects:      func(i Instruction) []expr.Effect { return nil },
 	}, {
 		name: "ebreak",
 		opcode: opcode.Opcode{
@@ -461,63 +455,107 @@ var integer32 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: false,
 		instrType:    model.TypeSyscall,
-		// FIXME: How to represent syscall?
-		effects: func(i Instruction) []expr.Effect { return nil },
+		effects:      func(i Instruction) []expr.Effect { return nil },
 	},
 
 	// TODO: Find a way how to represent CSR instructions.
-	/*
-		{
-			name:                "csrrw",
-			opcode:              opcode10(0b001, 0b1110011),
-			inputRegCnt:         1,
-			hasOutputReg:        true,
-			immediate:           immTypeI,
-			additionalImmediate: addImmCSR,
-			instrType:           model.TypeCPUStateChange,
-		}, {
-			name:                "csrrs",
-			opcode:              opcode10(0b010, 0b1110011),
-			inputRegCnt:         1,
-			hasOutputReg:        true,
-			immediate:           immTypeI,
-			additionalImmediate: addImmCSR,
-			instrType:           model.TypeCPUStateChange,
-		}, {
-			name:                "csrrc",
-			opcode:              opcode10(0b011, 0b1110011),
-			inputRegCnt:         1,
-			hasOutputReg:        true,
-			immediate:           immTypeI,
-			additionalImmediate: addImmCSR,
-			instrType:           model.TypeCPUStateChange,
+
+	{
+		name:         "csrrw",
+		opcode:       opcode10(0b001, 0b1110011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			return []expr.Effect{
+				regStore(expr.NewRegLoad(key, width32), i, width32),
+				expr.NewRegStore(regLoad(rs1, i, width32), key, width32),
+			}
 		},
-		// FIXME: There are 2 independent immediate values in those 3
-		// instructions. Find a way how to parse and represent those
-		// instructions.
-		{
-			name:                "csrrwi",
-			opcode:              opcode10(0b101, 0b1110011),
-			inputRegCnt:         0,
-			hasOutputReg:        true,
-			additionalImmediate: addImmCSR,
-			instrType:           model.TypeCPUStateChange,
-		}, {
-			name:                "csrrsi",
-			opcode:              opcode10(0b110, 0b1110011),
-			inputRegCnt:         0,
-			hasOutputReg:        true,
-			additionalImmediate: addImmCSR,
-			instrType:           model.TypeCPUStateChange,
-		}, {
-			name:                "csrrci",
-			opcode:              opcode10(0b111, 0b1110011),
-			inputRegCnt:         0,
-			hasOutputReg:        true,
-			additionalImmediate: addImmCSR,
-			instrType:           model.TypeCPUStateChange,
+	}, {
+		name:         "csrrs",
+		opcode:       opcode10(0b010, 0b1110011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			val := expr.NewRegLoad(key, width32)
+			mask := regLoad(rs1, i, width32)
+			newVal := expr.NewBinary(expr.Or, val, mask, width32)
+			return []expr.Effect{
+				regStore(val, i, width32),
+				expr.NewRegStore(newVal, key, width32),
+			}
 		},
-	*/
+	}, {
+		name:         "csrrc",
+		opcode:       opcode10(0b011, 0b1110011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			val := expr.NewRegLoad(key, width32)
+			mask := exprtools.BitNegate(regLoad(rs1, i, width32), width32)
+			newVal := expr.NewBinary(expr.And, val, mask, width32)
+			return []expr.Effect{
+				regStore(val, i, width32),
+				expr.NewRegStore(newVal, key, width32),
+			}
+		},
+	}, {
+		name:         "csrrwi",
+		opcode:       opcode10(0b101, 0b1110011),
+		inputRegCnt:  0,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			return []expr.Effect{
+				regStore(expr.NewRegLoad(key, width32), i, width32),
+				expr.NewRegStore(csrImm(i), key, width32),
+			}
+		},
+	}, {
+		name:         "csrrsi",
+		opcode:       opcode10(0b110, 0b1110011),
+		inputRegCnt:  0,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			val := expr.NewRegLoad(key, width32)
+			newVal := expr.NewBinary(expr.Or, val, csrImm(i), width32)
+			return []expr.Effect{
+				regStore(val, i, width32),
+				expr.NewRegStore(newVal, key, width32),
+			}
+		},
+	}, {
+		name:         "csrrci",
+		opcode:       opcode10(0b111, 0b1110011),
+		inputRegCnt:  0,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			val := expr.NewRegLoad(key, width32)
+			mask := exprtools.BitNegate(csrImm(i), width32)
+			newVal := expr.NewBinary(expr.And, val, mask, width32)
+			return []expr.Effect{
+				regStore(val, i, width32),
+				expr.NewRegStore(newVal, key, width32),
+			}
+		},
+	},
 }
 
 var mul32 = []*instructionOpcode{

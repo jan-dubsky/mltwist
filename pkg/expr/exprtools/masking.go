@@ -54,3 +54,8 @@ func signBitMask(w expr.Width) expr.Expr {
 func IntNegative(e expr.Expr, w expr.Width) expr.Expr {
 	return expr.NewBinary(expr.And, e, signBitMask(w), w)
 }
+
+// BitNegate negates every bit in e and returns result of width w.
+func BitNegate(e expr.Expr, w expr.Width) expr.Expr {
+	return expr.NewBinary(expr.Xor, e, Ones(w), w)
+}

@@ -319,31 +319,28 @@ var integer64 = []*instructionOpcode{
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
-		name:                "slli",
-		opcode:              opcodeShiftImm(false, 6, 0b001, 0b0010011),
-		inputRegCnt:         1,
-		hasOutputReg:        true,
-		additionalImmediate: addImmSh64,
+		name:         "slli",
+		opcode:       opcodeShiftImm(false, 6, 0b001, 0b0010011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
 		effects: func(i Instruction) []expr.Effect {
 			val := regImmShift(expr.Lsh, i, 6, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
-		name:                "srli",
-		opcode:              opcodeShiftImm(false, 6, 0b101, 0b0010011),
-		inputRegCnt:         1,
-		hasOutputReg:        true,
-		additionalImmediate: addImmSh64,
+		name:         "srli",
+		opcode:       opcodeShiftImm(false, 6, 0b101, 0b0010011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
 		effects: func(i Instruction) []expr.Effect {
 			val := regImmShift(expr.Rsh, i, 6, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
-		name:                "srai",
-		opcode:              opcodeShiftImm(true, 6, 0b101, 0b0010011),
-		inputRegCnt:         1,
-		hasOutputReg:        true,
-		additionalImmediate: addImmSh64,
+		name:         "srai",
+		opcode:       opcodeShiftImm(true, 6, 0b101, 0b0010011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
 		effects: func(i Instruction) []expr.Effect {
 			reg := regLoad(rs1, i, width64)
 			val := exprtools.RshA(reg, immShift(6, i), width64)
@@ -500,6 +497,103 @@ var integer64 = []*instructionOpcode{
 		effects: func(i Instruction) []expr.Effect { return nil },
 	},
 
+	{
+		name:         "csrrw",
+		opcode:       opcode10(0b001, 0b1110011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			return []expr.Effect{
+				regStore(expr.NewRegLoad(key, width64), i, width64),
+				expr.NewRegStore(regLoad(rs1, i, width64), key, width64),
+			}
+		},
+	}, {
+		name:         "csrrs",
+		opcode:       opcode10(0b010, 0b1110011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			val := expr.NewRegLoad(key, width64)
+			regVal := regLoad(rs1, i, width64)
+			newVal := expr.NewBinary(expr.Or, val, regVal, width64)
+			return []expr.Effect{
+				regStore(val, i, width64),
+				expr.NewRegStore(newVal, key, width64),
+			}
+		},
+	}, {
+		name:         "csrrc",
+		opcode:       opcode10(0b011, 0b1110011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			val := expr.NewRegLoad(key, width64)
+			regVal := exprtools.BitNegate(regLoad(rs1, i, width64), width64)
+			newVal := expr.NewBinary(expr.And, val, regVal, width64)
+			return []expr.Effect{
+				regStore(val, i, width64),
+				expr.NewRegStore(newVal, key, width64),
+			}
+		},
+	}, {
+		name:         "csrrwi",
+		opcode:       opcode10(0b101, 0b1110011),
+		inputRegCnt:  0,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			return []expr.Effect{
+				regStore(expr.NewRegLoad(key, width64), i, width64),
+				expr.NewRegStore(csrImm(i), key, width64),
+			}
+		},
+	}, {
+		name:         "csrrsi",
+		opcode:       opcode10(0b110, 0b1110011),
+		inputRegCnt:  0,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			val := expr.NewRegLoad(key, width64)
+			newVal := expr.NewBinary(expr.Or, val, csrImm(i), width64)
+			return []expr.Effect{
+				regStore(val, i, width64),
+				expr.NewRegStore(newVal, key, width64),
+			}
+		},
+	}, {
+		name:         "csrrci",
+		opcode:       opcode10(0b111, 0b1110011),
+		inputRegCnt:  0,
+		hasOutputReg: true,
+		immediate:    immTypeI,
+		instrType:    model.TypeCPUStateChange,
+		effects: func(i Instruction) []expr.Effect {
+			key := csrKey(i)
+			val := expr.NewRegLoad(key, width64)
+			mask := exprtools.BitNegate(csrImm(i), width64)
+			newVal := expr.NewBinary(expr.And, val, mask, width64)
+			return []expr.Effect{
+				regStore(val, i, width64),
+				expr.NewRegStore(newVal, key, width64),
+			}
+		},
+	},
+
 	// List of additional opcodes existing only in RV64.
 	{
 		name:         "addiw",
@@ -512,31 +606,28 @@ var integer64 = []*instructionOpcode{
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
-		name:                "slliw",
-		opcode:              opcodeShiftImm(false, 5, 0b001, 0b0011011),
-		inputRegCnt:         1,
-		hasOutputReg:        true,
-		additionalImmediate: addImmSh32,
+		name:         "slliw",
+		opcode:       opcodeShiftImm(false, 5, 0b001, 0b0011011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(regImmShift(expr.Lsh, i, 5, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
-		name:                "srliw",
-		opcode:              opcodeShiftImm(false, 5, 0b101, 0b0011011),
-		inputRegCnt:         1,
-		hasOutputReg:        true,
-		additionalImmediate: addImmSh32,
+		name:         "srliw",
+		opcode:       opcodeShiftImm(false, 5, 0b101, 0b0011011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
 		effects: func(i Instruction) []expr.Effect {
 			val := sext32To64(regImmShift(expr.Rsh, i, 5, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
-		name:                "sraiw",
-		opcode:              opcodeShiftImm(true, 5, 0b101, 0b0011011),
-		inputRegCnt:         1,
-		hasOutputReg:        true,
-		additionalImmediate: addImmSh32,
+		name:         "sraiw",
+		opcode:       opcodeShiftImm(true, 5, 0b101, 0b0011011),
+		inputRegCnt:  1,
+		hasOutputReg: true,
 		effects: func(i Instruction) []expr.Effect {
 			reg := regLoad(rs1, i, width32)
 			val := sext32To64(exprtools.RshA(reg, immShift(5, i), width32))

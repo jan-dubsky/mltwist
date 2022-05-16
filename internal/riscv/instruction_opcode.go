@@ -33,8 +33,7 @@ type instructionOpcode struct {
 
 	// immediate describes an immediate value encoding format in an
 	// instruction.
-	immediate           immType
-	additionalImmediate addOpcodeInfo
+	immediate immType
 
 	// instrType is set of instruction types of an opcode.
 	instrType model.Type

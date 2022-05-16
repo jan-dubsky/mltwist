@@ -91,7 +91,7 @@ func (p Parser) Parse(addr model.Addr, bytes []byte) (model.Instruction, error) 
 
 	var effects []expr.Effect
 	if l := len(opcodeEffects); l > 0 {
-		effects = make([]expr.Effect, 0, l)
+		effects = make([]expr.Effect, 0, len(opcodeEffects))
 		for _, e := range opcodeEffects {
 			if e != nil {
 				effects = append(effects, e)
