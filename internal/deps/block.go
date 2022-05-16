@@ -2,7 +2,6 @@ package deps
 
 import (
 	"fmt"
-	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/pkg/model"
 	"sort"
 )
@@ -23,12 +22,11 @@ type block struct {
 // newBlock parses a non-empty sequence of instructions sorted by their
 // in-memory addresses into a block and analyzes dependencies in between
 // instructions.
-func newBlock(idx int, bbSeq []basicblock.Instruction) *block {
+func newBlock(idx int, seq []*instruction) *block {
 	var length model.Addr
-	seq := make([]*instruction, len(bbSeq))
-	for i, ins := range bbSeq {
+	for i, ins := range seq {
 		length += ins.Len()
-		seq[i] = newInstruction(ins, i)
+		ins.setIndex(i)
 	}
 
 	processTrueDeps(seq)
@@ -38,8 +36,8 @@ func newBlock(idx int, bbSeq []basicblock.Instruction) *block {
 	processSpecialDeps(seq)
 
 	return &block{
-		begin: bbSeq[0].Addr,
-		end:   bbSeq[0].Addr + length,
+		begin: seq[0].Begin(),
+		end:   seq[0].Begin() + length,
 		seq:   seq,
 
 		idx: idx,

@@ -31,7 +31,12 @@ type Code struct {
 // NewCode finds basic blocks in the program and identifies instruction
 // dependencies within basic blocks.
 func NewCode(entrypoint model.Addr, seq []parser.Instruction) (*Code, error) {
-	seqs, err := basicblock.Parse(entrypoint, seq)
+	ins := make([]*instruction, len(seq))
+	for i, instruction := range seq {
+		ins[i] = newInstruction(instruction)
+	}
+
+	seqs, err := basicblock.Parse(entrypoint, ins)
 	if err != nil {
 		return nil, fmt.Errorf("cannot find basic blocks: %w", err)
 	}

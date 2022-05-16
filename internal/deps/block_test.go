@@ -2,33 +2,32 @@ package deps
 
 import (
 	"fmt"
-	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 	"strconv"
-	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestBlock_New(t *testing.T) {
-	testInputInsLen := func(addr model.Addr, bytes model.Addr) basicblock.Instruction {
-		return basicblock.Instruction{
-			Addr:  addr,
-			Bytes: make([]byte, bytes),
+	testInputInsLen := func(addr model.Addr, bytes model.Addr) *instruction {
+		return &instruction{
+			origAddr: addr,
+			currAddr: addr,
+			bytes:    make([]byte, bytes),
 		}
 	}
 
 	tests := []struct {
 		name  string
-		seq   []basicblock.Instruction
+		seq   []*instruction
 		begin model.Addr
 		bytes model.Addr
 	}{
 		{
 			name: "single_add",
-			seq: []basicblock.Instruction{
+			seq: []*instruction{
 				testInputInsLen(56, 2),
 				testInputInsLen(58, 3),
 				testInputInsLen(61, 4),
@@ -38,7 +37,7 @@ func TestBlock_New(t *testing.T) {
 		},
 		{
 			name: "multiple_ins",
-			seq: []basicblock.Instruction{
+			seq: []*instruction{
 				testInputInsLen(128, 4),
 				testInputInsLen(132, 4),
 				testInputInsLen(136, 4),
@@ -68,41 +67,37 @@ func TestBlock_New(t *testing.T) {
 			r.Equal(len(tt.seq), b.Num())
 
 			for i, ins := range tt.seq {
-				r.Equal(ins.Addr, b.index(i).OrigAddr())
-				r.Equal(ins.Bytes, b.index(i).bytes)
-				r.Equal(ins.Details, b.index(i).details)
-				r.Equal(ins.Effects, b.index(i).effects)
-				r.Equal(ins.JumpTargets, b.index(i).jumpTargets)
-				r.Equal(ins.Type, b.index(i).typ)
+				r.Equal(ins.OrigAddr(), b.index(i).OrigAddr())
+				r.Equal(ins.bytes, b.index(i).bytes)
+				r.Equal(ins.details, b.index(i).details)
+				r.Equal(ins.Effects(), b.index(i).Effects())
+				r.Equal(ins.jumpTargets, b.index(i).jumpTargets)
+				r.Equal(ins.typ, b.index(i).typ)
 			}
 		})
 	}
 }
 
-// testInputInsCtr is counter of testInputInsReg calls which allows to generate
-// unique register names to avoid random clashes in dependency analysis.
-var testInputInsCtr int64
-
-func testInputInsReg(out uint64, in ...uint64) basicblock.Instruction {
-	effects := make([]expr.Effect, 0, len(in)+1)
-	id := atomic.AddInt64(&testInputInsCtr, 1)
-
-	for i, r := range in {
+func testInputInsReg(out uint64, ins ...uint64) *instruction {
+	inRegs := make(regSet, len(ins))
+	for _, r := range ins {
 		key := expr.Key(strconv.FormatUint(r, 10))
-		ef := expr.NewRegStore(
-			expr.NewRegLoad(key, expr.Width8),
-			expr.Key(fmt.Sprintf("test_register_%d_%d", id, i)),
-			expr.Width8,
-		)
-		effects = append(effects, ef)
+		inRegs[key] = struct{}{}
 	}
 
+	outRegs := make(regSet, 1)
 	if out != regInvalid {
 		key := expr.Key(strconv.FormatUint(out, 10))
-		effects = append(effects, expr.NewRegStore(expr.Zero, key, expr.Width8))
+		outRegs[key] = struct{}{}
 	}
 
-	return basicblock.Instruction{Effects: effects}
+	return &instruction{
+		inRegs:  inRegs,
+		outRegs: outRegs,
+
+		depsFwd:  make(insSet),
+		depsBack: make(insSet),
+	}
 }
 
 func TestBlock_Bounds(t *testing.T) {
@@ -115,71 +110,67 @@ func TestBlock_Bounds(t *testing.T) {
 	}
 	tests := []struct {
 		name   string
-		ins    []basicblock.Instruction
+		ins    []*instruction
 		bounds map[int]bounds
-	}{
-		{
-			name: "simple_add",
-			ins: []basicblock.Instruction{
-				testInputInsReg(1),
-				testInputInsReg(2),
-				testInputInsReg(3, 1, 2),
-			},
-			bounds: map[int]bounds{
-				0: {lower: 0, upper: 1},
-				1: {lower: 0, upper: 1},
-				2: {lower: 2, upper: 2},
-			},
+	}{{
+		name: "simple_add",
+		ins: []*instruction{
+			testInputInsReg(1),
+			testInputInsReg(2),
+			testInputInsReg(3, 1, 2),
 		},
-		{
-			name: "multiple_adds",
-			ins: []basicblock.Instruction{
-				testInputInsReg(1, 1),
-				testInputInsReg(3),
-				testInputInsReg(2, 2),
-				testInputInsReg(4, 1, 3),
-				testInputInsReg(5, 2, 1),
-				testInputInsReg(6, 3, 4),
-				testInputInsReg(7, 1, 3),
-				testInputInsReg(3),
-				testInputInsReg(1),
-				testInputInsReg(8),
-			},
-			bounds: map[int]bounds{
-				0: {lower: 0, upper: 2},
-				1: {lower: 0, upper: 2},
-				2: {lower: 0, upper: 3},
-				3: {lower: 2, upper: 4},
-				4: {lower: 3, upper: 7},
-				5: {lower: 4, upper: 6},
-				6: {lower: 2, upper: 6},
-				7: {lower: 7, upper: 9},
-				8: {lower: 7, upper: 9},
-				9: {lower: 0, upper: 9},
-			},
+		bounds: map[int]bounds{
+			0: {lower: 0, upper: 1},
+			1: {lower: 0, upper: 1},
+			2: {lower: 2, upper: 2},
 		},
-		{
-			name: "anti_dependencies",
-			ins: []basicblock.Instruction{
-				testInputInsReg(1),
-				testInputInsReg(2, 7, 2),
-				testInputInsReg(3, 5),
-				testInputInsReg(5, 4),
-				testInputInsReg(4, 8),
-				testInputInsReg(6, 9),
-				testInputInsReg(7, 7),
-			},
-			bounds: map[int]bounds{
-				0: {lower: 0, upper: 6},
-				1: {lower: 0, upper: 5},
-				2: {lower: 0, upper: 2},
-				3: {lower: 3, upper: 3},
-				4: {lower: 4, upper: 6},
-				5: {lower: 0, upper: 6},
-				6: {lower: 2, upper: 6},
-			},
+	}, {
+		name: "multiple_adds",
+		ins: []*instruction{
+			testInputInsReg(1, 1),
+			testInputInsReg(3),
+			testInputInsReg(2, 2),
+			testInputInsReg(4, 1, 3),
+			testInputInsReg(5, 2, 1),
+			testInputInsReg(6, 3, 4),
+			testInputInsReg(7, 1, 3),
+			testInputInsReg(3),
+			testInputInsReg(1),
+			testInputInsReg(8),
 		},
-	}
+		bounds: map[int]bounds{
+			0: {lower: 0, upper: 2},
+			1: {lower: 0, upper: 2},
+			2: {lower: 0, upper: 3},
+			3: {lower: 2, upper: 4},
+			4: {lower: 3, upper: 7},
+			5: {lower: 4, upper: 6},
+			6: {lower: 2, upper: 6},
+			7: {lower: 7, upper: 9},
+			8: {lower: 7, upper: 9},
+			9: {lower: 0, upper: 9},
+		},
+	}, {
+		name: "anti_dependencies",
+		ins: []*instruction{
+			testInputInsReg(1),
+			testInputInsReg(2, 7, 2),
+			testInputInsReg(3, 5),
+			testInputInsReg(5, 4),
+			testInputInsReg(4, 8),
+			testInputInsReg(6, 9),
+			testInputInsReg(7, 7),
+		},
+		bounds: map[int]bounds{
+			0: {lower: 0, upper: 6},
+			1: {lower: 0, upper: 5},
+			2: {lower: 0, upper: 2},
+			3: {lower: 3, upper: 3},
+			4: {lower: 4, upper: 6},
+			5: {lower: 0, upper: 6},
+			6: {lower: 2, upper: 6},
+		},
+	}}
 
 	idxs := func(instrs insSet) []int {
 		indexes := make([]int, 0, len(instrs))
@@ -425,10 +416,11 @@ func TestBlock_Move(t *testing.T) {
 }
 
 func TestBlock_Address(t *testing.T) {
-	addrIns := func(a model.Addr, id model.Addr) basicblock.Instruction {
-		return basicblock.Instruction{
-			Addr:  a,
-			Bytes: make([]byte, id),
+	addrIns := func(a model.Addr, id model.Addr) *instruction {
+		return &instruction{
+			origAddr: a,
+			currAddr: a,
+			bytes:    make([]byte, id),
 		}
 	}
 
@@ -439,7 +431,7 @@ func TestBlock_Address(t *testing.T) {
 		id    model.Addr
 	}{{
 		name: "first_ins",
-		block: newBlock(0, []basicblock.Instruction{
+		block: newBlock(0, []*instruction{
 			addrIns(0, 2),
 			addrIns(2, 4),
 			addrIns(6, 8),
@@ -449,7 +441,7 @@ func TestBlock_Address(t *testing.T) {
 		id:   2,
 	}, {
 		name: "last_ins",
-		block: newBlock(0, []basicblock.Instruction{
+		block: newBlock(0, []*instruction{
 			addrIns(0, 2),
 			addrIns(2, 4),
 			addrIns(6, 8),
@@ -459,7 +451,7 @@ func TestBlock_Address(t *testing.T) {
 		id:   16,
 	}, {
 		name: "middle_ins",
-		block: newBlock(0, []basicblock.Instruction{
+		block: newBlock(0, []*instruction{
 			addrIns(0, 2),
 			addrIns(2, 4),
 			addrIns(6, 8),
@@ -470,7 +462,7 @@ func TestBlock_Address(t *testing.T) {
 		id:   8,
 	}, {
 		name: "in_between_instructions",
-		block: newBlock(0, []basicblock.Instruction{
+		block: newBlock(0, []*instruction{
 			addrIns(0, 2),
 			addrIns(2, 4),
 			addrIns(6, 8),
@@ -481,7 +473,7 @@ func TestBlock_Address(t *testing.T) {
 		id:   model.MaxAddress,
 	}, {
 		name: "behind_last_addr",
-		block: newBlock(0, []basicblock.Instruction{
+		block: newBlock(0, []*instruction{
 			addrIns(0, 2),
 			addrIns(2, 4),
 			addrIns(6, 8),

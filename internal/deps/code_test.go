@@ -2,7 +2,6 @@ package deps
 
 import (
 	"fmt"
-	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/internal/parser"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
@@ -124,8 +123,9 @@ func TestCode_Move(t *testing.T) {
 		t.Run(fmt.Sprintf("move_%d", i), func(t *testing.T) {
 			blocks := make([]*block, numBlocks)
 			for i := range blocks {
-				ins := basicblock.Instruction{Addr: model.Addr(i)}
-				blocks[i] = newBlock(i, []basicblock.Instruction{ins})
+				ins := parser.Instruction{Addr: model.Addr(i)}
+				instr := newInstruction(ins)
+				blocks[i] = newBlock(i, []*instruction{instr})
 			}
 
 			r := require.New(t)

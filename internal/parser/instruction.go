@@ -26,5 +26,7 @@ func newInstruction(ins model.Instruction, addr model.Addr, bytes []byte) Instru
 		Details: ins.Details,
 	}
 }
-func (i Instruction) Len() model.Addr      { return model.Addr(len(i.Bytes)) }
-func (i Instruction) NextAddr() model.Addr { return i.Addr + i.Len() }
+
+func (i Instruction) Begin() model.Addr { return i.Addr }
+func (i Instruction) Len() model.Addr   { return model.Addr(len(i.Bytes)) }
+func (i Instruction) End() model.Addr   { return i.Addr + i.Len() }

@@ -1,8 +1,8 @@
 package deps
 
 import (
-	"mltwist/internal/deps/internal/basicblock"
 	"mltwist/internal/exprtransform"
+	"mltwist/internal/parser"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/model"
 )
@@ -63,7 +63,7 @@ type instruction struct {
 	blockIdx int
 }
 
-func newInstruction(ins basicblock.Instruction, index int) *instruction {
+func newInstruction(ins parser.Instruction) *instruction {
 	return &instruction{
 		typ:      ins.Type,
 		origAddr: ins.Addr,
@@ -71,7 +71,7 @@ func newInstruction(ins basicblock.Instruction, index int) *instruction {
 		details:  ins.Details,
 
 		effects:     ins.Effects,
-		jumpTargets: ins.JumpTargets,
+		jumpTargets: jumps(ins),
 
 		currAddr: ins.Addr,
 
@@ -84,8 +84,46 @@ func newInstruction(ins basicblock.Instruction, index int) *instruction {
 		depsFwd:  make(insSet, 5),
 		depsBack: make(insSet, 5),
 
-		blockIdx: index,
+		blockIdx: -1,
 	}
+}
+
+func jumps(ins parser.Instruction) []expr.Expr {
+	var jumpAddrs []expr.Expr
+	for _, ef := range ins.Effects {
+		e, ok := ef.(expr.RegStore)
+		if !ok {
+			continue
+		}
+
+		if e.Key() != expr.IPKey {
+			continue
+		}
+
+		addrs := exprtransform.JumpAddrs(e.Value())
+
+		// Filter those jump addresses which jump to the following
+		// instruction as those are technically not jumps.
+		j := 0
+		for i := 0; i < len(addrs); i, j = i+1, j+1 {
+			addrs[j] = addrs[i]
+
+			c, ok := addrs[i].(expr.Const)
+			if !ok {
+				continue
+			}
+
+			addr, _ := expr.ConstUint[model.Addr](c)
+			if addr != ins.End() {
+				continue
+			}
+
+			j--
+		}
+		jumpAddrs = append(jumpAddrs, addrs[:j]...)
+	}
+
+	return jumpAddrs
 }
 
 // Idx returns index of an instruction in its basic block.
@@ -106,8 +144,12 @@ func (i *instruction) End() model.Addr { return i.currAddr + i.Len() }
 // binary.
 func (i *instruction) OrigAddr() model.Addr { return i.origAddr }
 
-// Effects returns a list of all side effects if an instruction.
+// Effects returns a read-only list of all side effects if an instruction.
 func (i *instruction) Effects() []expr.Effect { return i.effects }
+
+// Jumps returns a read-only list of all memory addresses this instruction can
+// jump to.
+func (i *instruction) Jumps() []expr.Expr { return i.jumpTargets }
 
 func (i *instruction) setIndex(idx int)     { i.blockIdx = idx }
 func (i *instruction) setAddr(a model.Addr) { i.currAddr = a }
