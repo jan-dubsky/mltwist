@@ -2,8 +2,8 @@ package opcode
 
 import "fmt"
 
-// OpcodeGetter is an arbitrary type which exposes an opcode.
-type OpcodeGetter interface {
+// Opcoder is an arbitrary type which exposes an opcode.
+type Opcoder interface {
 	// Opcode returns the opcode definition.
 	Opcode() Opcode
 	// Name returns a name of an instruction the Opcode belong to.
