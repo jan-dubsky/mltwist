@@ -144,7 +144,7 @@ func (c *UI) processCommand() error {
 
 func (c *UI) Run() error {
 	for {
-		e := view.NewCompositeView(c.mode().mode.View(), commandPrompt{})
+		e := view.NewComposite(c.mode().mode.View(), commandPrompt{})
 		err := view.Print(e)
 		if err != nil {
 			return fmt.Errorf("cannot print screen: %w", err)

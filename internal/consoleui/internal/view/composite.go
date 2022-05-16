@@ -4,17 +4,17 @@ import (
 	"fmt"
 )
 
-type CompositeView struct {
+type Composite struct {
 	elements []View
 }
 
-func NewCompositeView(elements ...View) *CompositeView {
-	return &CompositeView{
+func NewComposite(elements ...View) *Composite {
+	return &Composite{
 		elements: elements,
 	}
 }
 
-func (v *CompositeView) Print(lines int) error {
+func (v *Composite) Print(lines int) error {
 	minLines := v.MinLines()
 	remainingLines := lines - v.MinLines()
 	if remainingLines < 0 {
@@ -40,9 +40,9 @@ func (v *CompositeView) Print(lines int) error {
 // elementSpaces returns number of spaces in between individual elements. As
 // every 2 consecutive elements are split by an empty line, the number returned
 // is number of elements minus one.
-func (v *CompositeView) elementSpaces() int { return len(v.elements) - 1 }
+func (v *Composite) elementSpaces() int { return len(v.elements) - 1 }
 
-func (v *CompositeView) MinLines() int {
+func (v *Composite) MinLines() int {
 	var h int
 	for _, p := range v.elements {
 		h += p.MinLines()
@@ -51,7 +51,7 @@ func (v *CompositeView) MinLines() int {
 	return h + v.elementSpaces()
 }
 
-func (v *CompositeView) MaxLines() int {
+func (v *Composite) MaxLines() int {
 	var h int
 	for _, p := range v.elements {
 		m := p.MaxLines()
@@ -65,7 +65,7 @@ func (v *CompositeView) MaxLines() int {
 	return h + v.elementSpaces()
 }
 
-func (v *CompositeView) distributeLines(remLines int) map[int]int {
+func (v *Composite) distributeLines(remLines int) map[int]int {
 	mins := v.mins()
 
 	lineCnts := make(map[int]int, len(mins))
@@ -91,7 +91,7 @@ func (v *CompositeView) distributeLines(remLines int) map[int]int {
 	return lineCnts
 }
 
-func (v *CompositeView) mins() map[int]int {
+func (v *Composite) mins() map[int]int {
 	mins := make(map[int]int, len(v.elements))
 	for i, e := range v.elements {
 		val := e.MinLines()
@@ -104,12 +104,12 @@ func (v *CompositeView) mins() map[int]int {
 	return mins
 }
 
-func (v *CompositeView) diffLinesMax(mins map[int]int, maxDiff int) map[int]int {
+func (v *Composite) diffLinesMax(mins map[int]int, maxDiff int) map[int]int {
 	diffs := make(map[int]int, len(v.elements))
 	for i, e := range v.elements {
 		min, max := mins[i], e.MaxLines()
 		// Invalid min and max.
-		if max < min {
+		if max >= 0 && max < min {
 			diffs[i] = 0
 			continue
 		}

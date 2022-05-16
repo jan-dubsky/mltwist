@@ -34,7 +34,7 @@ func New(code *deps.Code, ip model.Addr, stat *state.State) (*mode, error) {
 		emul: emul,
 
 		lineView: lineView,
-		view:     view.NewCompositeView(lineView, regView),
+		view:     view.NewComposite(lineView, regView),
 	}
 
 	if err := e.refreshCursor(); err != nil {

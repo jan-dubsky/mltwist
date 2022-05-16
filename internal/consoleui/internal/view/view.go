@@ -11,7 +11,7 @@ type View interface {
 	MinLines() int
 	// MaxLines returns maximal number of lines the view is able to render
 	// to. The value returned should be greater or equal to value returned
-	// by MinLines(). Positive values less then MinLines will be
+	// by MinLines(). Non-negative values less then MinLines will be
 	// interpretted as MinLines(). Negative values are be interpreted as
 	// infinity.
 	//
