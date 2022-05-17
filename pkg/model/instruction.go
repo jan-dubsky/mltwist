@@ -38,7 +38,7 @@ type PlatformDetails interface {
 // Validate assert that an Instruction description is valid (makes sense). If
 // it's not, this method provides a human readable error describing the problem.
 func (i *Instruction) Validate() error {
-	if t := i.Type; t >= typeMax {
+	if t := i.Type; t >= TypeMax {
 		return fmt.Errorf("invalid value of type: 0x%x (%d)", t, t)
 	}
 	if i.ByteLen == 0 {

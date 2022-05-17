@@ -70,6 +70,9 @@ func condEval(c expr.Condition, c1 expr.Const, c2 expr.Const, w expr.Width) bool
 // ConstFold replaces all expressions of constants by a constant expression
 // transitively in a whole expression subtree of ex.
 //
+// The returned expression doesn't containt any unnecessary width gadgets as
+// PurgeWidthGadgets is applied at the end of constant folding process.
+//
 // In order to perform static analysis of an expression, we have to be able to
 // identify static expressions and evaluate them. Constant fold on constant
 // naturally produces the same constant. Constant fold of an arbitrary binary
@@ -89,9 +92,6 @@ func condEval(c expr.Condition, c1 expr.Const, c2 expr.Const, w expr.Width) bool
 // words, if a leaf sub-tree of the expression tree cannot be constant-folded,
 // it's reused in the new tree. An edge case of this is that return value can
 // equal ex if there are no expressions which can be constant folded.
-//
-// The returned expression doesn't containt any unnecessary width gadgets as
-// width gadget pruning is applied at the end of constant folding process.
 func ConstFold(ex expr.Expr) expr.Expr {
 	e, _ := constFold(ex)
 	return PurgeWidthGadgets(e)

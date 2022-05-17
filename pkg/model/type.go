@@ -1,20 +1,11 @@
 package model
 
-// Type respresents a role of instruction in machine code.
+// Type respresents a special role of instruction in machine code.
 //
-// To implement a generic instruction analysis, we need to be able to say the
-// purpose of an instruction in machine code. For this reason, we have to
-// introduce some categories of instructions which we will use for this purpose.
-//
-// As any CISC instruction can be described as a chain of RISC instruction, it
-// is in practice sufficient to use RISC categories of instructions. We will
-// then use multiple types to describe CISC instruction.
-//
-// As one instruction might belong into multiple categories, we represent
-// instruction type as set of bit flags, where every bit represents a single
-// category. This form will allow us to represent an arbitrary set of types for
-// every instruction. Zero value of Type then represents no/invalid instruction
-// type.
+// Some instruction have a special meaning in in instruction code which cannot
+// be represented using an expression model. For those instruction, we introduce
+// special markers. One instruction cat fit multiple markers. For this reason,
+// we represent a single instruction by a bit mask of its special features.
 type Type uint64
 
 // TypeNone describes an instruction which is not special in any way. In other
@@ -37,9 +28,9 @@ const (
 	// userspace program.
 	TypeSyscall
 
-	// typeMax is maximal exclusive allowed value of Type. Any value higher
+	// TypeMax is maximal exclusive allowed value of Type. Any value higher
 	// or equal to this is invalid.
-	typeMax
+	TypeMax
 )
 
 // Is checks if type set t contains type other.

@@ -5,6 +5,11 @@ import (
 	"mltwist/pkg/expr"
 )
 
+// Equal compares if ex1 and ex2 are identical expressions.
+//
+// Expressions ex1 and ex2 are identical if they have the same width, type and
+// if all the properties if their respective expression match are equal.
+// Equality checks then recursively apply to all arguments of equal.
 func Equal(ex1 expr.Expr, ex2 expr.Expr) bool {
 	if ex1.Width() != ex2.Width() {
 		return false

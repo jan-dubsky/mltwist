@@ -94,11 +94,10 @@ func (c *Code) NumInstr() int { return c.instrCnt }
 // Move moves basic block at index from to index to.
 //
 // Unlike for instructions within a single basic block, move of a basic block
-// has no effect on it's address in the program.
-//
-// For detailed explanation why we don't move basic blocks and which effect such
-// a move could have to relative jump instructions, please read doc-comment of
-// Move method of Block in this package.
+// has no effect on it's address in the program. For detailed explanation why we
+// don't move basic blocks and which effect such a move could have to relative
+// jump instructions, please read doc-comment of Move method of Block in this
+// package.
 func (c *Code) Move(from int, to int) error {
 	if err := checkFromToIndex(from, to, len(c.blocks)); err != nil {
 		return fmt.Errorf("cannot move %d to %d: %w", from, to, err)

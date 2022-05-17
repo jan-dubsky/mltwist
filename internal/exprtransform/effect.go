@@ -18,7 +18,7 @@ func Exprs(effect expr.Effect) []expr.Expr {
 }
 
 // ExprsMany applies Exprs to every element of effects array and returns
-// contatenation of return values into a single array.
+// concatenation of return values into a single array.
 func ExprsMany(effects []expr.Effect) []expr.Expr {
 	exprs := make([]expr.Expr, 0, len(effects))
 	for _, effect := range effects {

@@ -88,6 +88,9 @@ func newInstruction(ins parser.Instruction) *instruction {
 	}
 }
 
+// Jumps extracts all expressions the instruction can jump to. Jumps to address
+// following the instruction (to address of End()) are filtered away as those
+// are not read jump addresses.
 func jumps(ins parser.Instruction) []expr.Expr {
 	var jumpAddrs []expr.Expr
 	for _, ef := range ins.Effects {
@@ -100,15 +103,16 @@ func jumps(ins parser.Instruction) []expr.Expr {
 			continue
 		}
 
-		addrs := exprtransform.JumpAddrs(e.Value())
+		addrs := exprtransform.Possibilities(e.Value())
 
 		// Filter those jump addresses which jump to the following
 		// instruction as those are technically not jumps.
 		j := 0
 		for i := 0; i < len(addrs); i, j = i+1, j+1 {
-			addrs[j] = addrs[i]
+			a := exprtransform.ConstFold(addrs[i])
+			addrs[j] = a
 
-			c, ok := addrs[i].(expr.Const)
+			c, ok := a.(expr.Const)
 			if !ok {
 				continue
 			}

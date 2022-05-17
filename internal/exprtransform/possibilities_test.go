@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestJumpAddr(t *testing.T) {
+func TestPossibilities(t *testing.T) {
 	tests := []struct {
 		name  string
 		e     expr.Expr
@@ -139,8 +139,11 @@ func TestJumpAddr(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			addrs := exprtransform.JumpAddrs(tt.e)
-			require.Equal(t, tt.addrs, addrs)
+			exprs := exprtransform.Possibilities(tt.e)
+			for i, e := range exprs {
+				exprs[i] = exprtransform.ConstFold(e)
+			}
+			require.Equal(t, tt.addrs, exprs)
 		})
 	}
 }
