@@ -103,8 +103,8 @@ func bitLsh(bs []byte, shift uint8) {
 	}
 }
 
-// Lsh implements left shift of value val1 of val2 bits. Bottom-most val2 bits
-// are set to zeros.
+// Lsh left shifts value val1 of val2 bits. Bottom-most val2 bits are set to
+// zeros.
 func Lsh(val1 Value, val2 Value, w expr.Width) Value {
 	byteShift, bitShift, ok := shiftUint64(val2, w)
 	if !ok {
@@ -137,6 +137,8 @@ func bitRsh(bs []byte, shift uint8) {
 	}
 }
 
+// Rsh right shifts value val1 of val2 bits. Top-most val2 bits are filled to
+// zeros.
 func Rsh(val1 Value, val2 Value, w expr.Width) Value {
 	byteShift, bitShift, ok := shiftUint64(val2, w)
 	if !ok {
@@ -156,12 +158,15 @@ func Rsh(val1 Value, val2 Value, w expr.Width) Value {
 	return newValue(shifted)
 }
 
+// Mul unsigned multiplies val1 and val2. The result has width w.
 func Mul(val1 Value, val2 Value, w expr.Width) Value {
 	val1Int, val2Int := val1.bigInt(w), val2.bigInt(w)
 	product := (&big.Int{}).Mul(val1Int, val2Int)
 	return parseBigInt(product).SetWidth(w)
 }
 
+// Div calculates val1 (unsigned) divided by div2. The produced value is of
+// width w. If val2 is zero, this method returns all ones of width w.
 func Div(val1 Value, val2 Value, w expr.Width) Value {
 	val2Int := val2.bigInt(w)
 
@@ -178,6 +183,8 @@ func Div(val1 Value, val2 Value, w expr.Width) Value {
 	return parseBigInt(div).SetWidth(w)
 }
 
+// Mod calculates val1 (unsigned) modulo val2. The produced value is of width w.
+// If val2 is zero, this method returns val1 of width w.
 func Mod(val1 Value, val2 Value, w expr.Width) Value {
 	val2Int := val2.bigInt(w)
 
@@ -206,14 +213,17 @@ func bitOp(
 	return newValue(result)
 }
 
+// And returns bit-wise and of val1 and val2 of width w.
 func And(val1 Value, val2 Value, w expr.Width) Value {
 	return bitOp(val1, val2, w, func(v1, v2 byte) byte { return v1 & v2 })
 }
 
+// Or returns bit-wise or of val1 and val2 of width w.
 func Or(val1 Value, val2 Value, w expr.Width) Value {
 	return bitOp(val1, val2, w, func(v1, v2 byte) byte { return v1 | v2 })
 }
 
+// Xor returns bit-wise xor of val1 and val2 of width w.
 func Xor(val1 Value, val2 Value, w expr.Width) Value {
 	return bitOp(val1, val2, w, func(v1, v2 byte) byte { return v1 ^ v2 })
 }

@@ -49,12 +49,8 @@ func condEvalFunc(c expr.Condition) condFunc {
 		return expreval.Eq
 	case expr.Ltu:
 		return expreval.Ltu
-	case expr.Leu:
-		return expreval.Leu
 	case expr.Lts:
 		return expreval.Lts
-	case expr.Les:
-		return expreval.Les
 	default:
 		panic(fmt.Sprintf("unknown condition type: %v", c))
 	}

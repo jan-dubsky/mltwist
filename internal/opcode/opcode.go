@@ -34,6 +34,8 @@ type Opcode struct {
 	Mask []byte
 }
 
+// Validate checks if an opcode is valid and reports any problem with the
+// opcode.
 func (o Opcode) Validate() error {
 	if len(o.Bytes) == 0 {
 		return fmt.Errorf("opcode has zero bytes")

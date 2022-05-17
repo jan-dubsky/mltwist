@@ -6,13 +6,20 @@ import (
 	"mltwist/pkg/model"
 )
 
+// Instruction represents single parsed machine code instruction.
 type Instruction struct {
 	Type model.Type
 
-	Addr  model.Addr
+	// Addr is memory address of the instruction in program virtual memory.
+	Addr model.Addr
+	// Bytes is slice of raw bytes representing the instruction in program
+	// memory.
 	Bytes []byte
 
+	// Effects is a constant-folded list of expression side-effects
+	// representing the instruction functionality.
 	Effects []expr.Effect
+	// Details provide platform-dependent functionality of the instruction.
 	Details model.PlatformDetails
 }
 

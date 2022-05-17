@@ -71,7 +71,7 @@ func TestConstFold(t *testing.T) {
 	}, {
 		name: "eval_condition_false_no_cond_width",
 		e: expr.NewCond(
-			expr.Leu,
+			expr.Eq,
 			expr.NewBinary(expr.Lsh,
 				expr.ConstFromUint[uint8](5),
 				expr.NewBinary(expr.Sub, c1, c2, expr.Width8),
@@ -135,7 +135,7 @@ func TestConstFold(t *testing.T) {
 		),
 	}, {
 		name: "condition_simplify_args",
-		e: expr.NewCond(expr.Leu,
+		e: expr.NewCond(expr.Ltu,
 			expr.ConstFromUint[uint16](324),
 			expr.NewMemLoad("mem01",
 				expr.ConstFromUint[uint64](0xf3920bada83),
@@ -161,7 +161,7 @@ func TestConstFold(t *testing.T) {
 			),
 			expr.Width64,
 		),
-		exp: expr.NewCond(expr.Leu,
+		exp: expr.NewCond(expr.Ltu,
 			expr.ConstFromUint[uint16](324),
 			expr.NewMemLoad("mem01",
 				expr.ConstFromUint[uint64](0xf3920bada83),
@@ -177,7 +177,7 @@ func TestConstFold(t *testing.T) {
 		),
 	}, {
 		name: "eval_condition_output_width_change",
-		e: expr.NewCond(expr.Leu,
+		e: expr.NewCond(expr.Lts,
 			expr.ConstFromUint[uint16](323),
 			expr.ConstFromUint[uint16](324),
 			expr.NewBinary(expr.Div,
@@ -211,7 +211,7 @@ func TestConstFold(t *testing.T) {
 	}, {
 		name: "eval_condition_intermediate_width_change_necessary",
 		e: expr.NewBinary(expr.Add,
-			expr.NewCond(expr.Leu,
+			expr.NewCond(expr.Lts,
 				expr.ConstFromUint[uint16](323),
 				expr.ConstFromUint[uint16](324),
 				expr.NewBinary(expr.Div,
@@ -240,7 +240,7 @@ func TestConstFold(t *testing.T) {
 	}, {
 		name: "eval_condition_intermediate_width_change_non_necessary",
 		e: expr.NewBinary(expr.Add,
-			expr.NewCond(expr.Leu,
+			expr.NewCond(expr.Ltu,
 				expr.ConstFromUint[uint16](323),
 				expr.ConstFromUint[uint16](324),
 				expr.NewBinary(expr.Div,

@@ -12,6 +12,7 @@ func eq(val1 Value, val2 Value) bool {
 	return true
 }
 
+// Eq compares w bytes of val1 and val2 and checks if they are equal.
 func Eq(val1 Value, val2 Value, w expr.Width) bool {
 	val1Ext, val2Ext := val1.SetWidth(w), val2.SetWidth(w)
 	return eq(val1Ext, val2Ext)
@@ -30,14 +31,11 @@ func ltu(val1 Value, val2 Value) bool {
 	return false
 }
 
+// Ltu compares w bytes of val1 and val2 and checks if val1 is less then val2
+// using unsigned integer comparison.
 func Ltu(val1 Value, val2 Value, w expr.Width) bool {
 	val1Ext, val2Ext := val1.SetWidth(w), val2.SetWidth(w)
 	return ltu(val1Ext, val2Ext)
-}
-
-func Leu(val1 Value, val2 Value, w expr.Width) bool {
-	val1Ext, val2Ext := val1.SetWidth(w), val2.SetWidth(w)
-	return ltu(val1Ext, val2Ext) || eq(val1Ext, val2Ext)
 }
 
 func negative(v Value) bool {
@@ -58,12 +56,9 @@ func lts(val1 Value, val2 Value) bool {
 	}
 }
 
+// Ltu compares w bytes of val1 and val2 and checks if val1 is less then val2
+// using signed integer comparison.
 func Lts(val1 Value, val2 Value, w expr.Width) bool {
 	val1Ext, val2Ext := val1.SetWidth(w), val2.SetWidth(w)
 	return lts(val1Ext, val2Ext)
-}
-
-func Les(val1 Value, val2 Value, w expr.Width) bool {
-	val1Ext, val2Ext := val1.SetWidth(w), val2.SetWidth(w)
-	return lts(val1Ext, val2Ext) || eq(val1Ext, val2Ext)
 }

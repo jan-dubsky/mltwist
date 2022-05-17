@@ -67,13 +67,7 @@ const (
 	// Ltu performs unsigned less-then (<) comparison of the first and
 	// second argument.
 	Ltu
-	// Leu performs unsigned less-then-or-equal (<=) comparison of the first
-	// and second argument.
-	Leu
 	// Lts perform signed less-then (<) comparison of the first and second
 	// argument.
 	Lts
-	// Les performs signed less-then-or-equal (<=) comparison of the first
-	// and second argument.
-	Les
 )
