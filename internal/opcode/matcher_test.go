@@ -34,10 +34,10 @@ var testOpcs = []*opcodeValue{
 	newValue([]byte{0xf5, 0x50, 0x45, 0x89}, []byte{0xf0, 0, 0, 0xff}),
 }
 
-func TestDecoder_New(t *testing.T) {
+func TestMatcher_New_Successful(t *testing.T) {
 	r := require.New(t)
 
-	dec, err := NewDecoder(testOpcs...)
+	dec, err := NewMatcher(testOpcs...)
 	r.NoError(err)
 	r.Len(dec.groups, 4)
 
@@ -61,65 +61,70 @@ func TestDecoder_New(t *testing.T) {
 	checkSorted(dec.groups[1].opcodes)
 	checkSorted(dec.groups[2].opcodes)
 	checkSorted(dec.groups[3].opcodes)
-
-	ambiguous := []*opcodeValue{
-		newValue([]byte{0xf5, 0x50, 0x45, 0x88}, []byte{0xf0, 0, 0, 0xff}),
-		newValue([]byte{0xf6, 0x50, 0x45, 0x88}, []byte{0xf0, 0, 0, 0xff}),
-	}
-	dec, err = NewDecoder(ambiguous...)
-	r.Error(err)
-	r.Nil(dec)
-
-	ambiguous = []*opcodeValue{
-		newValue([]byte{0xf5, 0x50, 0x45, 0x88}, []byte{0xf0, 0, 0, 0xff}),
-		newValue([]byte{0xf6, 0x50, 0x45, 0x88}, []byte{0xff, 0, 0, 0xff}),
-	}
-	dec, err = NewDecoder(ambiguous...)
-	r.Error(err)
-	r.Nil(dec)
-
-	invalidOpcode := []*opcodeValue{
-		newValue([]byte{0xf5, 0x50, 0x45, 0x88}, []byte{0xf0, 0, 0, 0}),
-		newValue([]byte{0xf6, 0x50, 0x45, 0x88}, []byte{0xff, 0, 0, 0xff}),
-	}
-	dec, err = NewDecoder(invalidOpcode...)
-	r.Error(err)
-	r.Nil(dec)
 }
 
-func TestDecoder_Match(t *testing.T) {
-	dec, err := NewDecoder(testOpcs...)
+func TestMatcher_New_Failed(t *testing.T) {
+	tests := []struct {
+		name string
+		opcs []*opcodeValue
+	}{{
+		name: "ambiguous_same_mask",
+		opcs: []*opcodeValue{
+			newValue([]byte{0xf5, 0x50, 0x45, 0x88}, []byte{0xf0, 0, 0, 0xff}),
+			newValue([]byte{0xf6, 0x50, 0x45, 0x88}, []byte{0xf0, 0, 0, 0xff}),
+		},
+	}, {
+		name: "ambiguous_different_mask",
+		opcs: []*opcodeValue{
+			newValue([]byte{0xf5, 0x50, 0x45, 0x88}, []byte{0xf0, 0, 0, 0xff}),
+			newValue([]byte{0xf6, 0x50, 0x45, 0x88}, []byte{0xff, 0, 0, 0xff}),
+		},
+	}, {
+		name: "invalid_opcode",
+		opcs: []*opcodeValue{
+			newValue([]byte{0xf5, 0x50, 0x45, 0x88}, []byte{0xf0, 0, 0, 0}),
+			newValue([]byte{0xf6, 0x50, 0x45, 0x88}, []byte{0xff, 0, 0, 0xff}),
+		},
+	}}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			r := require.New(t)
+
+			dec, err := NewMatcher(tt.opcs...)
+			r.Error(err)
+			r.Nil(dec)
+		})
+	}
+}
+
+func TestMatcher_Match(t *testing.T) {
+	dec, err := NewMatcher(testOpcs...)
 	require.NoError(t, err)
 
 	tests := []struct {
 		bytes    []byte
 		expected *opcodeValue
-	}{
-		{
-			bytes:    []byte{0x25, 0xff, 0xee, 0x88},
-			expected: testOpcs[0],
-		},
-		{
-			bytes:    []byte{0x25, 0xff, 0xee, 0x89},
-			expected: testOpcs[2],
-		},
-		{
-			bytes:    []byte{0xa5, 0xff, 0x85, 0x89},
-			expected: testOpcs[3],
-		},
-		{
-			bytes:    []byte{0xa5, 0x88, 0x98, 0x89},
-			expected: testOpcs[5],
-		},
-		{
-			bytes:    []byte{0xf5, 0x50, 0x45, 0x89},
-			expected: testOpcs[8],
-		},
-		{
-			bytes:    []byte{0xaa, 0xaa},
-			expected: nil,
-		},
-	}
+	}{{
+		bytes:    []byte{0x25, 0xff, 0xee, 0x88},
+		expected: testOpcs[0],
+	}, {
+		bytes:    []byte{0x25, 0xff, 0xee, 0x89},
+		expected: testOpcs[2],
+	}, {
+		bytes:    []byte{0xa5, 0xff, 0x85, 0x89},
+		expected: testOpcs[3],
+	}, {
+		bytes:    []byte{0xa5, 0x88, 0x98, 0x89},
+		expected: testOpcs[5],
+	}, {
+		bytes:    []byte{0xf5, 0x50, 0x45, 0x89},
+		expected: testOpcs[8],
+	}, {
+		bytes:    []byte{0xaa, 0xaa},
+		expected: nil,
+	}}
 
 	for i, tt := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {

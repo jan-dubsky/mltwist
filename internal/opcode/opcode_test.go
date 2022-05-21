@@ -11,33 +11,28 @@ func TestOpcode_Validate(t *testing.T) {
 	tests := []struct {
 		opcode opcode.Opcode
 		valid  bool
-	}{
-		{
-			opcode: opcode.Opcode{
-				Bytes: make([]byte, 4),
-				Mask:  []byte{0, 0, 0, 1},
-			},
-			valid: true,
+	}{{
+		opcode: opcode.Opcode{
+			Bytes: make([]byte, 4),
+			Mask:  []byte{0, 0, 0, 1},
 		},
-		{
-			opcode: opcode.Opcode{
-				Bytes: make([]byte, 4),
-				Mask:  []byte{0, 0, 1},
-			},
-			valid: false,
+		valid: true,
+	}, {
+		opcode: opcode.Opcode{
+			Bytes: make([]byte, 4),
+			Mask:  []byte{0, 0, 1},
 		},
-		{
-			opcode: opcode.Opcode{
-				Bytes: make([]byte, 4),
-				Mask:  []byte{0, 0, 0, 0},
-			},
-			valid: false,
+		valid: false,
+	}, {
+		opcode: opcode.Opcode{
+			Bytes: make([]byte, 4),
+			Mask:  []byte{0, 0, 0, 0},
 		},
-		{
-			opcode: opcode.Opcode{},
-			valid:  false,
-		},
-	}
+		valid: false,
+	}, {
+		opcode: opcode.Opcode{},
+		valid:  false,
+	}}
 
 	r := require.New(t)
 	for _, tt := range tests {

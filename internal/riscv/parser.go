@@ -45,7 +45,7 @@ const (
 )
 
 type Parser struct {
-	decoder *opcode.Decoder[*instructionOpcode]
+	matcher *opcode.Matcher[*instructionOpcode]
 }
 
 // NewParser creates a new RISC-V instruction parser parsing RISC-V architecture
@@ -64,13 +64,13 @@ func NewParser(v Variant, exts ...Extension) Parser {
 
 	instrs := mergeInstructions(extensions)
 
-	decoder, err := opcode.NewDecoder(instrs...)
+	decoder, err := opcode.NewMatcher(instrs...)
 	if err != nil {
 		panic(fmt.Sprintf("unexpected: %s", err.Error()))
 	}
 
 	return Parser{
-		decoder: decoder,
+		matcher: decoder,
 	}
 }
 
@@ -80,7 +80,7 @@ func (p Parser) Parse(addr model.Addr, bytes []byte) (model.Instruction, error) 
 			"bytes are too short (%d) to represent an instruction opcode", l)
 	}
 
-	opcode, ok := p.decoder.Match(bytes)
+	opcode, ok := p.matcher.Match(bytes)
 	if !ok {
 		return model.Instruction{}, fmt.Errorf(
 			"unknown instruction opcode: 0x%x", bytes[:instructionLen])
