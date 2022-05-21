@@ -6,4 +6,5 @@ import "fmt"
 // of this value are valid.
 type csr uint16
 
+// String returns a string representation of a given CSR.
 func (c csr) String() string { return fmt.Sprintf("csr%d", c) }

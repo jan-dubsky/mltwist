@@ -7,14 +7,14 @@ import (
 	"mltwist/pkg/model"
 )
 
-var integer64 = []*instructionOpcode{
+var integer64 = []*instructionType{
 	{
 		name:         "lui",
 		opcode:       opcode7(0b0110111),
 		inputRegCnt:  0,
 		hasOutputReg: true,
 		immediate:    immTypeU,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			imm, _ := immTypeU.parseValue(i.value)
 			val := sext32To64(expr.ConstFromInt(imm))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -25,9 +25,9 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: true,
 		immediate:    immTypeU,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			imm, _ := immTypeU.parseValue(i.value)
-			val := expr.ConstFromUint(uint64(addrAddImm(i.address, imm)))
+			val := expr.ConstFromUint(uint64(addrAddImm(i.addr, imm)))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -36,10 +36,10 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: true,
 		immediate:    immTypeJ,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			target := addrImmConst(immTypeJ, i, width64)
 			// Address of following instruction.
-			following := expr.ConstFromUint(uint64(i.address) + 4)
+			following := expr.ConstFromUint(uint64(i.addr) + 4)
 			return []expr.Effect{
 				expr.NewRegStore(target, expr.IPKey, width64),
 				regStore(following, i, width64),
@@ -52,10 +52,10 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		// FIXME: Find a way how to represent those jump targets.
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			target := regImmOp(expr.Add, immTypeI, i, width64)
 			// Address of following instruction.
-			following := expr.ConstFromUint(uint64(i.address) + 4)
+			following := expr.ConstFromUint(uint64(i.addr) + 4)
 			return []expr.Effect{
 				expr.NewRegStore(target, expr.IPKey, width64),
 				regStore(following, i, width64),
@@ -67,7 +67,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Eq, true, i, width64)}
 		},
 	}, {
@@ -76,7 +76,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Eq, false, i, width64)}
 		},
 	}, {
@@ -85,7 +85,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Lts, true, i, width64)}
 		},
 	}, {
@@ -94,7 +94,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Lts, false, i, width64)}
 		},
 	}, {
@@ -103,7 +103,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Ltu, true, i, width64)}
 		},
 	}, {
@@ -112,7 +112,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return []expr.Effect{branchCmp(expr.Ltu, false, i, width64)}
 		},
 	}, {
@@ -122,7 +122,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    1,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			val := sext(memLoad(addr, width8), 7, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -134,7 +134,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    2,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			val := sext(memLoad(addr, width16), 15, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -146,7 +146,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    4,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			val := sext(memLoad(addr, width32), 31, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -158,7 +158,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    8,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			val := memLoad(addr, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -170,7 +170,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    1,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			return []expr.Effect{regStore(memLoad(addr, width8), i, width64)}
 		},
@@ -181,7 +181,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    2,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			return []expr.Effect{regStore(memLoad(addr, width16), i, width64)}
 		},
@@ -192,7 +192,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    4,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			addr := regImmOp(expr.Add, immTypeI, i, width64)
 			return []expr.Effect{regStore(memLoad(addr, width32), i, width64)}
 		},
@@ -203,7 +203,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   1,
 		immediate:    immTypeS,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regLoad(rs2, i, width64)
 			addr := regImmOp(expr.Add, immTypeS, i, width64)
 			return []expr.Effect{memStore(val, addr, width8)}
@@ -215,7 +215,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   2,
 		immediate:    immTypeS,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regLoad(rs2, i, width64)
 			addr := regImmOp(expr.Add, immTypeS, i, width64)
 			return []expr.Effect{memStore(val, addr, width16)}
@@ -227,7 +227,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   4,
 		immediate:    immTypeS,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regLoad(rs2, i, width64)
 			addr := regImmOp(expr.Add, immTypeS, i, width64)
 			return []expr.Effect{memStore(val, addr, width32)}
@@ -239,7 +239,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   8,
 		immediate:    immTypeS,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regLoad(rs2, i, width64)
 			addr := regImmOp(expr.Add, immTypeS, i, width64)
 			return []expr.Effect{memStore(val, addr, width64)}
@@ -250,7 +250,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regImmOp(expr.Add, immTypeI, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -260,7 +260,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := expr.NewCond(
 				expr.Lts,
 				regLoad(rs1, i, width64),
@@ -277,7 +277,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := expr.NewCond(
 				expr.Ltu,
 				regLoad(rs1, i, width64),
@@ -294,7 +294,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regImmOp(expr.Xor, immTypeI, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -304,7 +304,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regImmOp(expr.Or, immTypeI, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -314,7 +314,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regImmOp(expr.And, immTypeI, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -323,7 +323,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcodeShiftImm(false, 6, 0b001, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regImmShift(expr.Lsh, i, 6, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -332,7 +332,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcodeShiftImm(false, 6, 0b101, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regImmShift(expr.Rsh, i, 6, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -341,7 +341,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcodeShiftImm(true, 6, 0b101, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			reg := regLoad(rs1, i, width64)
 			val := exprtools.RshA(reg, immShift(6, i), width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -351,7 +351,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b000, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := reg2Op(expr.Add, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -360,7 +360,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0100000, 0b000, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := reg2Op(expr.Sub, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -369,7 +369,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b010, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := expr.NewCond(
 				expr.Lts,
 				regLoad(rs1, i, width64),
@@ -385,7 +385,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b011, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := expr.NewCond(
 				expr.Ltu,
 				regLoad(rs1, i, width64),
@@ -401,7 +401,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b110, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := reg2Op(expr.Or, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -410,7 +410,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b111, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := reg2Op(expr.And, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -419,7 +419,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b100, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := reg2Op(expr.Xor, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -428,7 +428,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b001, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := maskedRegOp(expr.Lsh, i, 6, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -437,7 +437,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0000000, 0b101, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := maskedRegOp(expr.Rsh, i, 6, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -446,7 +446,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcode17(0b0100000, 0b101, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			shift := exprtools.MaskBits(regLoad(rs2, i, width64), 6, width64)
 			val := exprtools.RshA(regLoad(rs1, i, width64), shift, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -461,7 +461,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		instrType:    model.TypeMemOrder,
 		// FIXME: How to represent memory order?
-		effects: func(i Instruction) []expr.Effect { return nil },
+		effects: func(i instruction) []expr.Effect { return nil },
 	}, { // Same definition as the 32bit version.
 		name: "fence.i",
 		opcode: opcode.Opcode{
@@ -472,7 +472,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		instrType:    model.TypeMemOrder,
 		// FIXME: How to represent memory order?
-		effects: func(i Instruction) []expr.Effect { return nil },
+		effects: func(i instruction) []expr.Effect { return nil },
 	}, { // Same definition as the 32bit version.
 		name: "ecall",
 		opcode: opcode.Opcode{
@@ -483,7 +483,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		instrType:    model.TypeSyscall,
 		// FIXME: How to represent syscall?
-		effects: func(i Instruction) []expr.Effect { return nil },
+		effects: func(i instruction) []expr.Effect { return nil },
 	}, { // Same definition as the 32bit version.
 		name: "ebreak",
 		opcode: opcode.Opcode{
@@ -494,7 +494,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: false,
 		instrType:    model.TypeSyscall,
 		// FIXME: How to represent syscall?
-		effects: func(i Instruction) []expr.Effect { return nil },
+		effects: func(i instruction) []expr.Effect { return nil },
 	},
 
 	{
@@ -504,7 +504,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeCPUStateChange,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			key := csrKey(i)
 			return []expr.Effect{
 				regStore(expr.NewRegLoad(key, width64), i, width64),
@@ -518,7 +518,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeCPUStateChange,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			key := csrKey(i)
 			val := expr.NewRegLoad(key, width64)
 			regVal := regLoad(rs1, i, width64)
@@ -535,7 +535,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeCPUStateChange,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			key := csrKey(i)
 			val := expr.NewRegLoad(key, width64)
 			regVal := exprtools.BitNegate(regLoad(rs1, i, width64), width64)
@@ -552,7 +552,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeCPUStateChange,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			key := csrKey(i)
 			return []expr.Effect{
 				regStore(expr.NewRegLoad(key, width64), i, width64),
@@ -566,7 +566,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeCPUStateChange,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			key := csrKey(i)
 			val := expr.NewRegLoad(key, width64)
 			newVal := expr.NewBinary(expr.Or, val, csrImm(i), width64)
@@ -582,7 +582,7 @@ var integer64 = []*instructionOpcode{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		instrType:    model.TypeCPUStateChange,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			key := csrKey(i)
 			val := expr.NewRegLoad(key, width64)
 			mask := exprtools.BitNegate(csrImm(i), width64)
@@ -601,7 +601,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := sext32To64(regImmOp(expr.Add, immTypeI, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -610,7 +610,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcodeShiftImm(false, 5, 0b001, 0b0011011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := sext32To64(regImmShift(expr.Lsh, i, 5, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -619,7 +619,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcodeShiftImm(false, 5, 0b101, 0b0011011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := sext32To64(regImmShift(expr.Rsh, i, 5, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -628,7 +628,7 @@ var integer64 = []*instructionOpcode{
 		opcode:       opcodeShiftImm(true, 5, 0b101, 0b0011011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			reg := regLoad(rs1, i, width32)
 			val := sext32To64(exprtools.RshA(reg, immShift(5, i), width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -639,7 +639,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := sext32To64(reg2Op(expr.Add, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -649,7 +649,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := sext32To64(reg2Op(expr.Sub, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -659,7 +659,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := sext32To64(maskedRegOp(expr.Lsh, i, 5, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -669,7 +669,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := sext32To64(maskedRegOp(expr.Rsh, i, 5, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -679,7 +679,7 @@ var integer64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			shift := exprtools.MaskBits(regLoad(rs2, i, width32), 5, width32)
 			val32 := exprtools.RshA(regLoad(rs1, i, width32), shift, width32)
 			return []expr.Effect{regStore(sext32To64(val32), i, width64)}
@@ -687,14 +687,14 @@ var integer64 = []*instructionOpcode{
 	},
 }
 
-var mul64 = []*instructionOpcode{
+var mul64 = []*instructionType{
 	{
 		name:         "mul",
 		opcode:       opcode17(0b0000001, 0b000, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := reg2Op(expr.Mul, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -704,7 +704,7 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			mul := exprtools.SignedMul(r1, r2, width64)
 			shift := expr.ConstFromUint[uint8](64)
@@ -718,7 +718,7 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			mul := expr.NewBinary(expr.Mul, r1, r2, width128)
 			shift := expr.ConstFromUint[uint8](64)
@@ -732,7 +732,7 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			r1Abs := exprtools.Abs(r1, width64)
 			mul := expr.NewBinary(expr.Mul, r1Abs, r2, width128)
@@ -754,7 +754,7 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			val := exprtools.SignedDiv(r1, r2, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -765,7 +765,7 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := reg2Op(expr.Div, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -775,7 +775,7 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
 			val := exprtools.SignedMod(r1, r2, width64)
 			return []expr.Effect{regStore(val, i, width64)}
@@ -786,7 +786,7 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := reg2Op(expr.Mod, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -799,7 +799,7 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := sext32To64(reg2Op(expr.Mul, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -809,7 +809,7 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			val := sext32To64(exprtools.SignedDiv(r1, r2, width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -820,7 +820,7 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := sext32To64(reg2Op(expr.Div, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -830,7 +830,7 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
 			val := sext32To64(exprtools.SignedMod(r1, r2, width32))
 			return []expr.Effect{regStore(val, i, width64)}
@@ -841,14 +841,14 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := sext32To64(reg2Op(expr.Mod, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	},
 }
 
-var atomic64 = []*instructionOpcode{
+var atomic64 = []*instructionType{
 	{
 		name: "lr.d",
 		// LR.D is special as rs2 is always r0 - otherwise the
@@ -862,7 +862,7 @@ var atomic64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    8,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := memLoad(regLoad(rs1, i, width64), width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
@@ -873,7 +873,7 @@ var atomic64 = []*instructionOpcode{
 		hasOutputReg: true,
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regLoad(rs2, i, width64)
 			addr := regLoad(rs1, i, width64)
 			// TODO: Find a way how to emulate the race check.
@@ -890,7 +890,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    8,
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			addr := regLoad(rs1, i, width64)
 			return []expr.Effect{
 				regStore(memLoad(addr, width64), i, width64),
@@ -905,7 +905,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    8,
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOp(atomicBinaryOp(expr.Add), i, width64)
 		},
 	}, {
@@ -916,7 +916,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    8,
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOp(atomicBinaryOp(expr.Xor), i, width64)
 		},
 	}, {
@@ -927,7 +927,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    8,
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOp(atomicBinaryOp(expr.And), i, width64)
 		},
 	}, {
@@ -938,7 +938,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    8,
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOp(atomicBinaryOp(expr.Or), i, width64)
 		},
 	}, {
@@ -949,7 +949,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    8,
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOp(atomicMinMax(expr.Lts, false), i, width64)
 		},
 	}, {
@@ -960,7 +960,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    8,
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOp(atomicMinMax(expr.Lts, true), i, width64)
 		},
 	}, {
@@ -971,7 +971,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    8,
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOp(atomicMinMax(expr.Ltu, false), i, width64)
 		},
 	}, {
@@ -982,7 +982,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    8,
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOp(atomicMinMax(expr.Ltu, true), i, width64)
 		},
 	},
@@ -1001,7 +1001,7 @@ var atomic64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    4,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := memLoad(regLoad(rs1, i, width64), width32)
 			return []expr.Effect{regStore(sext32To64(val), i, width64)}
 		},
@@ -1012,7 +1012,7 @@ var atomic64 = []*instructionOpcode{
 		hasOutputReg: true,
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			val := regLoad(rs2, i, width32)
 			addr := regLoad(rs1, i, width64)
 			// TODO: Find a way how to emulate the race check.
@@ -1029,7 +1029,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    4,
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			addr := regLoad(rs1, i, width64)
 			return []expr.Effect{
 				regStore(sext32To64(memLoad(addr, width32)), i, width64),
@@ -1044,7 +1044,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    4,
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOpWidth(atomicBinaryOp(expr.Add), i, width64, width32)
 		},
 	}, {
@@ -1055,7 +1055,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    4,
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOpWidth(atomicBinaryOp(expr.Xor), i, width64, width32)
 		},
 	}, {
@@ -1066,7 +1066,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    4,
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOpWidth(atomicBinaryOp(expr.And), i, width64, width32)
 		},
 	}, {
@@ -1077,7 +1077,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    4,
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			return atomicOpWidth(atomicBinaryOp(expr.Or), i, width64, width32)
 		},
 	}, {
@@ -1088,7 +1088,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    4,
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			f := atomicMinMax(expr.Lts, false)
 			return atomicOpWidth(f, i, width64, width32)
 		},
@@ -1100,7 +1100,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    4,
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			f := atomicMinMax(expr.Lts, true)
 			return atomicOpWidth(f, i, width64, width32)
 		},
@@ -1112,7 +1112,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    4,
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			f := atomicMinMax(expr.Ltu, false)
 			return atomicOpWidth(f, i, width64, width32)
 		},
@@ -1124,7 +1124,7 @@ var atomic64 = []*instructionOpcode{
 		loadBytes:    4,
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
-		effects: func(i Instruction) []expr.Effect {
+		effects: func(i instruction) []expr.Effect {
 			f := atomicMinMax(expr.Ltu, true)
 			return atomicOpWidth(f, i, width64, width32)
 		},

@@ -21,13 +21,13 @@ func newHashableOpcode(o opcode.Opcode) hashableOpcode {
 	}
 }
 
-func assertValidOpcode(t testing.TB, xlenBytes uint8, instrs []*instructionOpcode) {
+func assertValidOpcode(t testing.TB, xlenBytes uint8, instrs []*instructionType) {
 	for _, ins := range instrs {
 		require.NoError(t, ins.validate(xlenBytes), ins.Name())
 	}
 }
 
-func assertUniqueOpcode(t testing.TB, instrs []*instructionOpcode) {
+func assertUniqueOpcode(t testing.TB, instrs []*instructionType) {
 	opcodeSet := make(map[hashableOpcode]struct{}, len(instrs))
 	for i, ins := range instrs {
 		o := ins.Opcode()
@@ -40,8 +40,8 @@ func assertUniqueOpcode(t testing.TB, instrs []*instructionOpcode) {
 	}
 }
 
-func assertUniqueNames(t testing.TB, instrs []*instructionOpcode) {
-	m := make(map[string]*instructionOpcode, len(instrs))
+func assertUniqueNames(t testing.TB, instrs []*instructionType) {
+	m := make(map[string]*instructionType, len(instrs))
 	for _, ins := range instrs {
 		_, ok := m[ins.name]
 		require.False(t, ok)
@@ -53,7 +53,7 @@ func TestInstructions(t *testing.T) {
 	for arch, exts := range instructions {
 		exts := exts
 		t.Run(fmt.Sprintf("arch_%v", arch), func(t *testing.T) {
-			allInstrs := make([]*instructionOpcode, 0)
+			allInstrs := make([]*instructionType, 0)
 			for _, instrs := range exts {
 				allInstrs = append(allInstrs, instrs...)
 			}
@@ -76,8 +76,8 @@ func TestInstructions(t *testing.T) {
 	}
 }
 
-func opcodeMap(t testing.TB, opcs []*instructionOpcode) map[string]*instructionOpcode {
-	m := make(map[string]*instructionOpcode)
+func opcodeMap(t testing.TB, opcs []*instructionType) map[string]*instructionType {
+	m := make(map[string]*instructionType)
 	for _, o := range opcs {
 		_, ok := m[o.name]
 		require.False(t, ok)
@@ -90,8 +90,8 @@ func opcodeMap(t testing.TB, opcs []*instructionOpcode) map[string]*instructionO
 func TestRV32ToRV64(t *testing.T) {
 	type instrSet struct {
 		name string
-		rv32 []*instructionOpcode
-		rv64 []*instructionOpcode
+		rv32 []*instructionType
+		rv64 []*instructionType
 	}
 
 	lists := []instrSet{

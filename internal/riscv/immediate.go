@@ -8,7 +8,7 @@ import "fmt"
 // Allowed values of immType are then 0-5 inclusive, where zero value represents
 // an opcode layout without an immediate value. The fact that zero value is used
 // to express such layout is convenient as it allows us not to specify immediate
-// layour for instruction opcodes without immediate value and laverage compiler
+// layout for instruction opcodes without immediate value and leverage compiler
 // zero value initialization instead.
 type immType uint8
 
@@ -85,14 +85,14 @@ const (
 	immTypeJ
 )
 
-// parseBitRange parses bits in range [begin,end) in value into lowest bytes if
-// a return value.
+// parseBitRange parses bits in range [begin, end) in value into lowest bytes of
+// the return value.
 func parseBitRange(value uint32, begin uint8, end uint8) uint32 {
 	endMask := (uint32(1) << end) - 1
 	return (value & endMask) >> begin
 }
 
-// signExtend perform integer sign extentions on unsigned where value of bit
+// signExtend perform integer sign extensions on unsigned where value of bit
 // with index signBitIdx is copied to all higher bits.
 //
 // As sign extension of 32bit value doesn't make sense for values which are

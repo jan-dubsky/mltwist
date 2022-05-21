@@ -198,7 +198,7 @@ func addrAddImm(a model.Addr, imm int32) model.Addr {
 	}
 }
 
-func immConst(t immType, i Instruction) expr.Const {
+func immConst(t immType, i instruction) expr.Const {
 	imm, ok := t.parseValue(i.value)
 	if !ok {
 		panic(fmt.Sprintf("immediate encoding %d has no value", t))
@@ -208,14 +208,14 @@ func immConst(t immType, i Instruction) expr.Const {
 	return expr.ConstFromInt(imm)
 }
 
-func immShift(shiftBits uint8, i Instruction) expr.Const {
+func immShift(shiftBits uint8, i instruction) expr.Const {
 	assertshiftBits(shiftBits)
 	mask := int32(1) << int32(shiftBits)
 	imm, _ := immTypeI.parseValue(i.value)
 	return expr.ConstFromInt(imm & mask)
 }
 
-func regLoad(r reg, i Instruction, w expr.Width) expr.Expr {
+func regLoad(r reg, i instruction, w expr.Width) expr.Expr {
 	num := r.regNum(i.value)
 	if num == 0 {
 		return expr.Zero
@@ -223,28 +223,28 @@ func regLoad(r reg, i Instruction, w expr.Width) expr.Expr {
 	return expr.NewRegLoad(expr.Key(num.String()), w)
 }
 
-func regImmOp(op expr.BinaryOp, t immType, i Instruction, w expr.Width) expr.Expr {
+func regImmOp(op expr.BinaryOp, t immType, i instruction, w expr.Width) expr.Expr {
 	return expr.NewBinary(op, regLoad(rs1, i, w), immConst(t, i), w)
 }
 
-func addrImmConst(t immType, i Instruction, w expr.Width) expr.Const {
+func addrImmConst(t immType, i instruction, w expr.Width) expr.Const {
 	imm, ok := t.parseValue(i.value)
 	if !ok {
 		panic(fmt.Sprintf("immediate encoding %d has no value", t))
 	}
-	return expr.NewConstUint(addrAddImm(i.address, imm), w)
+	return expr.NewConstUint(addrAddImm(i.addr, imm), w)
 }
 
-func reg2Op(op expr.BinaryOp, i Instruction, w expr.Width) expr.Expr {
+func reg2Op(op expr.BinaryOp, i instruction, w expr.Width) expr.Expr {
 	return expr.NewBinary(op, regLoad(rs1, i, w), regLoad(rs2, i, w), w)
 }
 
-func maskedRegOp(op expr.BinaryOp, i Instruction, bits uint8, w expr.Width) expr.Expr {
+func maskedRegOp(op expr.BinaryOp, i instruction, bits uint8, w expr.Width) expr.Expr {
 	mask := exprtools.MaskBits(regLoad(rs2, i, w), exprtools.BitCnt(bits), w)
 	return expr.NewBinary(op, regLoad(rs1, i, w), mask, w)
 }
 
-func regImmShift(op expr.BinaryOp, i Instruction, bits uint8, w expr.Width) expr.Expr {
+func regImmShift(op expr.BinaryOp, i instruction, bits uint8, w expr.Width) expr.Expr {
 	return expr.NewBinary(op, regLoad(rs1, i, w), immShift(bits, i), w)
 }
 
@@ -262,7 +262,7 @@ func memStore(e expr.Expr, addr expr.Expr, w expr.Width) expr.Effect {
 	return expr.NewMemStore(e, MemoryKey, addr, w)
 }
 
-func regStore(e expr.Expr, i Instruction, w expr.Width) expr.Effect {
+func regStore(e expr.Expr, i instruction, w expr.Width) expr.Effect {
 	num := rd.regNum(i.value)
 	if num == 0 {
 		return nil
@@ -273,11 +273,11 @@ func regStore(e expr.Expr, i Instruction, w expr.Width) expr.Effect {
 func branchCmp(
 	cond expr.Condition,
 	branchIfTrue bool,
-	i Instruction,
+	i instruction,
 	w expr.Width,
 ) expr.Effect {
 	jumpTarget := addrImmConst(immTypeB, i, w)
-	nextInstr := expr.NewConstUint(i.address+instructionLen, w)
+	nextInstr := expr.NewConstUint(i.addr+instructionLen, w)
 
 	condTrue, condFalse := jumpTarget, nextInstr
 	if !branchIfTrue {
@@ -315,7 +315,7 @@ func atomicMinMax(c expr.Condition, negate bool) binaryExprFunc {
 	}
 }
 
-func atomicOp(f binaryExprFunc, i Instruction, w expr.Width) []expr.Effect {
+func atomicOp(f binaryExprFunc, i instruction, w expr.Width) []expr.Effect {
 	addr := regLoad(rs1, i, w)
 	ld := memLoad(addr, w)
 
@@ -326,7 +326,7 @@ func atomicOp(f binaryExprFunc, i Instruction, w expr.Width) []expr.Effect {
 	}
 }
 
-func atomicOpWidth(f binaryExprFunc, i Instruction, addrW, opW expr.Width) []expr.Effect {
+func atomicOpWidth(f binaryExprFunc, i instruction, addrW, opW expr.Width) []expr.Effect {
 	if opW >= width64 {
 		panic(fmt.Sprintf("bug: expression too wide: %d", opW))
 	}
@@ -341,17 +341,17 @@ func atomicOpWidth(f binaryExprFunc, i Instruction, addrW, opW expr.Width) []exp
 	}
 }
 
-func csrKey(i Instruction) expr.Key {
+func csrKey(i instruction) expr.Key {
 	csrNum, _ := immTypeI.parseValue(i.value)
 	return expr.Key(csr(csrNum).String())
 }
 
-func csrImm(i Instruction) expr.Const {
+func csrImm(i instruction) expr.Const {
 	val := uint8((i.value >> 15) & 0x1f)
 	return expr.ConstFromUint(val)
 }
 
-var instructions = map[Variant]map[Extension][]*instructionOpcode{
+var instructions = map[Variant]map[Extension][]*instructionType{
 	Variant32: {
 		extI: integer32,
 		ExtM: mul32,
