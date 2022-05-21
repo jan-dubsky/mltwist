@@ -71,5 +71,5 @@ func TestControlDeps(t *testing.T) {
 		},
 	}
 
-	runDepsTest(t, tests, processControlDeps)
+	runDepsTest(t, tests, findControlDeps)
 }

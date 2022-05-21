@@ -29,11 +29,11 @@ func newBlock(idx int, seq []*instruction) *block {
 		ins.setIndex(i)
 	}
 
-	processTrueDeps(seq)
-	processAntiDeps(seq)
-	processOutputDeps(seq)
-	processControlDeps(seq)
-	processSpecialDeps(seq)
+	findTrueDeps(seq)
+	findAntiDeps(seq)
+	findOutputDeps(seq)
+	findControlDeps(seq)
+	findSpecialDeps(seq)
 
 	return &block{
 		begin: seq[0].Begin(),

@@ -50,5 +50,5 @@ func TestSpecialDeps(t *testing.T) {
 		},
 	}
 
-	runDepsTest(t, tests, processSpecialDeps)
+	runDepsTest(t, tests, findSpecialDeps)
 }

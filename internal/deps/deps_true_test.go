@@ -219,7 +219,7 @@ func TestTrueDeps_Register(t *testing.T) {
 		deps: nil,
 	}}
 
-	runDepsTest(t, tests, processTrueDeps)
+	runDepsTest(t, tests, findTrueDeps)
 }
 
 func TestTrueDeps_Memory(t *testing.T) {
@@ -276,5 +276,5 @@ func TestTrueDeps_Memory(t *testing.T) {
 		},
 	}}
 
-	runDepsTest(t, tests, processTrueDeps)
+	runDepsTest(t, tests, findTrueDeps)
 }

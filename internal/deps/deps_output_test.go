@@ -49,7 +49,7 @@ func TestOutputDeps_Register(t *testing.T) {
 		deps: nil,
 	}}
 
-	runDepsTest(t, tests, processOutputDeps)
+	runDepsTest(t, tests, findOutputDeps)
 }
 
 func TestOutputDeps_Memory(t *testing.T) {
@@ -105,5 +105,5 @@ func TestOutputDeps_Memory(t *testing.T) {
 		},
 	}}
 
-	runDepsTest(t, tests, processOutputDeps)
+	runDepsTest(t, tests, findOutputDeps)
 }

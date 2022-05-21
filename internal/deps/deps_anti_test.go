@@ -20,7 +20,7 @@ func TestAntiDeps_Register(t *testing.T) {
 	}, {
 		name: "add_sequential",
 		ins: []*instruction{
-			testInsReg(1, 1), // Cannot be antidependent on itself.
+			testInsReg(1, 1), // Cannot be anti dependent on itself.
 			testInsReg(2),
 			testInsReg(3, 1, 2),
 			testInsReg(1, 2),
@@ -44,7 +44,7 @@ func TestAntiDeps_Register(t *testing.T) {
 		deps: nil,
 	}}
 
-	runDepsTest(t, tests, processAntiDeps)
+	runDepsTest(t, tests, findAntiDeps)
 }
 
 func TestAntiDeps_Memory(t *testing.T) {
@@ -99,5 +99,5 @@ func TestAntiDeps_Memory(t *testing.T) {
 		},
 	}}
 
-	runDepsTest(t, tests, processAntiDeps)
+	runDepsTest(t, tests, findAntiDeps)
 }
