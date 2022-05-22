@@ -57,7 +57,7 @@ type Parser struct {
 // times is undefined as well.
 func NewParser(v Variant, exts ...Extension) Parser {
 	instrs := instructionSet(v, exts)
-	decoder, err := opcode.NewMatcher(instrs...)
+	decoder, err := opcode.NewMatcher(instrs)
 
 	// This means that instruction opcodes defined in this package are
 	// either invalid or they collide. This is non-recoverable as the

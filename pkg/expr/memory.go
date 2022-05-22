@@ -19,7 +19,7 @@ type MemLoad struct {
 // NewMemLoad returns a new memory load reading w bytes from address addr in
 // memory address space identified by key.
 func NewMemLoad(key Key, addr Expr, w Width) MemLoad {
-	key.assertValid()
+	key.assertValid(keyScopeMem)
 
 	return MemLoad{
 		key:  key,
@@ -53,7 +53,7 @@ type MemStore struct {
 // NewMemSotre returns new MemStore storing value to address addr in memory
 // addres space identified by key. The width of write is w.
 func NewMemStore(value Expr, key Key, addr Expr, w Width) MemStore {
-	key.assertValid()
+	key.assertValid(keyScopeMem)
 
 	return MemStore{
 		value: value,

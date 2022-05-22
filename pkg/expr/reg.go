@@ -14,7 +14,7 @@ type RegLoad struct {
 // NewRegLoad creates a new register load expression returning expression of
 // width w from a register identified by key.
 func NewRegLoad(key Key, w Width) RegLoad {
-	key.assertValid()
+	key.assertValid(keyScopeReg)
 
 	return RegLoad{
 		key: key,
@@ -47,7 +47,7 @@ type RegStore struct {
 // NewRegStore creates a new register store expression storing value of value
 // with width w to a register identified by key.
 func NewRegStore(value Expr, key Key, w Width) RegStore {
-	key.assertValid()
+	key.assertValid(keyScopeReg)
 
 	return RegStore{
 		value: value,

@@ -37,7 +37,7 @@ var testOpcs = []*opcodeValue{
 func TestMatcher_New_Successful(t *testing.T) {
 	r := require.New(t)
 
-	dec, err := NewMatcher(testOpcs...)
+	dec, err := NewMatcher(testOpcs)
 	r.NoError(err)
 	r.Len(dec.groups, 4)
 
@@ -92,7 +92,7 @@ func TestMatcher_New_Failed(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			dec, err := NewMatcher(tt.opcs...)
+			dec, err := NewMatcher(tt.opcs)
 			r.Error(err)
 			r.Nil(dec)
 		})
@@ -100,7 +100,7 @@ func TestMatcher_New_Failed(t *testing.T) {
 }
 
 func TestMatcher_Match(t *testing.T) {
-	dec, err := NewMatcher(testOpcs...)
+	dec, err := NewMatcher(testOpcs)
 	require.NoError(t, err)
 
 	tests := []struct {

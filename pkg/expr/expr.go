@@ -13,7 +13,7 @@
 // by Effect interface. Expressions describe a way how to obtain values. Those
 // are register reads, memory reads and constants. On top of that, we provide as
 // well conditional expressions and binary operations which allow combining
-// expressionsinto more complicated calculations. Effects on the other hand
+// expressions into more complicated calculations. Effects on the other hand
 // describe side-effects of instructions. Those are either memory or register
 // writes.
 //
@@ -57,7 +57,7 @@
 // have Effects which describe external state change. An instruction can be then
 // represented as a set of effects where every effect comprises of a one or
 // multiple trees of expressions. This way, description of a single instruction
-// is a functional syntex tree, but instructions are not dependent in between
+// is a functional syntax tree, but instructions are not dependent in between
 // one another. Moreover this model as well simplifies implementation of
 // instruction parsers. It's also worth mentioning that this model is very close
 // to the way how people reason and write algorithms - people write expressions
@@ -73,8 +73,8 @@
 // Selecting single width of register for a given CPU is also not sufficient as
 // even in n-bit architectures, there are typically instructions operating less
 // than n bytes. Consequently the only design which seems to be generic enough
-// is the one where every operationpackage has a width in bytes and all
-// operations truncate of extends values based on their widths.
+// is the one where every operation has a width in bytes and all operations
+// truncate of extends values based on their widths.
 //
 // The width extension logic is following: If width of an input expression
 // matches width of an argument, no conversion applies. If width of an operand
@@ -105,7 +105,7 @@
 // space. Address spaces are again identified by string keys and address spaces
 // with different keys are fully independent on one another.
 //
-// It's worth mentining that we might represent register accesses as memory
+// It's worth mentioning that we might represent register accesses as memory
 // reads and writes. By using maximal width of a register as stride in between
 // individual register records, we could represent register file in a special
 // address space. This approach is similar to encoding RAM computer model in a
@@ -116,7 +116,7 @@
 // separate register operations. The reason we provide register operations is
 // just to simplify both the parsing and the code analysis.
 //
-// Some architectures have registers addresses by other register. A nice examply
+// Some architectures have registers addresses by other register. A nice example
 // of such registers are MSRs in x86 architecture. There address of MSR register
 // is taken from another register. As register operations do not allow
 // addressing by another expression, emulation of MSG and similar registers,

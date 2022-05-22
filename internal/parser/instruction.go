@@ -34,6 +34,11 @@ func newInstruction(ins model.Instruction, addr model.Addr, bytes []byte) Instru
 	}
 }
 
+// Begin returns the address where i starts.
 func (i Instruction) Begin() model.Addr { return i.Addr }
-func (i Instruction) Len() model.Addr   { return model.Addr(len(i.Bytes)) }
-func (i Instruction) End() model.Addr   { return i.Addr + i.Len() }
+
+// Len returns length of an instruction in bytes.
+func (i Instruction) Len() model.Addr { return model.Addr(len(i.Bytes)) }
+
+// End returns exclusive ending address of i.
+func (i Instruction) End() model.Addr { return i.Addr + i.Len() }

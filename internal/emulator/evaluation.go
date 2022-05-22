@@ -5,12 +5,16 @@ import (
 	"mltwist/pkg/model"
 )
 
-// RegSet if a set of registers and their respective values.
+// RegSet if a set of registers and their respective values loaded or stored.
 type RegSet map[expr.Key]expr.Const
 
+// MemAccess describes a single memory access the simulation performed.
 type MemAccess struct {
-	Key   expr.Key
-	Addr  model.Addr
+	// Key is a key of memory address space accessed.
+	Key expr.Key
+	// Addr is the address in the memory accessed.
+	Addr model.Addr
+	// Value is the value loader or stored into the memory.
 	Value expr.Const
 }
 
@@ -22,35 +26,43 @@ func newMemAccess(key expr.Key, addr model.Addr, c expr.Const) MemAccess {
 	}
 }
 
+// Width returns width of the memory access.
 func (a MemAccess) Width() expr.Width { return a.Value.Width() }
 
-type Evaluation struct {
-	InputRegs  RegSet
-	OutputRegs RegSet
+// Step describes all loads and stores a single emulated instruction performed.
+type Step struct {
+	// RegLoads contains a set of register keys loaded and their respective
+	// values.
+	RegLoads RegSet
+	// RegStores contains a set of register keys stored and their respective
+	// values.
+	RegStores RegSet
 
-	InMem  []MemAccess
-	OutMem []MemAccess
+	// MemLoads contains a list of memory loads.
+	MemLoads []MemAccess
+	// MemStores contains a list of memory stores.
+	MemStores []MemAccess
 }
 
-func newEvaluation() *Evaluation {
-	return &Evaluation{
-		InputRegs:  make(RegSet, 16),
-		OutputRegs: make(RegSet, 4),
+func newEvaluation() *Step {
+	return &Step{
+		RegLoads:  make(RegSet, 16),
+		RegStores: make(RegSet, 4),
 	}
 }
 
-func (e *Evaluation) inputReg(key expr.Key, c expr.Const) { e.InputRegs[key] = c }
-func (e *Evaluation) memRead(key expr.Key, addr model.Addr, c expr.Const) {
-	e.InMem = append(e.InMem, newMemAccess(key, addr, c))
+func (e *Step) inputReg(key expr.Key, c expr.Const) { e.RegLoads[key] = c }
+func (e *Step) memRead(key expr.Key, addr model.Addr, c expr.Const) {
+	e.MemLoads = append(e.MemLoads, newMemAccess(key, addr, c))
 }
 
-func (e *Evaluation) recordOutput(effect expr.Effect) {
+func (e *Step) recordOutput(effect expr.Effect) {
 	switch ef := effect.(type) {
 	case expr.MemStore:
 		addr, _ := expr.ConstUint[model.Addr](ef.Addr().(expr.Const))
 		val := ef.Value().(expr.Const).WithWidth(ef.Width())
-		e.OutMem = append(e.OutMem, newMemAccess(ef.Key(), addr, val))
+		e.MemStores = append(e.MemStores, newMemAccess(ef.Key(), addr, val))
 	case expr.RegStore:
-		e.OutputRegs[ef.Key()] = ef.Value().(expr.Const)
+		e.RegStores[ef.Key()] = ef.Value().(expr.Const)
 	}
 }

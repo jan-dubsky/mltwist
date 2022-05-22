@@ -65,17 +65,17 @@ func (e *Emulator) instruction() (deps.Instruction, error) {
 }
 
 // Step performs a single instruction step of an emulation.
-func (e *Emulator) Step() (Evaluation, error) {
+func (e *Emulator) Step() (Step, error) {
 	ins, err := e.instruction()
 	if err != nil {
-		return Evaluation{}, err
+		return Step{}, err
 	}
 
 	efs := ins.Effects()
 
-	eval := Evaluation{
-		InputRegs:  make(RegSet, 16),
-		OutputRegs: make(RegSet, len(efs)),
+	eval := Step{
+		RegLoads:  make(RegSet, 16),
+		RegStores: make(RegSet, len(efs)),
 	}
 
 	efs = exprtransform.EffectsApply(efs, func(ex expr.Expr) expr.Expr {
@@ -100,7 +100,7 @@ func (e *Emulator) Step() (Evaluation, error) {
 	return eval, nil
 }
 
-func (e *Emulator) eval(ex expr.Expr, eval *Evaluation) expr.Const {
+func (e *Emulator) eval(ex expr.Expr, eval *Step) expr.Const {
 	ex = e.evalRegsFully(ex, eval)
 	ex = e.evalMemoryFully(ex, eval)
 
@@ -121,7 +121,7 @@ func (e *Emulator) regValue(key expr.Key, w expr.Width) expr.Const {
 	return val
 }
 
-func (e *Emulator) evalRegsFully(ex expr.Expr, eval *Evaluation) expr.Expr {
+func (e *Emulator) evalRegsFully(ex expr.Expr, eval *Step) expr.Expr {
 	ex = exprtransform.ReplaceAll(ex, func(curr expr.RegLoad) (expr.Expr, bool) {
 		key := curr.Key()
 		val := e.regValue(key, curr.Width())
@@ -165,7 +165,7 @@ func (e *Emulator) memValue(key expr.Key, addr model.Addr, w expr.Width) expr.Co
 	return val.(expr.Const)
 }
 
-func (e *Emulator) evalMemoryFully(ex expr.Expr, eval *Evaluation) expr.Expr {
+func (e *Emulator) evalMemoryFully(ex expr.Expr, eval *Step) expr.Expr {
 	ex = exprtransform.ReplaceAll(ex, func(curr expr.MemLoad) (expr.Expr, bool) {
 		key, w := curr.Key(), curr.Width()
 

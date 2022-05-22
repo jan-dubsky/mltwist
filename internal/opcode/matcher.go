@@ -32,11 +32,16 @@ func duplicateOpcodeErr[T Opcoder](op1 opcode[T], op2 opcode[T]) error {
 		op2.opcoder.Name(), op2.opcode.String())
 }
 
+// Matcher is an object identifying instruction in the code.
 type Matcher[T Opcoder] struct {
 	groups []maskGroup[T]
 }
 
-func NewMatcher[T Opcoder](opcs ...T) (*Matcher[T], error) {
+// NewMatcher creates new Matcher configured to recognize instruction opcodes in
+// opcs.
+//
+// The opcs array is left untouched and the caller is allowed to further use it.
+func NewMatcher[T Opcoder](opcs []T) (*Matcher[T], error) {
 	for i, opc := range opcs {
 		err := opc.Opcode().Validate()
 		if err != nil {
@@ -137,10 +142,13 @@ func checkConflicts[T Opcoder](groups []maskGroup[T]) error {
 	return nil
 }
 
-// Match matches a sequence of bytes to Opcode returned by OpcodeGetters.
-func (d *Matcher[T]) Match(bytes []byte) (T, bool) {
+// Match matches a sequence of bytes to an instruction opcode.
+//
+// It's allowed to pass bs of arbitrary length and those opcodes which can fit
+// bs will be matched.
+func (d *Matcher[T]) Match(bs []byte) (T, bool) {
 	for _, g := range d.groups {
-		ins, ok := g.matchInstruction(bytes)
+		ins, ok := g.matchInstruction(bs)
 		if ok {
 			return ins.opcoder, true
 		}
