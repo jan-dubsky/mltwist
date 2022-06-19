@@ -23,8 +23,6 @@ func binaryEvalFunc(op expr.BinaryOp) binaryFunc {
 		return expreval.Mul
 	case expr.Div:
 		return expreval.Div
-	case expr.Mod:
-		return expreval.Mod
 	case expr.And:
 		return expreval.And
 	case expr.Or:

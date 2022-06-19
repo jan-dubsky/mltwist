@@ -23,6 +23,21 @@ func Ones(w expr.Width) expr.Expr {
 	return expr.NewBinary(expr.Sub, expr.Zero, expr.One, w)
 }
 
+// Mod returns width bits unsigned division reminder of the first argument
+// divided by the second argument. The produced result is of width w.
+//
+// Please note that signed module can be implemented using unsigned module
+// followed by sign resolution logic.
+//
+// Module by zero doesn't cause any error, but produces result of width w with
+// value of the first argument.
+func Mod(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
+	div := expr.NewBinary(expr.Div, e1, e2, w)
+	// If e2 is zero, multiple is also zero -> mod will be e1 - 0 == e1.
+	multiple := expr.NewBinary(expr.Mul, div, e2, w)
+	return expr.NewBinary(expr.Sub, e1, multiple, w)
+}
+
 // negativeSignJoin extracts signs out of 2 signed integer expressions and
 // returns sign of their integer produce.
 //
@@ -64,8 +79,13 @@ func SignedMul(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
 	)
 }
 
-func signedOp(op expr.BinaryOp, e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
-	unsigned := expr.NewBinary(op, Abs(e1, e1.Width()), Abs(e2, e2.Width()), w)
+func signedOp(
+	e1 expr.Expr,
+	e2 expr.Expr,
+	w expr.Width,
+	f func(e1, e2 expr.Expr, w expr.Width) expr.Expr,
+) expr.Expr {
+	unsigned := f(Abs(e1, e1.Width()), Abs(e2, e2.Width()), w)
 	return BoolCond(
 		negativeSignJoin(e1, e2),
 		Negate(unsigned, w),
@@ -83,24 +103,28 @@ func signedOp(op expr.BinaryOp, e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.E
 // An overflow can happen of e1 is maximal negative number representable in w
 // and e2 is -1. In such a case the result is the same value as e1.
 func SignedDiv(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
+	signedDiv := signedOp(e1, e2, w, func(e1, e2 expr.Expr, w expr.Width) expr.Expr {
+		return expr.NewBinary(expr.Div, e1, e2, w)
+	})
+
+	// Special case division by zero.
 	return BoolCond(
 		e2,
-		signedOp(expr.Div, e1, e2, w),
+		signedDiv,
 		Ones(w),
 		w,
 	)
 }
 
-// SignedDiv implement signed module operation for 2 w wide values. The result
+// SignedMod implement signed modulo operation for 2 w-wide values. The result
 // is as well w wide.
-//
-// Modulo by zero will result in an expression of width w with the same value
+//// Modulo by zero will result in an expression of width w with the same value
 // as e1 (potentially cropped to w bytes).
 //
 // An overflow can happen of e1 is maximal negative number representable in w
 // and e2 is -1. In such a case the result is zero.
 func SignedMod(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
-	return signedOp(expr.Mod, e1, e2, w)
+	return signedOp(e1, e2, w, Mod)
 }
 
 // SignExtend implements sign extension of e, where bit at position signBit is

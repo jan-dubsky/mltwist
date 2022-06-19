@@ -123,6 +123,42 @@ func TestOnes(t *testing.T) {
 	}
 }
 
+func TestMod(t *testing.T) {
+	tests := []struct {
+		name string
+		e1   expr.Expr
+		e2   expr.Expr
+		w    expr.Width
+		exp  expr.Expr
+	}{{
+		name: "plain_modulo",
+		e1:   expr.ConstFromUint[uint16](46323),
+		e2:   expr.ConstFromUint[uint8](134),
+		w:    expr.Width16,
+		exp:  expr.NewConstUint[uint16](46323%134, expr.Width16),
+	}, {
+		name: "mod_by_zero",
+		e1:   expr.ConstFromUint[uint16](46323),
+		e2:   expr.Zero,
+		w:    expr.Width32,
+		exp:  expr.NewConstUint[uint16](46323, expr.Width32),
+	}, {
+		name: "mod_by_one",
+		e1:   expr.ConstFromInt[int32](-1),
+		e2:   expr.One,
+		w:    expr.Width32,
+		exp:  expr.NewConstUint[uint8](0, expr.Width32),
+	}}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			e := exprtools.Mod(tt.e1, tt.e2, tt.w)
+			require.Equal(t, tt.exp, exprtransform.ConstFold(e))
+		})
+	}
+}
+
 func TestSignedMul(t *testing.T) {
 	tests := []struct {
 		name string

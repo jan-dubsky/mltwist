@@ -227,14 +227,13 @@ func TestMul(t *testing.T) {
 	testBinaryOp(t, tests, expreval.Mul)
 }
 
-func TestDivMod(t *testing.T) {
+func TestDiv(t *testing.T) {
 	tests := []struct {
 		name string
 		v1   expreval.Value
 		v2   expreval.Value
 		w    expr.Width
 		div  expreval.Value
-		mod  expreval.Value
 	}{
 		{
 			name: "single_byte",
@@ -242,7 +241,6 @@ func TestDivMod(t *testing.T) {
 			v2:   expreval.NewValue([]byte{23}),
 			w:    expr.Width8,
 			div:  expreval.NewValue([]byte{183 / 23}),
-			mod:  expreval.NewValue([]byte{183 % 23}),
 		},
 		{
 			name: "two_bytes",
@@ -250,7 +248,6 @@ func TestDivMod(t *testing.T) {
 			v2:   valUint(3345, expr.Width16),
 			w:    expr.Width16,
 			div:  valUint(54678/3345, expr.Width16),
-			mod:  valUint(54678%3345, expr.Width16),
 		},
 		{
 			name: "greater_divisor",
@@ -258,7 +255,6 @@ func TestDivMod(t *testing.T) {
 			v2:   valUint(4454466, expr.Width32),
 			w:    expr.Width32,
 			div:  valUint(0, expr.Width32),
-			mod:  valUint(54, expr.Width32),
 		},
 		{
 			name: "cut_upper_bytes",
@@ -266,7 +262,6 @@ func TestDivMod(t *testing.T) {
 			v2:   valUint(56, expr.Width8),
 			w:    expr.Width16,
 			div:  valUint((99340&0xffff)/56, expr.Width16),
-			mod:  valUint((99340&0xffff)%56, expr.Width16),
 		},
 		{
 			name: "div_same_numbers",
@@ -274,7 +269,6 @@ func TestDivMod(t *testing.T) {
 			v2:   valUint(0x5b3c3d7a, expr.Width32),
 			w:    expr.Width32,
 			div:  expreval.NewValue([]byte{1, 0, 0, 0}),
-			mod:  expreval.NewValue([]byte{0, 0, 0, 0}),
 		},
 		{
 			name: "div_by_zero",
@@ -282,22 +276,14 @@ func TestDivMod(t *testing.T) {
 			v2:   expreval.NewValue([]byte{0}),
 			w:    expr.Width32,
 			div:  expreval.NewValue([]byte{0xff, 0xff, 0xff, 0xff}),
-			mod:  valUint(293445, expr.Width32),
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Run("div", func(t *testing.T) {
-				result := expreval.Div(tt.v1, tt.v2, tt.w)
-				require.Equal(t, tt.div, result)
-			})
-
-			t.Run("mod", func(t *testing.T) {
-				result := expreval.Mod(tt.v1, tt.v2, tt.w)
-				require.Equal(t, tt.mod, result)
-			})
+			result := expreval.Div(tt.v1, tt.v2, tt.w)
+			require.Equal(t, tt.div, result)
 		})
 	}
 }

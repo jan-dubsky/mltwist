@@ -658,7 +658,8 @@ var mul32 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2Op(expr.Mod, i, width32)
+			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
+			val := exprtools.Mod(r1, r2, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	},

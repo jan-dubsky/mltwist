@@ -787,7 +787,8 @@ var mul64 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2Op(expr.Mod, i, width64)
+			r1, r2 := regLoad(rs1, i, width64), regLoad(rs2, i, width64)
+			val := exprtools.Mod(r1, r2, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	},
@@ -842,7 +843,8 @@ var mul64 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		effects: func(i instruction) []expr.Effect {
-			val := sext32To64(reg2Op(expr.Mod, i, width32))
+			r1, r2 := regLoad(rs1, i, width32), regLoad(rs2, i, width32)
+			val := sext32To64(exprtools.Mod(r1, r2, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	},

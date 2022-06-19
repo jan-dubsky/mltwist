@@ -90,32 +90,6 @@ const (
 	// as then we'd need a model of operating system handling this exception
 	// and filling appropriate values in registry.
 	Div
-	// Mod returns width bits unsigned division reminder of the first
-	// argument divided by the second argument.
-	//
-	// Please note that signed module can be implemented using unsigned
-	// module followed by sign resolution logic.
-	//
-	// Module by zero doesn't cause any error, but produces result of width
-	// w with value of first argument.
-	//
-	// This design of division without zero division exception is inspired
-	// by RISC-V design, and the reasoning behind is also very similar to
-	// the reasoning in RISC-V manual: As we represent arithmetic operations
-	// in a functional way we'd have quite hard times to handle any sort of
-	// exceptional behaviour. By well-defining the behaviour in case of
-	// division by zero, we can significantly simplify the expression
-	// analysis logic.
-	//
-	// Another reason not to produce a division by zero exception is that
-	// the design chosen in in a way the more generic one. On CPU
-	// architectures where division by zero should cause an exception, this
-	// behaviour can be simply implemented by conditional trap execution. On
-	// the other hand we'd have quite hard time to represent behaviour of
-	// architectures like RISC-V, if we used the division by zero exception
-	// as then we'd need a model of operating system handling this exception
-	// and filling appropriate values in registry.
-	Mod
 
 	// And represent bit-wise and of arguments.
 	And

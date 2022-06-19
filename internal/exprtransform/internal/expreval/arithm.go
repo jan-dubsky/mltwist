@@ -183,20 +183,6 @@ func Div(val1 Value, val2 Value, w expr.Width) Value {
 	return parseBigInt(div).SetWidth(w)
 }
 
-// Mod calculates val1 (unsigned) modulo val2. The produced value is of width w.
-// If val2 is zero, this method returns val1 of width w.
-func Mod(val1 Value, val2 Value, w expr.Width) Value {
-	val2Int := val2.bigInt(w)
-
-	// Special-case division by zero.
-	if val2Int.Cmp(&big.Int{}) == 0 {
-		return val1.SetWidth(w)
-	}
-
-	mod := (&big.Int{}).Mod(val1.bigInt(w), val2Int)
-	return parseBigInt(mod).SetWidth(w)
-}
-
 func bitOp(
 	val1 Value,
 	val2 Value,

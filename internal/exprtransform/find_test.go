@@ -16,7 +16,7 @@ func TestFind(t *testing.T) {
 		expr.NewRegLoad("r2", expr.Width64),
 		expr.Width64,
 	)
-	binary2 := expr.NewBinary(expr.Mod,
+	binary2 := expr.NewBinary(expr.Div,
 		expr.NewRegLoad("r2", expr.Width16),
 		expr.NewRegLoad("r1", expr.Width64),
 		expr.Width32,
