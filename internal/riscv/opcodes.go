@@ -217,10 +217,17 @@ func regLoad(r reg, i instruction, w expr.Width) expr.Expr {
 }
 
 type binaryExprFunc func(e1, e2 expr.Expr, w expr.Width) expr.Expr
+type condExprFunc func(a1, a2 expr.Expr, t, f expr.Expr, w expr.Width) expr.Expr
 
 func binOpFunc(op expr.BinaryOp) binaryExprFunc {
 	return func(e1, e2 expr.Expr, w expr.Width) expr.Expr {
 		return expr.NewBinary(op, e1, e2, w)
+	}
+}
+
+func condFunc(c expr.Condition) condExprFunc {
+	return func(a1, a2, t, f expr.Expr, w expr.Width) expr.Expr {
+		return expr.NewCond(c, a1, a2, t, f, w)
 	}
 }
 
@@ -276,7 +283,7 @@ func addrImmConst(t immType, i instruction, w expr.Width) expr.Const {
 }
 
 func branchCmp(
-	cond expr.Condition,
+	f condExprFunc,
 	branchIfTrue bool,
 	i instruction,
 	w expr.Width,
@@ -289,8 +296,7 @@ func branchCmp(
 		condTrue, condFalse = nextInstr, jumpTarget
 	}
 
-	ip := expr.NewCond(
-		cond,
+	ip := f(
 		regLoad(rs1, i, w),
 		regLoad(rs2, i, w),
 		condTrue,

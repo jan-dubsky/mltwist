@@ -9,6 +9,70 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestEq(t *testing.T) {
+	tests := []struct {
+		name   string
+		arg1   expr.Expr
+		arg2   expr.Expr
+		w      expr.Width
+		isTrue bool
+	}{{
+		name:   "zero_to_zero",
+		arg1:   expr.Zero,
+		arg2:   expr.Zero,
+		w:      expr.Width16,
+		isTrue: true,
+	}, {
+		name:   "one_to_one",
+		arg1:   expr.One,
+		arg2:   expr.One,
+		w:      expr.Width16,
+		isTrue: true,
+	}, {
+		name:   "zero_to_one",
+		arg1:   expr.Zero,
+		arg2:   expr.One,
+		w:      expr.Width32,
+		isTrue: false,
+	}, {
+		name:   "one_to_zero",
+		arg1:   expr.One,
+		arg2:   expr.Zero,
+		w:      expr.Width32,
+		isTrue: false,
+	}, {
+		name:   "one_to_max",
+		arg1:   expr.One,
+		arg2:   exprtools.Ones(expr.Width16),
+		w:      expr.Width16,
+		isTrue: false,
+	}, {
+		name:   "max_to_max",
+		arg1:   exprtools.Ones(expr.Width32),
+		arg2:   exprtools.Ones(expr.Width32),
+		w:      expr.Width32,
+		isTrue: true,
+	}}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			te := expr.ConstFromUint[uint64](0x0123456789abcdef)
+			fe := expr.ConstFromUint[uint64](0x84848484bcbcbcbc)
+
+			e := exprtools.Eq(tt.arg1, tt.arg2, te, fe, tt.w)
+
+			exp := fe
+			if tt.isTrue {
+				exp = te
+			}
+			exp = exp.WithWidth(tt.w)
+
+			require.Equal(t, exp, exprtransform.ConstFold(e))
+		})
+	}
+}
+
 func TestLeu(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -29,7 +93,7 @@ func TestLeu(t *testing.T) {
 		w:      expr.Width16,
 		isTrue: true,
 	}, {
-		name: "one_to_zero",
+		name: "one_to_zero_wide",
 		arg1: expr.One,
 		arg2: expr.Zero,
 		w:    expr.Width64,

@@ -61,20 +61,20 @@ func TestSetWidth(t *testing.T) {
 		},
 		{
 			name: "cond_wider",
-			e:    expr.NewCond(expr.Eq, c1, c2, c3, c4, expr.Width16),
+			e:    expr.NewCond(expr.Ltu, c1, c2, c3, c4, expr.Width16),
 			w:    expr.Width32,
 			exp: exprtools.NewWidthGadget(
-				expr.NewCond(expr.Eq, c1, c2, c3, c4, expr.Width16),
+				expr.NewCond(expr.Ltu, c1, c2, c3, c4, expr.Width16),
 				expr.Width32,
 			),
 		},
 
 		{
 			name: "cond_narrower",
-			e:    expr.NewCond(expr.Eq, c1, c2, c3, c4, expr.Width16),
+			e:    expr.NewCond(expr.Ltu, c1, c2, c3, c4, expr.Width16),
 			w:    expr.Width8,
 			exp: exprtools.NewWidthGadget(
-				expr.NewCond(expr.Eq, c1, c2, c3, c4, expr.Width16),
+				expr.NewCond(expr.Ltu, c1, c2, c3, c4, expr.Width16),
 				expr.Width8,
 			),
 		},

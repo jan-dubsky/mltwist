@@ -39,8 +39,6 @@ func binaryEval(op expr.BinaryOp, c1 expr.Const, c2 expr.Const, w expr.Width) ex
 
 func condEvalFunc(c expr.Condition) condFunc {
 	switch c {
-	case expr.Eq:
-		return expreval.Eq
 	case expr.Ltu:
 		return expreval.Ltu
 	case expr.Lts:

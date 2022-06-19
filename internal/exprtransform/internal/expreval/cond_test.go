@@ -8,46 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEq(t *testing.T) {
-	tests := []struct {
-		name     string
-		v1       expreval.Value
-		v2       expreval.Value
-		w        expr.Width
-		expected bool
-	}{
-		{
-			name:     "equal",
-			v1:       expreval.NewValue([]byte{5, 7, 33, 249}),
-			v2:       expreval.NewValue([]byte{5, 7, 33, 249}),
-			w:        expr.Width32,
-			expected: true,
-		},
-		{
-			name:     "not_equal",
-			v1:       valUint(34433556, expr.Width32),
-			v2:       valUint(438483843, expr.Width32),
-			w:        expr.Width32,
-			expected: false,
-		},
-		{
-			name:     "cut_extend",
-			v1:       expreval.NewValue([]byte{45, 135, 0, 0, 34, 67, 87}),
-			v2:       expreval.NewValue([]byte{45, 135}),
-			w:        expr.Width32,
-			expected: true,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			res := expreval.Eq(tt.v1, tt.v2, tt.w)
-			require.Equal(t, tt.expected, res)
-		})
-	}
-}
-
 func TestLtu(t *testing.T) {
 	tests := []struct {
 		name string

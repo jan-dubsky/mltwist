@@ -16,7 +16,7 @@ func TestPossibilities(t *testing.T) {
 	}{{
 		name: "const_offset_branch",
 		e: expr.NewCond(
-			expr.Eq,
+			expr.Ltu,
 			expr.NewRegLoad("r1", expr.Width32),
 			expr.Zero,
 			expr.ConstFromUint[uint32](0x1000),
@@ -30,7 +30,7 @@ func TestPossibilities(t *testing.T) {
 	}, {
 		name: "const_offset_branch_with_width",
 		e: expr.NewCond(
-			expr.Eq,
+			expr.Ltu,
 			expr.NewRegLoad("r1", expr.Width8),
 			expr.Zero,
 			expr.ConstFromUint[uint64](0x1000),
@@ -45,7 +45,7 @@ func TestPossibilities(t *testing.T) {
 		name: "cond_followed_by_calculation",
 		e: expr.NewBinary(expr.Add,
 			expr.NewCond(
-				expr.Eq,
+				expr.Ltu,
 				expr.NewRegLoad("r1", expr.Width32),
 				expr.Zero,
 				expr.ConstFromUint[uint32](0x1000),
@@ -63,7 +63,7 @@ func TestPossibilities(t *testing.T) {
 		name: "cross_product",
 		e: expr.NewBinary(expr.Add,
 			expr.NewCond(
-				expr.Eq,
+				expr.Ltu,
 				expr.NewRegLoad("r1", expr.Width32),
 				expr.Zero,
 				expr.ConstFromUint[uint32](0x1000),
@@ -90,7 +90,7 @@ func TestPossibilities(t *testing.T) {
 		name: "mem_ref_cross",
 		e: expr.NewBinary(expr.Add,
 			expr.NewCond(
-				expr.Eq,
+				expr.Lts,
 				expr.NewRegLoad("r1", expr.Width32),
 				expr.Zero,
 				expr.ConstFromUint[uint32](0x1000),

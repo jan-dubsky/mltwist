@@ -6,10 +6,11 @@ import "mltwist/pkg/expr"
 // zero, value of zero is returned. The return value has always width 1.
 func Bool(e expr.Expr) expr.Expr {
 	return NewWidthGadget(
+		// e equal 0 if it's less than one as unsigned integers.
 		expr.NewCond(
-			expr.Eq,
+			expr.Ltu,
 			e,
-			expr.Zero,
+			expr.One,
 			expr.Zero,
 			expr.One,
 			e.Width(),
@@ -24,10 +25,11 @@ func Bool(e expr.Expr) expr.Expr {
 // expression with value one. Width of returned expression is always 1.
 func Not(e expr.Expr) expr.Expr {
 	return NewWidthGadget(
+		// e equal 0 if it's less than one as unsigned integers.
 		expr.NewCond(
-			expr.Eq,
+			expr.Ltu,
 			e,
-			expr.Zero,
+			expr.One,
 			expr.One,
 			expr.Zero,
 			e.Width(),
@@ -43,11 +45,11 @@ func BoolCond(boolExpr expr.Expr, trueExpr, falseExpr expr.Expr, w expr.Width) e
 	// In normal logic nonzero is true, but we use boolExpr == 0 condition
 	// so we have to swap true and false expression.
 	return expr.NewCond(
-		expr.Eq,
-		Bool(boolExpr),
+		expr.Ltu,
 		expr.Zero,
-		falseExpr,
+		boolExpr,
 		trueExpr,
+		falseExpr,
 		w,
 	)
 }

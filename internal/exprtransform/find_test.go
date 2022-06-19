@@ -38,7 +38,7 @@ func TestFind(t *testing.T) {
 		binary2,
 		expr.Width16,
 	)
-	cond2 := expr.NewCond(expr.Eq,
+	cond2 := expr.NewCond(expr.Ltu,
 		expr.Zero,
 		expr.NewRegLoad("r3", expr.Width16),
 		load1,

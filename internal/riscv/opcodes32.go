@@ -68,7 +68,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(expr.Eq, true, i, width32)}
+			return []expr.Effect{branchCmp(exprtools.Eq, true, i, width32)}
 		},
 	}, {
 		name:         "bne",
@@ -77,7 +77,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(expr.Eq, false, i, width32)}
+			return []expr.Effect{branchCmp(exprtools.Eq, false, i, width32)}
 		},
 	}, {
 		name:         "blt",
@@ -86,7 +86,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(expr.Lts, true, i, width32)}
+			return []expr.Effect{branchCmp(condFunc(expr.Lts), true, i, width32)}
 		},
 	}, {
 		name:         "bge",
@@ -95,7 +95,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(expr.Lts, false, i, width32)}
+			return []expr.Effect{branchCmp(condFunc(expr.Lts), false, i, width32)}
 		},
 	}, {
 		name:         "bltu",
@@ -104,7 +104,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(expr.Ltu, true, i, width32)}
+			return []expr.Effect{branchCmp(condFunc(expr.Ltu), true, i, width32)}
 		},
 	}, {
 		name:         "bgeu",
@@ -113,7 +113,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(expr.Ltu, false, i, width32)}
+			return []expr.Effect{branchCmp(condFunc(expr.Ltu), false, i, width32)}
 		},
 	}, {
 		name:         "lb",
@@ -607,10 +607,8 @@ var mul32 = []*instructionType{
 			mul := expr.NewBinary(expr.Mul, r1Abs, r2, width64)
 			shift := expr.ConstFromUint[uint8](32)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width64)
-			val := expr.NewCond(
-				expr.Eq,
-				r1,
-				r1Abs,
+			val := exprtools.BoolCond(
+				exprtools.IntNegative(r1, width32),
 				shifted,
 				exprtools.Negate(shifted, width32),
 				width32,
