@@ -1,6 +1,7 @@
 package exprtools_test
 
 import (
+	"math"
 	"mltwist/internal/exprtransform"
 	"mltwist/pkg/expr"
 	"mltwist/pkg/expr/exprtools"
@@ -52,6 +53,12 @@ func TestEq(t *testing.T) {
 		arg2:   exprtools.Ones(expr.Width32),
 		w:      expr.Width32,
 		isTrue: true,
+	}, {
+		name:   "max_to_max_minus_one",
+		arg1:   exprtools.Ones(expr.Width32),
+		arg2:   expr.ConstFromUint[uint32](math.MaxUint32 - 1),
+		w:      expr.Width32,
+		isTrue: false,
 	}}
 
 	for _, tt := range tests {

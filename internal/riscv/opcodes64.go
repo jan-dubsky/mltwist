@@ -104,7 +104,7 @@ var integer64 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(condFunc(expr.Ltu), true, i, width64)}
+			return []expr.Effect{branchCmp(lessFunc, true, i, width64)}
 		},
 	}, {
 		name:         "bgeu",
@@ -113,7 +113,7 @@ var integer64 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(condFunc(expr.Ltu), false, i, width64)}
+			return []expr.Effect{branchCmp(lessFunc, false, i, width64)}
 		},
 	}, {
 		name:         "lb",
@@ -277,8 +277,7 @@ var integer64 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			val := expr.NewCond(
-				expr.Ltu,
+			val := expr.NewLess(
 				regLoad(rs1, i, width64),
 				immConst(immTypeI, i),
 				expr.One,
@@ -383,8 +382,7 @@ var integer64 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := expr.NewCond(
-				expr.Ltu,
+			val := expr.NewLess(
 				regLoad(rs1, i, width64),
 				regLoad(rs2, i, width64),
 				expr.One,
@@ -966,7 +964,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicMinMax(condFunc(expr.Ltu), false), i, width64)
+			return atomicOp(atomicMinMax(lessFunc, false), i, width64)
 		},
 	}, {
 		name:         "amomaxu.d",
@@ -977,7 +975,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicMinMax(condFunc(expr.Ltu), true), i, width64)
+			return atomicOp(atomicMinMax(lessFunc, true), i, width64)
 		},
 	},
 
@@ -1107,7 +1105,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			f := atomicMinMax(condFunc(expr.Ltu), false)
+			f := atomicMinMax(lessFunc, false)
 			return atomicOpWidth(f, i, width64, width32)
 		},
 	}, {
@@ -1119,7 +1117,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			f := atomicMinMax(condFunc(expr.Ltu), true)
+			f := atomicMinMax(lessFunc, true)
 			return atomicOpWidth(f, i, width64, width32)
 		},
 	},

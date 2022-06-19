@@ -41,7 +41,7 @@ func replaceAll[T expr.Expr](
 		if changedArg1 || changedArg2 {
 			ex, changed = expr.NewBinary(e.Op(), arg1, arg2, e.Width()), true
 		}
-	case expr.Cond:
+	case expr.Less:
 		arg1, changedArg1 := replaceAll(e.Arg1(), f)
 		arg2, changedArg2 := replaceAll(e.Arg2(), f)
 		et, changedTrue := replaceAll(e.ExprTrue(), f)
@@ -49,7 +49,7 @@ func replaceAll[T expr.Expr](
 
 		changed = changedArg1 || changedArg2 || changedTrue || changedFalse
 		if changed {
-			ex = expr.NewCond(e.Cond(), arg1, arg2, et, ef, e.Width())
+			ex = expr.NewLess(arg1, arg2, et, ef, e.Width())
 		}
 
 	case expr.MemLoad:

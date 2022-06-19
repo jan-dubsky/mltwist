@@ -41,7 +41,7 @@ func TestControlDeps(t *testing.T) {
 				testInsReg(1),
 				testInsReg(2),
 				testInsReg(3, 2, 1),
-				testInsJumpTarget(expr.NewCond(expr.Ltu,
+				testInsJumpTarget(expr.NewLess(
 					expr.One,
 					expr.Zero,
 					expr.Zero,

@@ -25,14 +25,13 @@ func Equal(ex1 expr.Expr, ex2 expr.Expr) bool {
 		return e1.Op() == e2.Op() &&
 			Equal(e1.Arg1(), e2.Arg1()) &&
 			Equal(e1.Arg2(), e2.Arg2())
-	case expr.Cond:
-		e2, ok := ex2.(expr.Cond)
+	case expr.Less:
+		e2, ok := ex2.(expr.Less)
 		if !ok {
 			return false
 		}
 
-		return e1.Cond() == e2.Cond() &&
-			Equal(e1.Arg1(), e2.Arg1()) &&
+		return Equal(e1.Arg1(), e2.Arg1()) &&
 			Equal(e1.Arg2(), e2.Arg2()) &&
 			Equal(e1.ExprTrue(), e2.ExprTrue()) &&
 			Equal(e1.ExprFalse(), e2.ExprFalse())

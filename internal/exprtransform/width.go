@@ -36,7 +36,7 @@ func setWidth(ex expr.Expr, w expr.Width) (expr.Expr, bool) {
 	}
 
 	switch e := ex.(type) {
-	case expr.Binary, expr.Cond:
+	case expr.Binary, expr.Less:
 		// We ignore any smart optimization here as it's significantly
 		// simpler to now enter gadgets and drop them later in
 		// purgeWidthGadgets function.
@@ -117,7 +117,7 @@ func purgeWidthGadgets(ex expr.Expr) (expr.Expr, bool) {
 			return ex, false
 		}
 		return expr.NewBinary(e.Op(), e1, e2, e.Width()), true
-	case expr.Cond:
+	case expr.Less:
 		c1, changedArg1 := purgeWidthGadgets(e.Arg1())
 		c2, changedArg2 := purgeWidthGadgets(e.Arg2())
 		et, changedTrue := purgeWidthGadgets(e.ExprTrue())
@@ -132,7 +132,7 @@ func purgeWidthGadgets(ex expr.Expr) (expr.Expr, bool) {
 		if !(changed || prunedArg1 || prunedArg2 || prunedTrue || prunedFalse) {
 			return ex, false
 		}
-		return expr.NewCond(e.Cond(), c1, c2, et, ef, e.Width()), true
+		return expr.NewLess(c1, c2, et, ef, e.Width()), true
 	case expr.MemLoad:
 		// Address keeps its width independently on width of MemLoad.
 		addr, changedAddr := purgeWidthGadgetsKeepWidth(e.Addr())

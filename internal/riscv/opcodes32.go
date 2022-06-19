@@ -104,7 +104,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(condFunc(expr.Ltu), true, i, width32)}
+			return []expr.Effect{branchCmp(lessFunc, true, i, width32)}
 		},
 	}, {
 		name:         "bgeu",
@@ -113,7 +113,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(condFunc(expr.Ltu), false, i, width32)}
+			return []expr.Effect{branchCmp(lessFunc, false, i, width32)}
 		},
 	}, {
 		name:         "lb",
@@ -242,8 +242,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			val := expr.NewCond(
-				expr.Ltu,
+			val := expr.NewLess(
 				regLoad(rs1, i, width32),
 				immConst(immTypeI, i),
 				expr.One,
@@ -348,8 +347,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := expr.NewCond(
-				expr.Ltu,
+			val := expr.NewLess(
 				regLoad(rs1, i, width32),
 				regLoad(rs2, i, width32),
 				expr.One,
@@ -783,7 +781,7 @@ var atomic32 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicMinMax(condFunc(expr.Ltu), false), i, width32)
+			return atomicOp(atomicMinMax(lessFunc, false), i, width32)
 		},
 	}, {
 		name:         "amomaxu.w",
@@ -794,7 +792,7 @@ var atomic32 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicMinMax(condFunc(expr.Ltu), true), i, width32)
+			return atomicOp(atomicMinMax(lessFunc, true), i, width32)
 		},
 	},
 }

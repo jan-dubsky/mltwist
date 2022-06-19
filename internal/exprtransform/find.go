@@ -17,7 +17,7 @@ func findAll[T expr.Expr](ex expr.Expr, found []T) []T {
 	case expr.Binary:
 		found = findAll(e.Arg1(), found)
 		found = findAll(e.Arg2(), found)
-	case expr.Cond:
+	case expr.Less:
 		found = findAll(e.Arg1(), found)
 		found = findAll(e.Arg2(), found)
 		found = findAll(e.ExprTrue(), found)

@@ -96,33 +96,33 @@ func TestEqual(t *testing.T) {
 		eq: false,
 	}, {
 		name: "cond_eq",
-		e1:   expr.NewCond(expr.Ltu, c1, c2, c1, c2, expr.Width16),
-		e2:   expr.NewCond(expr.Ltu, c1, c2, c1, c2, expr.Width16),
+		e1:   expr.NewLess(c1, c2, c1, c2, expr.Width16),
+		e2:   expr.NewLess(c1, c2, c1, c2, expr.Width16),
 		eq:   true,
 	}, {
 		name: "cond_neq_width",
-		e1:   expr.NewCond(expr.Ltu, c1, c2, c1, c2, expr.Width16),
-		e2:   expr.NewCond(expr.Ltu, c1, c2, c1, c2, expr.Width32),
+		e1:   expr.NewLess(c1, c2, c1, c2, expr.Width16),
+		e2:   expr.NewLess(c1, c2, c1, c2, expr.Width32),
 		eq:   false,
 	}, {
 		name: "cond_neq_arg1",
-		e1:   expr.NewCond(expr.Ltu, c1, c2, c1, c2, expr.Width16),
-		e2:   expr.NewCond(expr.Ltu, c2, c2, c1, c2, expr.Width16),
+		e1:   expr.NewLess(c1, c2, c1, c2, expr.Width16),
+		e2:   expr.NewLess(c2, c2, c1, c2, expr.Width16),
 		eq:   false,
 	}, {
 		name: "cond_neq_arg2",
-		e1:   expr.NewCond(expr.Ltu, c1, c2, c1, c2, expr.Width16),
-		e2:   expr.NewCond(expr.Ltu, c1, c1, c1, c2, expr.Width16),
+		e1:   expr.NewLess(c1, c2, c1, c2, expr.Width16),
+		e2:   expr.NewLess(c1, c1, c1, c2, expr.Width16),
 		eq:   false,
 	}, {
 		name: "cond_neq_true",
-		e1:   expr.NewCond(expr.Ltu, c1, c2, c1, c2, expr.Width16),
-		e2:   expr.NewCond(expr.Ltu, c1, c2, c2, c2, expr.Width16),
+		e1:   expr.NewLess(c1, c2, c1, c2, expr.Width16),
+		e2:   expr.NewLess(c1, c2, c2, c2, expr.Width16),
 		eq:   false,
 	}, {
 		name: "cond_neq_false",
-		e1:   expr.NewCond(expr.Ltu, c1, c2, c1, c2, expr.Width16),
-		e2:   expr.NewCond(expr.Ltu, c1, c2, c1, c1, expr.Width16),
+		e1:   expr.NewLess(c1, c2, c1, c2, expr.Width16),
+		e2:   expr.NewLess(c1, c2, c1, c1, expr.Width16),
 		eq:   false,
 	}}
 

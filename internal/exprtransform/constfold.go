@@ -37,20 +37,9 @@ func binaryEval(op expr.BinaryOp, c1 expr.Const, c2 expr.Const, w expr.Width) ex
 	return f(v1, v2, w).Const(w)
 }
 
-func condEvalFunc(c expr.Condition) condFunc {
-	switch c {
-	case expr.Ltu:
-		return expreval.Ltu
-	default:
-		panic(fmt.Sprintf("unknown condition type: %v", c))
-	}
-}
-
-func condEval(c expr.Condition, c1 expr.Const, c2 expr.Const, w expr.Width) bool {
-	f := condEvalFunc(c)
-
+func lessEval(c1 expr.Const, c2 expr.Const, w expr.Width) bool {
 	v1, v2 := expreval.ParseConst(c1), expreval.ParseConst(c2)
-	return f(v1, v2, w)
+	return expreval.Ltu(v1, v2, w)
 }
 
 // ConstFold replaces all expressions of constants by a constant expression
@@ -99,7 +88,7 @@ func constFold(ex expr.Expr) (expr.Expr, bool) {
 			return ex, false
 		}
 		return expr.NewBinary(e.Op(), arg1, arg2, e.Width()), true
-	case expr.Cond:
+	case expr.Less:
 		arg1, changedArg1 := constFold(e.Arg1())
 		arg2, changedArg2 := constFold(e.Arg2())
 
@@ -107,7 +96,7 @@ func constFold(ex expr.Expr) (expr.Expr, bool) {
 		c2, ok2 := arg2.(expr.Const)
 		if ok1 && ok2 {
 			var res expr.Expr
-			if condEval(e.Cond(), c1, c2, e.Width()) {
+			if lessEval(c1, c2, e.Width()) {
 				res, _ = constFold(e.ExprTrue())
 			} else {
 				res, _ = constFold(e.ExprFalse())
@@ -122,7 +111,7 @@ func constFold(ex expr.Expr) (expr.Expr, bool) {
 		if !(changedArg1 || changedArg2 || changedTrue || changedFalse) {
 			return ex, false
 		}
-		return expr.NewCond(e.Cond(), arg1, arg2, t, f, e.Width()), true
+		return expr.NewLess(arg1, arg2, t, f, e.Width()), true
 	case expr.Const:
 		return ex, false
 	case expr.MemLoad:

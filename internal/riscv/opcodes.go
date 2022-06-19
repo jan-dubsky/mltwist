@@ -225,10 +225,8 @@ func binOpFunc(op expr.BinaryOp) binaryExprFunc {
 	}
 }
 
-func condFunc(c expr.Condition) condExprFunc {
-	return func(a1, a2, t, f expr.Expr, w expr.Width) expr.Expr {
-		return expr.NewCond(c, a1, a2, t, f, w)
-	}
+func lessFunc(a1, a2, t, f expr.Expr, w expr.Width) expr.Expr {
+	return expr.NewLess(a1, a2, t, f, w)
 }
 
 func regImmOp(f binaryExprFunc, t immType, i instruction, w expr.Width) expr.Expr {

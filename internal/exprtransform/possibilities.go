@@ -28,7 +28,7 @@ func Possibilities(ex expr.Expr) []expr.Expr {
 		}
 
 		return es
-	case expr.Cond:
+	case expr.Less:
 		es1, es2 := Possibilities(e.ExprTrue()), Possibilities(e.ExprFalse())
 
 		es := make([]expr.Expr, 0, len(es1)+len(es2))

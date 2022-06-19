@@ -15,8 +15,7 @@ func TestPossibilities(t *testing.T) {
 		addrs []expr.Expr
 	}{{
 		name: "const_offset_branch",
-		e: expr.NewCond(
-			expr.Ltu,
+		e: expr.NewLess(
 			expr.NewRegLoad("r1", expr.Width32),
 			expr.Zero,
 			expr.ConstFromUint[uint32](0x1000),
@@ -29,8 +28,7 @@ func TestPossibilities(t *testing.T) {
 		},
 	}, {
 		name: "const_offset_branch_with_width",
-		e: expr.NewCond(
-			expr.Ltu,
+		e: expr.NewLess(
 			expr.NewRegLoad("r1", expr.Width8),
 			expr.Zero,
 			expr.ConstFromUint[uint64](0x1000),
@@ -44,8 +42,7 @@ func TestPossibilities(t *testing.T) {
 	}, {
 		name: "cond_followed_by_calculation",
 		e: expr.NewBinary(expr.Add,
-			expr.NewCond(
-				expr.Ltu,
+			expr.NewLess(
 				expr.NewRegLoad("r1", expr.Width32),
 				expr.Zero,
 				expr.ConstFromUint[uint32](0x1000),
@@ -62,16 +59,14 @@ func TestPossibilities(t *testing.T) {
 	}, {
 		name: "cross_product",
 		e: expr.NewBinary(expr.Add,
-			expr.NewCond(
-				expr.Ltu,
+			expr.NewLess(
 				expr.NewRegLoad("r1", expr.Width32),
 				expr.Zero,
 				expr.ConstFromUint[uint32](0x1000),
 				expr.ConstFromUint[uint32](0x10aa),
 				expr.Width32,
 			),
-			expr.NewCond(
-				expr.Ltu,
+			expr.NewLess(
 				expr.NewRegLoad("r2", expr.Width32),
 				expr.NewRegLoad("r3", expr.Width32),
 				expr.ConstFromUint[uint32](0xff),
@@ -89,16 +84,14 @@ func TestPossibilities(t *testing.T) {
 	}, {
 		name: "mem_ref_cross",
 		e: expr.NewBinary(expr.Add,
-			expr.NewCond(
-				expr.Ltu,
+			expr.NewLess(
 				expr.NewRegLoad("r1", expr.Width32),
 				expr.Zero,
 				expr.ConstFromUint[uint32](0x1000),
 				expr.ConstFromUint[uint32](0x10aa),
 				expr.Width32,
 			),
-			expr.NewCond(
-				expr.Ltu,
+			expr.NewLess(
 				expr.NewRegLoad("r2", expr.Width32),
 				expr.NewRegLoad("r3", expr.Width32),
 				expr.ConstFromUint[uint32](0xff),

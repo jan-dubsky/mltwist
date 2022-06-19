@@ -31,14 +31,14 @@ func TestFind(t *testing.T) {
 		expr.Width32,
 	)
 
-	cond1 := expr.NewCond(expr.Ltu,
+	cond1 := expr.NewLess(
 		expr.NewRegLoad("r1", expr.Width64),
 		expr.ConstFromUint[uint16](6789),
 		binary1,
 		binary2,
 		expr.Width16,
 	)
-	cond2 := expr.NewCond(expr.Ltu,
+	cond2 := expr.NewLess(
 		expr.Zero,
 		expr.NewRegLoad("r3", expr.Width16),
 		load1,
@@ -86,11 +86,11 @@ func TestFind(t *testing.T) {
 	}
 	r.ElementsMatch(binary, exprtransform.FindAll[expr.Binary](e))
 
-	conds := []expr.Cond{
+	conds := []expr.Less{
 		cond1,
 		cond2,
 	}
-	r.ElementsMatch(conds, exprtransform.FindAll[expr.Cond](e))
+	r.ElementsMatch(conds, exprtransform.FindAll[expr.Less](e))
 
 	loads := []expr.MemLoad{
 		load1,

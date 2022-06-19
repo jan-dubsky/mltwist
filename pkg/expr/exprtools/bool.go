@@ -7,8 +7,7 @@ import "mltwist/pkg/expr"
 func Bool(e expr.Expr) expr.Expr {
 	return NewWidthGadget(
 		// e equal 0 if it's less than one as unsigned integers.
-		expr.NewCond(
-			expr.Ltu,
+		expr.NewLess(
 			e,
 			expr.One,
 			expr.Zero,
@@ -26,8 +25,7 @@ func Bool(e expr.Expr) expr.Expr {
 func Not(e expr.Expr) expr.Expr {
 	return NewWidthGadget(
 		// e equal 0 if it's less than one as unsigned integers.
-		expr.NewCond(
-			expr.Ltu,
+		expr.NewLess(
 			e,
 			expr.One,
 			expr.One,
@@ -44,8 +42,7 @@ func Not(e expr.Expr) expr.Expr {
 func BoolCond(boolExpr expr.Expr, trueExpr, falseExpr expr.Expr, w expr.Width) expr.Expr {
 	// In normal logic nonzero is true, but we use boolExpr == 0 condition
 	// so we have to swap true and false expression.
-	return expr.NewCond(
-		expr.Ltu,
+	return expr.NewLess(
 		expr.Zero,
 		boolExpr,
 		trueExpr,

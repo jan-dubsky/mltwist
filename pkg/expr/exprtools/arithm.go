@@ -15,7 +15,7 @@ func Negate(e expr.Expr, w expr.Width) expr.Expr {
 // if w is width of mask which also determines width of the expression produced.
 func abs(e expr.Expr, mask expr.Expr) expr.Expr {
 	w := mask.Width()
-	return expr.NewCond(expr.Ltu, e, mask, e, Negate(e, w), w)
+	return expr.NewLess(e, mask, e, Negate(e, w), w)
 }
 
 // Abs returns an absolute value of e with width w.
