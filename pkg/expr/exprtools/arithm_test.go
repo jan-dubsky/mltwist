@@ -17,37 +17,79 @@ func TestNegate(t *testing.T) {
 		e    expr.Expr
 		w    expr.Width
 		exp  expr.Expr
-	}{
-		{
-			name: "pos_to_neg",
-			e:    expr.ConstFromUint[uint8](57),
-			w:    expr.Width32,
-			exp:  expr.ConstFromInt[int32](-57),
-		},
-		{
-			name: "neg_to_pos",
-			e:    expr.ConstFromInt[int16](-255),
-			w:    expr.Width8,
-			exp:  expr.ConstFromUint[uint8](255),
-		},
-		{
-			name: "zero",
-			e:    expr.ConstFromInt[int16](0),
-			w:    expr.Width16,
-			exp:  expr.ConstFromUint[uint16](0),
-		},
-		{
-			name: "pos_to_neg_multibyte",
-			e:    expr.ConstFromUint[uint16](0x115e),
-			w:    expr.Width64,
-			exp:  expr.ConstFromInt[int64](-0x115e),
-		},
-	}
+	}{{
+		name: "pos_to_neg",
+		e:    expr.ConstFromUint[uint8](57),
+		w:    expr.Width32,
+		exp:  expr.ConstFromInt[int32](-57),
+	}, {
+		name: "neg_to_pos",
+		e:    expr.ConstFromInt[int16](-255),
+		w:    expr.Width8,
+		exp:  expr.ConstFromUint[uint8](255),
+	}, {
+		name: "zero",
+		e:    expr.ConstFromInt[int16](0),
+		w:    expr.Width16,
+		exp:  expr.ConstFromUint[uint16](0),
+	}, {
+		name: "pos_to_neg_multibyte",
+		e:    expr.ConstFromUint[uint16](0x115e),
+		w:    expr.Width64,
+		exp:  expr.ConstFromInt[int64](-0x115e),
+	}}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			e := exprtools.Negate(tt.e, tt.w)
+			require.Equal(t, tt.exp, exprtransform.ConstFold(e))
+		})
+	}
+}
+func TestSub(t *testing.T) {
+	tests := []struct {
+		name string
+		e1   expr.Expr
+		e2   expr.Expr
+		w    expr.Width
+		exp  expr.Expr
+	}{{
+		name: "pos_and_pos",
+		e1:   expr.ConstFromUint[uint8](57),
+		e2:   expr.ConstFromUint[uint8](32),
+		w:    expr.Width32,
+		exp:  expr.ConstFromInt[int32](57 - 32),
+	}, {
+		name: "pos_and_greater_pos",
+		e1:   expr.ConstFromUint[uint8](57),
+		e2:   expr.ConstFromUint[uint8](125),
+		w:    expr.Width32,
+		exp:  expr.ConstFromInt[int32](57 - 125),
+	}, {
+		name: "neg_to_neg",
+		e1:   expr.ConstFromInt[int16](-125),
+		e2:   expr.ConstFromInt[int8](-94),
+		w:    expr.Width8,
+		exp:  expr.ConstFromInt[int8](-125 + 94),
+	}, {
+		name: "negative_overflow",
+		e1:   expr.ConstFromInt[int16](-255),
+		e2:   expr.ConstFromUint[uint8](1),
+		w:    expr.Width8,
+		exp:  expr.ConstFromUint[uint8](0),
+	}, {
+		name: "subtract_zero",
+		e1:   expr.ConstFromInt[int16](-234),
+		e2:   expr.Zero,
+		w:    expr.Width16,
+		exp:  expr.ConstFromInt[int16](-234),
+	}}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			e := exprtools.Sub(tt.e1, tt.e2, tt.w)
 			require.Equal(t, tt.exp, exprtransform.ConstFold(e))
 		})
 	}

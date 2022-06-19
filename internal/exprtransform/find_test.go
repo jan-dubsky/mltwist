@@ -49,7 +49,7 @@ func TestFind(t *testing.T) {
 	binary3 := expr.NewBinary(expr.Div, load2, cond2, expr.Width64)
 	load3 := expr.NewMemLoad("mem01", binary3, expr.Width64)
 
-	binary4 := expr.NewBinary(expr.Sub,
+	binary4 := expr.NewBinary(expr.Add,
 		expr.NewRegLoad("r2", expr.Width16),
 		load3,
 		expr.Width8,

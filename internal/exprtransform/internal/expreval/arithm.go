@@ -48,28 +48,6 @@ func Add(val1 Value, val2 Value, w expr.Width) Value {
 	return newValue(sum)
 }
 
-// Sub calculates difference of val1 and val2 of width w.
-func Sub(val1 Value, val2 Value, w expr.Width) Value {
-	diff := make([]byte, w)
-	bytes1, bytes2 := val1.SetWidth(w).bytes(), val2.SetWidth(w).bytes()
-
-	var carry bool
-	for i := range diff {
-		b1, b2 := bytes1[i], bytes2[i]
-		res := b1 - b2
-
-		var newCarry = res > b1 || (carry && res == 0)
-		if carry {
-			res -= 1
-		}
-
-		diff[i] = res
-		carry = newCarry
-	}
-
-	return newValue(diff)
-}
-
 func shiftUint64(v Value, w expr.Width) (uint64, uint8, bool) {
 	vInt := v.bigInt(w)
 

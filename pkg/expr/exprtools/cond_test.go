@@ -126,25 +126,25 @@ func TestLts(t *testing.T) {
 	}, {
 		name:   "zero_to_minus_one",
 		arg1:   expr.Zero,
-		arg2:   expr.NewBinary(expr.Sub, expr.Zero, expr.One, expr.Width16),
+		arg2:   expr.ConstFromInt[int16](-1),
 		w:      expr.Width16,
 		isTrue: false,
 	}, {
 		name:   "minus_one_to_zero",
-		arg1:   expr.NewBinary(expr.Sub, expr.Zero, expr.One, expr.Width16),
+		arg1:   expr.ConstFromInt[int16](-1),
 		arg2:   expr.Zero,
 		w:      expr.Width16,
 		isTrue: true,
 	}, {
 		name:   "minus_one_to_minus_five",
-		arg1:   expr.NewBinary(expr.Sub, expr.Zero, expr.One, expr.Width16),
+		arg1:   expr.ConstFromInt[int16](-1),
 		arg2:   expr.ConstFromInt[int16](-5),
 		w:      expr.Width16,
 		isTrue: false,
 	}, {
 		name:   "minus_five_to_minus_one",
 		arg1:   expr.ConstFromInt[int16](-5),
-		arg2:   expr.NewBinary(expr.Sub, expr.Zero, expr.One, expr.Width16),
+		arg2:   expr.ConstFromInt[int16](-1),
 		w:      expr.Width16,
 		isTrue: true,
 	}}

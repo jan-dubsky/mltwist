@@ -42,9 +42,6 @@ const (
 	// Add adds 2 numbers. Due to properties of one's complement negative
 	// signed integer encoding, signed and unsigned addition are the same.
 	Add BinaryOp = iota + 1
-	// Sub subtracts second argument from the first one. As in case of Add,
-	// both signed and unsigned subtractions are identical.
-	Sub
 	// Lsh (logically) shifts first operand left second operand number of
 	// bits. Second operand is always understood as unsigned.
 	Lsh

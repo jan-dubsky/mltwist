@@ -7,6 +7,7 @@ import (
 	"mltwist/internal/emulator"
 	"mltwist/internal/exprtransform"
 	"mltwist/pkg/expr"
+	"mltwist/pkg/expr/exprtools"
 	"mltwist/pkg/model"
 )
 
@@ -77,6 +78,6 @@ func readValue(w expr.Width) (expr.Const, error) {
 		return abs, nil
 	}
 
-	c := expr.NewBinary(expr.Sub, expr.Zero, abs, w)
+	c := exprtools.Sub(expr.Zero, abs, w)
 	return exprtransform.ConstFold(c).(expr.Const), nil
 }

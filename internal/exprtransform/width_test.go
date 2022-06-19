@@ -144,7 +144,7 @@ func TestPurgeWidthGadgets(t *testing.T) {
 	}{
 		{
 			name: "no_gadgets",
-			e: expr.NewBinary(expr.Sub,
+			e: expr.NewBinary(expr.Rsh,
 				expr.NewBinary(expr.Add, c1, c2, expr.Width32),
 				expr.NewBinary(expr.Mul, c3, c4, expr.Width64),
 				expr.Width32,
@@ -153,12 +153,12 @@ func TestPurgeWidthGadgets(t *testing.T) {
 		},
 		{
 			name: "useless_output_gadget",
-			e: exprtools.NewWidthGadget(expr.NewBinary(expr.Sub,
+			e: exprtools.NewWidthGadget(expr.NewBinary(expr.Rsh,
 				expr.NewBinary(expr.Add, c1, c2, expr.Width32),
 				expr.NewBinary(expr.Mul, c3, c4, expr.Width64),
 				expr.Width32,
 			), expr.Width32),
-			exp: expr.NewBinary(expr.Sub,
+			exp: expr.NewBinary(expr.Rsh,
 				expr.NewBinary(expr.Add, c1, c2, expr.Width32),
 				expr.NewBinary(expr.Mul, c3, c4, expr.Width64),
 				expr.Width32,
@@ -173,7 +173,7 @@ func TestPurgeWidthGadgets(t *testing.T) {
 		},
 		{
 			name: "widening_intermediate_gadget",
-			e: expr.NewBinary(expr.Sub,
+			e: expr.NewBinary(expr.Rsh,
 				exprtools.NewWidthGadget(
 					expr.NewBinary(expr.Add, c1, c2, expr.Width32),
 					expr.Width64,
@@ -181,7 +181,7 @@ func TestPurgeWidthGadgets(t *testing.T) {
 				expr.NewBinary(expr.Mul, c3, c4, expr.Width64),
 				expr.Width32,
 			),
-			exp: expr.NewBinary(expr.Sub,
+			exp: expr.NewBinary(expr.Rsh,
 				expr.NewBinary(expr.Add, c1, c2, expr.Width32),
 				expr.NewBinary(expr.Mul, c3, c4, expr.Width64),
 				expr.Width32,
@@ -189,7 +189,7 @@ func TestPurgeWidthGadgets(t *testing.T) {
 		},
 		{
 			name: "narrowing_intermediate_gadget",
-			e: expr.NewBinary(expr.Sub,
+			e: expr.NewBinary(expr.Rsh,
 				exprtools.NewWidthGadget(
 					expr.NewBinary(expr.Add, c1, c2, expr.Width32),
 					expr.Width16,
@@ -200,7 +200,7 @@ func TestPurgeWidthGadgets(t *testing.T) {
 		},
 		{
 			name: "widening_intermediate_chain_big_small",
-			e: expr.NewBinary(expr.Sub,
+			e: expr.NewBinary(expr.Rsh,
 				exprtools.NewWidthGadget(exprtools.NewWidthGadget(
 					expr.NewBinary(expr.Add, c1, c2, expr.Width32),
 					expr.Width64), expr.Width32,
@@ -208,7 +208,7 @@ func TestPurgeWidthGadgets(t *testing.T) {
 				expr.NewBinary(expr.Mul, c3, c4, expr.Width64),
 				expr.Width32,
 			),
-			exp: expr.NewBinary(expr.Sub,
+			exp: expr.NewBinary(expr.Rsh,
 				expr.NewBinary(expr.Add, c1, c2, expr.Width32),
 				expr.NewBinary(expr.Mul, c3, c4, expr.Width64),
 				expr.Width32,
@@ -216,7 +216,7 @@ func TestPurgeWidthGadgets(t *testing.T) {
 		},
 		{
 			name: "widening_intermediate_chain_small_big_small",
-			e: expr.NewBinary(expr.Sub,
+			e: expr.NewBinary(expr.Rsh,
 				exprtools.NewWidthGadget(exprtools.NewWidthGadget(
 					exprtools.NewWidthGadget(
 						expr.NewBinary(expr.Add, c1, c2, expr.Width32),
@@ -226,7 +226,7 @@ func TestPurgeWidthGadgets(t *testing.T) {
 				expr.NewBinary(expr.Mul, c3, c4, expr.Width64),
 				expr.Width32,
 			),
-			exp: expr.NewBinary(expr.Sub,
+			exp: expr.NewBinary(expr.Rsh,
 				expr.NewBinary(expr.Add, c1, c2, expr.Width32),
 				expr.NewBinary(expr.Mul, c3, c4, expr.Width64),
 				expr.Width32,
@@ -234,7 +234,7 @@ func TestPurgeWidthGadgets(t *testing.T) {
 		},
 		{
 			name: "widening_intermediate_chain_smalling_chain",
-			e: expr.NewBinary(expr.Sub,
+			e: expr.NewBinary(expr.Rsh,
 				exprtools.NewWidthGadget(exprtools.NewWidthGadget(
 					exprtools.NewWidthGadget(
 						expr.NewBinary(expr.Add, c1, c2, expr.Width64),
@@ -244,7 +244,7 @@ func TestPurgeWidthGadgets(t *testing.T) {
 				expr.NewBinary(expr.Mul, c3, c4, expr.Width64),
 				expr.Width32,
 			),
-			exp: expr.NewBinary(expr.Sub,
+			exp: expr.NewBinary(expr.Rsh,
 				exprtools.NewWidthGadget(
 					expr.NewBinary(expr.Add, c1, c2, expr.Width64),
 					expr.Width8,

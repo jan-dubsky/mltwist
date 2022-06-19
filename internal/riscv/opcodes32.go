@@ -323,7 +323,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2Op(binOpFunc(expr.Sub), i, width32)
+			val := reg2Op(exprtools.Sub, i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {

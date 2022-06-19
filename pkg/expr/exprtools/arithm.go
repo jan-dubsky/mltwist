@@ -8,7 +8,15 @@ import (
 // Negate returns negative (multiplied by -1) integer value of an expression e
 // of width w.
 func Negate(e expr.Expr, w expr.Width) expr.Expr {
-	return expr.NewBinary(expr.Sub, expr.Zero, e, w)
+	return expr.NewBinary(expr.Add, BitNot(e, w), expr.One, w)
+}
+
+// Sub subtracts e1 and e2 and returns the difference as expression of width w.
+//
+// If w is greater than e1 or e2 width, unsigned extension will be used to
+// extend both e1 and e2 to w.
+func Sub(e1, e2 expr.Expr, w expr.Width) expr.Expr {
+	return expr.NewBinary(expr.Add, e1, Negate(e2, w), w)
 }
 
 // abs applies bit mask to e and returns absolute value of e in w bytes. Value
@@ -28,7 +36,7 @@ func Abs(e expr.Expr, w expr.Width) expr.Expr {
 //
 // This function can be used to represent signed -1 value of any width w.
 func Ones(w expr.Width) expr.Expr {
-	return expr.NewBinary(expr.Sub, expr.Zero, expr.One, w)
+	return expr.NewBinary(expr.Nand, expr.Zero, expr.Zero, w)
 }
 
 // Mod returns width bits unsigned division reminder of the first argument
@@ -43,7 +51,7 @@ func Mod(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
 	div := expr.NewBinary(expr.Div, e1, e2, w)
 	// If e2 is zero, multiple is also zero -> mod will be e1 - 0 == e1.
 	multiple := expr.NewBinary(expr.Mul, div, e2, w)
-	return expr.NewBinary(expr.Sub, e1, multiple, w)
+	return Sub(e1, multiple, w)
 }
 
 // negativeSignJoin extracts signs out of 2 signed integer expressions and
@@ -141,7 +149,7 @@ func SignedMod(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
 func SignExtend(e expr.Expr, signBit expr.Expr, w expr.Width) expr.Expr {
 	signMask := expr.NewBinary(expr.Lsh, expr.One, signBit, w)
 
-	validBitMask := expr.NewBinary(expr.Sub, signMask, expr.One, w)
+	validBitMask := Sub(signMask, expr.One, w)
 	validBits := BitAnd(e, validBitMask, w)
 
 	signBitMask := BitXor(Ones(w), validBitMask, w)
@@ -165,7 +173,7 @@ func RshA(e expr.Expr, shift expr.Expr, w expr.Width) expr.Expr {
 
 	// Last bit in W bit number.
 	signBitOrigPos := expr.NewConstUint(w.Bits()-1, w)
-	signBitShiftedPos := expr.NewBinary(expr.Sub, signBitOrigPos, shift, w)
+	signBitShiftedPos := Sub(signBitOrigPos, shift, w)
 	sextRsh := SignExtend(rsh, signBitShiftedPos, w)
 
 	negativeRsh := Leu(shift, expr.NewConstUint(w.Bits(), w), sextRsh, Ones(w), w)

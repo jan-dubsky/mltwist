@@ -5,7 +5,7 @@ import "mltwist/pkg/expr"
 // Eq creates an expression which returns exprTrue of width w if arg1 is equal
 // to arg2 and returns exprFalse (of width w) otherwise.
 func Eq(arg1, arg2 expr.Expr, exprTrue, exprFalse expr.Expr, w expr.Width) expr.Expr {
-	diff := expr.NewBinary(expr.Sub, arg1, arg2, w)
+	diff := Sub(arg1, arg2, w)
 	return expr.NewLess(diff, expr.One, exprTrue, exprFalse, w)
 }
 

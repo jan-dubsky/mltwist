@@ -21,10 +21,10 @@ func bitMask(bits BitCnt, w expr.Width) expr.Expr {
 
 	shift := expr.ConstFromUint(bits)
 	topBit := expr.NewBinary(expr.Lsh, expr.One, shift, w)
-	return expr.NewBinary(expr.Sub, topBit, expr.One, w)
+	return Sub(topBit, expr.One, w)
 }
 
-// MaskBits returns an expresion of width w with cnt lower bits of e. All higher
+// MaskBits returns an expression of width w with cnt lower bits of e. All higher
 // bits are unset.
 func MaskBits(e expr.Expr, cnt BitCnt, w expr.Width) expr.Expr {
 	return BitAnd(e, bitMask(cnt, w), w)

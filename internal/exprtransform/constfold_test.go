@@ -44,7 +44,7 @@ func TestConstFold(t *testing.T) {
 	}, {
 		name: "simplify_sub",
 		e: expr.NewBinary(expr.Add,
-			expr.NewBinary(expr.Sub, c1, c2, expr.Width32),
+			exprtools.Sub(c1, c2, expr.Width32),
 			expr.NewRegLoad("foo1", expr.Width16),
 			expr.Width32,
 		),
@@ -58,7 +58,7 @@ func TestConstFold(t *testing.T) {
 		e: expr.NewLess(
 			expr.NewBinary(expr.Lsh,
 				expr.ConstFromUint[uint8](5),
-				expr.NewBinary(expr.Sub, c1, c2, expr.Width8),
+				exprtools.Sub(c1, c2, expr.Width8),
 				expr.Width32,
 			),
 			expr.ConstFromUint[uint32](5<<27),
@@ -72,7 +72,7 @@ func TestConstFold(t *testing.T) {
 		e: expr.NewLess(
 			expr.NewBinary(expr.Lsh,
 				expr.ConstFromUint[uint8](5),
-				expr.NewBinary(expr.Sub, c1, c2, expr.Width8),
+				exprtools.Sub(c1, c2, expr.Width8),
 				expr.Width32,
 			),
 			expr.ConstFromUint[uint32](5<<27),
@@ -86,7 +86,7 @@ func TestConstFold(t *testing.T) {
 		e: expr.NewLess(
 			expr.NewBinary(expr.Lsh,
 				expr.ConstFromUint[uint8](5),
-				expr.NewBinary(expr.Sub, c1, c2, expr.Width8),
+				exprtools.Sub(c1, c2, expr.Width8),
 				expr.Width32,
 			),
 			expr.One,
@@ -108,7 +108,7 @@ func TestConstFold(t *testing.T) {
 				expr.Width32,
 			),
 			expr.NewBinary(expr.Div,
-				expr.NewBinary(expr.Sub,
+				exprtools.Sub(
 					expr.ConstFromUint[uint32](146),
 					expr.ConstFromInt[int16](13),
 					expr.Width8,
@@ -265,7 +265,7 @@ func TestConstFold(t *testing.T) {
 		name: "memory_address",
 		e: expr.NewMemLoad("foo1",
 			expr.NewBinary(expr.Div,
-				expr.NewBinary(expr.Sub,
+				exprtools.Sub(
 					expr.ConstFromUint[uint32](146),
 					expr.ConstFromInt[int16](13),
 					expr.Width8,

@@ -358,7 +358,7 @@ var integer64 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2Op(binOpFunc(expr.Sub), i, width64)
+			val := reg2Op(exprtools.Sub, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -643,7 +643,7 @@ var integer64 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		effects: func(i instruction) []expr.Effect {
-			val := sext32To64(reg2Op(binOpFunc(expr.Sub), i, width32))
+			val := sext32To64(reg2Op(exprtools.Sub, i, width32))
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {

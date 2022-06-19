@@ -13,8 +13,6 @@ func binaryEvalFunc(op expr.BinaryOp) binaryFunc {
 	switch op {
 	case expr.Add:
 		return expreval.Add
-	case expr.Sub:
-		return expreval.Sub
 	case expr.Lsh:
 		return expreval.Lsh
 	case expr.Rsh:

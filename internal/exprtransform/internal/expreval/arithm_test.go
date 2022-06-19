@@ -63,33 +63,6 @@ func TestAdd(t *testing.T) {
 	testBinaryOp(t, tests, expreval.Add)
 }
 
-func TestSub(t *testing.T) {
-	tests := []binaryOpTest{
-		{
-			name:   "without_carry",
-			v1:     expreval.NewValue([]byte{45, 67, 89, 8}),
-			v2:     expreval.NewValue([]byte{45, 45, 84, 8}),
-			w:      expr.Width32,
-			result: expreval.NewValue([]byte{0, 22, 5, 0}),
-		},
-		{
-			name:   "carry_chain",
-			v1:     expreval.NewValue([]byte{98, 93, 34, 67, 89, 78}),
-			v2:     expreval.NewValue([]byte{99, 245, 88, 98, 0, 12}),
-			w:      expr.Width64,
-			result: expreval.NewValue([]byte{255, 103, 201, 224, 88, 66, 0, 0}),
-		},
-		{
-			name:   "cut_upper_bytes",
-			v1:     expreval.NewValue([]byte{5, 6, 7, 8}),
-			v2:     expreval.NewValue([]byte{34, 254}),
-			w:      expr.Width16,
-			result: expreval.NewValue([]byte{227, 7}),
-		},
-	}
-	testBinaryOp(t, tests, expreval.Sub)
-}
-
 func TestLsh(t *testing.T) {
 	tests := []binaryOpTest{
 		{
