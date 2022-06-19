@@ -3,6 +3,7 @@ package memory
 import (
 	"mltwist/internal/state/interval"
 	"mltwist/pkg/expr"
+	"mltwist/pkg/expr/exprtools"
 	"mltwist/pkg/model"
 
 	intervaltree "github.com/zyedidia/generic/interval"
@@ -86,7 +87,7 @@ func (m *Sparse) Load(addr model.Addr, w expr.Width) (expr.Expr, bool) {
 		}
 
 		ex = expr.NewBinary(expr.Lsh, ex, expr.ConstFromUint((o.Low-addr)*8), w)
-		finalEx = expr.NewBinary(expr.Or, finalEx, ex, w)
+		finalEx = exprtools.BitOr(finalEx, ex, w)
 	}
 
 	return finalEx, true

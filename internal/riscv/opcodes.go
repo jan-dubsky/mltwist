@@ -227,6 +227,12 @@ func regImmOp(op expr.BinaryOp, t immType, i instruction, w expr.Width) expr.Exp
 	return expr.NewBinary(op, regLoad(rs1, i, w), immConst(t, i), w)
 }
 
+type binaryExprFunc func(e1, e2 expr.Expr, w expr.Width) expr.Expr
+
+func regImmBinOp(f binaryExprFunc, t immType, i instruction, w expr.Width) expr.Expr {
+	return f(regLoad(rs1, i, w), immConst(t, i), w)
+}
+
 func addrImmConst(t immType, i instruction, w expr.Width) expr.Const {
 	imm, ok := t.parseValue(i.value)
 	if !ok {
@@ -237,6 +243,10 @@ func addrImmConst(t immType, i instruction, w expr.Width) expr.Const {
 
 func reg2Op(op expr.BinaryOp, i instruction, w expr.Width) expr.Expr {
 	return expr.NewBinary(op, regLoad(rs1, i, w), regLoad(rs2, i, w), w)
+}
+
+func reg2BinOp(f binaryExprFunc, i instruction, w expr.Width) expr.Expr {
+	return f(regLoad(rs1, i, w), regLoad(rs2, i, w), w)
 }
 
 func maskedRegOp(op expr.BinaryOp, i instruction, bits uint8, w expr.Width) expr.Expr {
@@ -295,8 +305,6 @@ func branchCmp(
 
 	return expr.NewRegStore(ip, expr.IPKey, w)
 }
-
-type binaryExprFunc func(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr
 
 func atomicBinaryOp(op expr.BinaryOp) binaryExprFunc {
 	return func(e1, e2 expr.Expr, w expr.Width) expr.Expr {

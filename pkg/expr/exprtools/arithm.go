@@ -47,7 +47,7 @@ func Mod(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
 func negativeSignJoin(e1 expr.Expr, e2 expr.Expr) expr.Expr {
 	sign1 := Bool(IntNegative(e1, e1.Width()))
 	sign2 := Bool(IntNegative(e2, e2.Width()))
-	return expr.NewBinary(expr.Xor, sign1, sign2, expr.Width8)
+	return BitXor(sign1, sign2, expr.Width8)
 }
 
 // SignedMul performs a signed multiplication of 2 signed integer numbers of
@@ -134,13 +134,13 @@ func SignExtend(e expr.Expr, signBit expr.Expr, w expr.Width) expr.Expr {
 	signMask := expr.NewBinary(expr.Lsh, expr.One, signBit, w)
 
 	validBitMask := expr.NewBinary(expr.Sub, signMask, expr.One, w)
-	validBits := expr.NewBinary(expr.And, e, validBitMask, w)
+	validBits := BitAnd(e, validBitMask, w)
 
-	signBitMask := expr.NewBinary(expr.Xor, Ones(w), validBitMask, w)
-	negative := expr.NewBinary(expr.Or, validBits, signBitMask, w)
+	signBitMask := BitXor(Ones(w), validBitMask, w)
+	negative := BitOr(validBits, signBitMask, w)
 
 	return BoolCond(
-		expr.NewBinary(expr.And, e, signMask, w),
+		BitAnd(e, signMask, w),
 		negative,
 		validBits, // positive number,
 		w,

@@ -109,35 +109,3 @@ func TestIntNegative(t *testing.T) {
 		})
 	}
 }
-
-func TestBitNegate(t *testing.T) {
-	tests := []struct {
-		name string
-		e    expr.Expr
-		w    expr.Width
-		exp  expr.Const
-	}{{
-		name: "single_byte",
-		e:    expr.ConstFromUint[uint8](0b01011010),
-		w:    expr.Width8,
-		exp:  expr.ConstFromUint[uint8](0b10100101),
-	}, {
-		name: "zero_extend",
-		e:    expr.ConstFromUint[uint8](0b01101110),
-		w:    expr.Width16,
-		exp:  expr.ConstFromUint[uint16](0b1111111110010001),
-	}, {
-		name: "shrink_width",
-		e:    expr.ConstFromUint[uint64](0xffb3493ba823bca6),
-		w:    expr.Width16,
-		exp:  expr.ConstFromUint[uint16](0x4359),
-	}}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			e := exprtools.BitNegate(tt.e, tt.w)
-			require.Equal(t, tt.exp, exprtransform.ConstFold(e))
-		})
-	}
-}

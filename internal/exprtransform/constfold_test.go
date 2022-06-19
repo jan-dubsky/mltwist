@@ -102,7 +102,7 @@ func TestConstFold(t *testing.T) {
 		e: expr.NewCond(expr.Lts,
 			expr.NewBinary(expr.Mul,
 				expr.ConstFromUint[uint8](5),
-				expr.NewBinary(expr.Or,
+				exprtools.BitOr(
 					expr.ConstFromUint[uint16](0x1234),
 					expr.ConstFromUint[uint32](0xdbca8765),
 					expr.Width64,
@@ -152,7 +152,7 @@ func TestConstFold(t *testing.T) {
 			),
 			expr.NewBinary(expr.Mul,
 				expr.ConstFromUint[uint8](5),
-				expr.NewBinary(expr.Or,
+				exprtools.BitXor(
 					expr.ConstFromUint[uint16](0x1234),
 					expr.ConstFromUint[uint32](0xdbca8765),
 					expr.Width64,
@@ -172,7 +172,7 @@ func TestConstFold(t *testing.T) {
 				expr.NewRegLoad("foo2", expr.Width16),
 				expr.Width32,
 			),
-			expr.ConstFromUint(uint32(((0x1234|0xdbca8765)*5)&0xffffffff)),
+			expr.ConstFromUint(uint32(((0x1234^0xdbca8765)*5)&0xffffffff)),
 			expr.Width64,
 		),
 	}, {
@@ -191,7 +191,7 @@ func TestConstFold(t *testing.T) {
 			),
 			expr.NewBinary(expr.Mul,
 				expr.ConstFromUint[uint8](5),
-				expr.NewBinary(expr.Or,
+				expr.NewBinary(expr.Nand,
 					expr.ConstFromUint[uint16](0x1234),
 					expr.ConstFromUint[uint32](0xdbca8765),
 					expr.Width64,

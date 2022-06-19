@@ -27,7 +27,7 @@ func bitMask(bits BitCnt, w expr.Width) expr.Expr {
 // MaskBits returns an expresion of width w with cnt lower bits of e. All higher
 // bits are unset.
 func MaskBits(e expr.Expr, cnt BitCnt, w expr.Width) expr.Expr {
-	return expr.NewBinary(expr.And, e, bitMask(cnt, w), w)
+	return BitAnd(e, bitMask(cnt, w), w)
 }
 
 // signBitMask returns a mask with width w with bit at position (w*8)-1 set. In
@@ -52,10 +52,5 @@ func signBitMask(w expr.Width) expr.Expr {
 // single AND operation in a sign bit. In case a 0/1 result is required, this
 // helper can be trivially chained with Bool function.
 func IntNegative(e expr.Expr, w expr.Width) expr.Expr {
-	return expr.NewBinary(expr.And, e, signBitMask(w), w)
-}
-
-// BitNegate negates every bit in e and returns result of width w.
-func BitNegate(e expr.Expr, w expr.Width) expr.Expr {
-	return expr.NewBinary(expr.Xor, e, Ones(w), w)
+	return BitAnd(e, signBitMask(w), w)
 }

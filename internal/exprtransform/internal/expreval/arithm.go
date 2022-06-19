@@ -183,33 +183,13 @@ func Div(val1 Value, val2 Value, w expr.Width) Value {
 	return parseBigInt(div).SetWidth(w)
 }
 
-func bitOp(
-	val1 Value,
-	val2 Value,
-	w expr.Width,
-	byteFunc func(v1 byte, v2 byte) byte,
-) Value {
+func Nand(val1 Value, val2 Value, w expr.Width) Value {
 	result := make([]byte, w)
 	bytes1, bytes2 := val1.SetWidth(w).bytes(), val2.SetWidth(w).bytes()
 
 	for i := range result {
-		result[i] = byteFunc(bytes1[i], bytes2[i])
+		result[i] = ^(bytes1[i] & bytes2[i])
 	}
 
 	return newValue(result)
-}
-
-// And returns bit-wise and of val1 and val2 of width w.
-func And(val1 Value, val2 Value, w expr.Width) Value {
-	return bitOp(val1, val2, w, func(v1, v2 byte) byte { return v1 & v2 })
-}
-
-// Or returns bit-wise or of val1 and val2 of width w.
-func Or(val1 Value, val2 Value, w expr.Width) Value {
-	return bitOp(val1, val2, w, func(v1, v2 byte) byte { return v1 | v2 })
-}
-
-// Xor returns bit-wise xor of val1 and val2 of width w.
-func Xor(val1 Value, val2 Value, w expr.Width) Value {
-	return bitOp(val1, val2, w, func(v1, v2 byte) byte { return v1 ^ v2 })
 }

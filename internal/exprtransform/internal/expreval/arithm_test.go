@@ -288,54 +288,35 @@ func TestDiv(t *testing.T) {
 	}
 }
 
-func TestBitwise(t *testing.T) {
+func TestNand(t *testing.T) {
 	tests := []struct {
 		name string
 		v1   expreval.Value
 		v2   expreval.Value
 		w    expr.Width
-
-		and expreval.Value
-		or  expreval.Value
-		xor expreval.Value
+		exp  expreval.Value
 	}{
 		{
 			name: "multi_byte",
 			v1:   expreval.NewValue([]byte{0xfb, 0x45, 0x43, 0x2b}),
 			v2:   expreval.NewValue([]byte{0xde, 0x04, 0x22, 0x9f}),
 			w:    expr.Width32,
-
-			and: expreval.NewValue([]byte{0xda, 0x04, 0x02, 0x0b}),
-			or:  expreval.NewValue([]byte{0xff, 0x45, 0x63, 0xbf}),
-			xor: expreval.NewValue([]byte{0xfb ^ 0xde, 0x45 ^ 0x04, 0x43 ^ 0x22, 0x2b ^ 0x9f}),
+			exp:  expreval.NewValue([]byte{0x25, 0xfb, 0xfd, 0xf4}),
 		},
 		{
 			name: "cut_and_extend",
 			v1:   expreval.NewValue([]byte{0x55, 0x23, 0xb2, 0x3a, 0x24, 0x6f, 0x34, 0xbb}),
 			v2:   expreval.NewValue([]byte{0x56, 0xb3}),
 			w:    expr.Width32,
-
-			and: expreval.NewValue([]byte{0x54, 0x23, 0, 0}),
-			or:  expreval.NewValue([]byte{0x57, 0xb3, 0xb2, 0x3a}),
-			xor: expreval.NewValue([]byte{0x55 ^ 0x56, 0x23 ^ 0xb3, 0xb2 ^ 0, 0x3a ^ 0}),
+			exp:  expreval.NewValue([]byte{0xab, 0xdc, 0xff, 0xff}),
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Run("and", func(t *testing.T) {
-				result := expreval.And(tt.v1, tt.v2, tt.w)
-				require.Equal(t, tt.and, result)
-			})
-			t.Run("or", func(t *testing.T) {
-				result := expreval.Or(tt.v1, tt.v2, tt.w)
-				require.Equal(t, tt.or, result)
-			})
-			t.Run("xor", func(t *testing.T) {
-				result := expreval.Xor(tt.v1, tt.v2, tt.w)
-				require.Equal(t, tt.xor, result)
-			})
+			result := expreval.Nand(tt.v1, tt.v2, tt.w)
+			require.Equal(t, tt.exp, result)
 		})
 	}
 }

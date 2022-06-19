@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mltwist/internal/state/interval"
 	"mltwist/pkg/expr"
+	"mltwist/pkg/expr/exprtools"
 	"mltwist/pkg/model"
 	"sort"
 )
@@ -109,7 +110,7 @@ func (o *Overlay) Load(addr model.Addr, w expr.Width) (expr.Expr, bool) {
 	finalEx := reads[0].ex
 	for _, r := range reads[1:] {
 		ex := offsetExpr(r.ex, expr.Width(r.intv.Begin()-addr), w)
-		finalEx = expr.NewBinary(expr.Or, finalEx, ex, w)
+		finalEx = exprtools.BitOr(finalEx, ex, w)
 	}
 
 	return finalEx, true

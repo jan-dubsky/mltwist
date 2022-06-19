@@ -23,12 +23,8 @@ func binaryEvalFunc(op expr.BinaryOp) binaryFunc {
 		return expreval.Mul
 	case expr.Div:
 		return expreval.Div
-	case expr.And:
-		return expreval.And
-	case expr.Or:
-		return expreval.Or
-	case expr.Xor:
-		return expreval.Xor
+	case expr.Nand:
+		return expreval.Nand
 	default:
 		panic(fmt.Sprintf("unknown binary operation: %v", op))
 	}

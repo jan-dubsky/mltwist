@@ -295,7 +295,7 @@ var integer64 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			val := regImmOp(expr.Xor, immTypeI, i, width64)
+			val := regImmBinOp(exprtools.BitXor, immTypeI, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -305,7 +305,7 @@ var integer64 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			val := regImmOp(expr.Or, immTypeI, i, width64)
+			val := regImmBinOp(exprtools.BitOr, immTypeI, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -315,7 +315,7 @@ var integer64 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			val := regImmOp(expr.And, immTypeI, i, width64)
+			val := regImmBinOp(exprtools.BitAnd, immTypeI, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -402,7 +402,7 @@ var integer64 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2Op(expr.Or, i, width64)
+			val := reg2BinOp(exprtools.BitOr, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -411,7 +411,7 @@ var integer64 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2Op(expr.And, i, width64)
+			val := reg2BinOp(exprtools.BitAnd, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -420,7 +420,7 @@ var integer64 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2Op(expr.Xor, i, width64)
+			val := reg2BinOp(exprtools.BitXor, i, width64)
 			return []expr.Effect{regStore(val, i, width64)}
 		},
 	}, {
@@ -522,7 +522,7 @@ var integer64 = []*instructionType{
 			key := csrKey(i)
 			val := expr.NewRegLoad(key, width64)
 			regVal := regLoad(rs1, i, width64)
-			newVal := expr.NewBinary(expr.Or, val, regVal, width64)
+			newVal := exprtools.BitOr(val, regVal, width64)
 			return []expr.Effect{
 				regStore(val, i, width64),
 				expr.NewRegStore(newVal, key, width64),
@@ -538,8 +538,8 @@ var integer64 = []*instructionType{
 		effects: func(i instruction) []expr.Effect {
 			key := csrKey(i)
 			val := expr.NewRegLoad(key, width64)
-			regVal := exprtools.BitNegate(regLoad(rs1, i, width64), width64)
-			newVal := expr.NewBinary(expr.And, val, regVal, width64)
+			regVal := exprtools.BitNot(regLoad(rs1, i, width64), width64)
+			newVal := exprtools.BitAnd(val, regVal, width64)
 			return []expr.Effect{
 				regStore(val, i, width64),
 				expr.NewRegStore(newVal, key, width64),
@@ -569,7 +569,7 @@ var integer64 = []*instructionType{
 		effects: func(i instruction) []expr.Effect {
 			key := csrKey(i)
 			val := expr.NewRegLoad(key, width64)
-			newVal := expr.NewBinary(expr.Or, val, csrImm(i), width64)
+			newVal := exprtools.BitOr(val, csrImm(i), width64)
 			return []expr.Effect{
 				regStore(val, i, width64),
 				expr.NewRegStore(newVal, key, width64),
@@ -585,8 +585,8 @@ var integer64 = []*instructionType{
 		effects: func(i instruction) []expr.Effect {
 			key := csrKey(i)
 			val := expr.NewRegLoad(key, width64)
-			mask := exprtools.BitNegate(csrImm(i), width64)
-			newVal := expr.NewBinary(expr.And, val, mask, width64)
+			mask := exprtools.BitNot(csrImm(i), width64)
+			newVal := exprtools.BitAnd(val, mask, width64)
 			return []expr.Effect{
 				regStore(val, i, width64),
 				expr.NewRegStore(newVal, key, width64),
@@ -919,7 +919,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicBinaryOp(expr.Xor), i, width64)
+			return atomicOp(exprtools.BitXor, i, width64)
 		},
 	}, {
 		name:         "amoand.d",
@@ -930,7 +930,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicBinaryOp(expr.And), i, width64)
+			return atomicOp(exprtools.BitAnd, i, width64)
 		},
 	}, {
 		name:         "amoor.d",
@@ -941,7 +941,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicBinaryOp(expr.Or), i, width64)
+			return atomicOp(exprtools.BitOr, i, width64)
 		},
 	}, {
 		name:         "amomin.d",
@@ -1058,7 +1058,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOpWidth(atomicBinaryOp(expr.Xor), i, width64, width32)
+			return atomicOpWidth(exprtools.BitXor, i, width64, width32)
 		},
 	}, {
 		name:         "amoand.w",
@@ -1069,7 +1069,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOpWidth(atomicBinaryOp(expr.And), i, width64, width32)
+			return atomicOpWidth(exprtools.BitAnd, i, width64, width32)
 		},
 	}, {
 		name:         "amoor.w",
@@ -1080,7 +1080,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOpWidth(atomicBinaryOp(expr.Or), i, width64, width32)
+			return atomicOpWidth(exprtools.BitOr, i, width64, width32)
 		},
 	}, {
 		name:         "amomin.w",

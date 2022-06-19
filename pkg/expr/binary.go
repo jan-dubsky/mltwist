@@ -91,10 +91,6 @@ const (
 	// and filling appropriate values in registry.
 	Div
 
-	// And represent bit-wise and of arguments.
-	And
-	// Or represent bit-wise or of arguments.
-	Or
-	// Xor represent bit-wise xor of arguments.
-	Xor
+	// Nand represents bit-wise NAND (NOT-AND) of arguments.
+	Nand
 )
