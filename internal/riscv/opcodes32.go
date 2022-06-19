@@ -53,7 +53,7 @@ var integer32 = []*instructionType{
 		immediate:    immTypeI,
 		// FIXME: Find a way how to represent those jump targets.
 		effects: func(i instruction) []expr.Effect {
-			target := regImmOp(expr.Add, immTypeI, i, width32)
+			target := regImmOp(binOpFunc(expr.Add), immTypeI, i, width32)
 			// Address of following instruction.
 			following := expr.ConstFromUint(uint32(i.addr) + 4)
 			return []expr.Effect{
@@ -123,7 +123,7 @@ var integer32 = []*instructionType{
 		loadBytes:    1,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			addr := regImmOp(expr.Add, immTypeI, i, width32)
+			addr := regImmOp(binOpFunc(expr.Add), immTypeI, i, width32)
 			val := sext(memLoad(addr, width8), 7, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
@@ -135,7 +135,7 @@ var integer32 = []*instructionType{
 		loadBytes:    2,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			addr := regImmOp(expr.Add, immTypeI, i, width32)
+			addr := regImmOp(binOpFunc(expr.Add), immTypeI, i, width32)
 			val := sext(memLoad(addr, width16), 15, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
@@ -147,7 +147,7 @@ var integer32 = []*instructionType{
 		loadBytes:    4,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			addr := regImmOp(expr.Add, immTypeI, i, width32)
+			addr := regImmOp(binOpFunc(expr.Add), immTypeI, i, width32)
 			val := memLoad(addr, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
@@ -159,7 +159,7 @@ var integer32 = []*instructionType{
 		loadBytes:    1,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			addr := regImmOp(expr.Add, immTypeI, i, width32)
+			addr := regImmOp(binOpFunc(expr.Add), immTypeI, i, width32)
 			return []expr.Effect{regStore(memLoad(addr, width8), i, width32)}
 		},
 	}, {
@@ -170,7 +170,7 @@ var integer32 = []*instructionType{
 		loadBytes:    2,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			addr := regImmOp(expr.Add, immTypeI, i, width32)
+			addr := regImmOp(binOpFunc(expr.Add), immTypeI, i, width32)
 			return []expr.Effect{regStore(memLoad(addr, width16), i, width32)}
 		},
 	}, {
@@ -182,7 +182,7 @@ var integer32 = []*instructionType{
 		immediate:    immTypeS,
 		effects: func(i instruction) []expr.Effect {
 			val := regLoad(rs2, i, width32)
-			addr := regImmOp(expr.Add, immTypeS, i, width32)
+			addr := regImmOp(binOpFunc(expr.Add), immTypeS, i, width32)
 			return []expr.Effect{memStore(val, addr, width8)}
 		},
 	}, {
@@ -194,7 +194,7 @@ var integer32 = []*instructionType{
 		immediate:    immTypeS,
 		effects: func(i instruction) []expr.Effect {
 			val := regLoad(rs2, i, width32)
-			addr := regImmOp(expr.Add, immTypeS, i, width32)
+			addr := regImmOp(binOpFunc(expr.Add), immTypeS, i, width32)
 			return []expr.Effect{memStore(val, addr, width16)}
 		},
 	}, {
@@ -206,7 +206,7 @@ var integer32 = []*instructionType{
 		immediate:    immTypeS,
 		effects: func(i instruction) []expr.Effect {
 			val := regLoad(rs2, i, width32)
-			addr := regImmOp(expr.Add, immTypeS, i, width32)
+			addr := regImmOp(binOpFunc(expr.Add), immTypeS, i, width32)
 			return []expr.Effect{memStore(val, addr, width32)}
 		},
 	}, {
@@ -216,7 +216,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			val := regImmOp(expr.Add, immTypeI, i, width32)
+			val := regImmOp(binOpFunc(expr.Add), immTypeI, i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -260,7 +260,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			val := regImmBinOp(exprtools.BitXor, immTypeI, i, width32)
+			val := regImmOp(exprtools.BitXor, immTypeI, i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -270,7 +270,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			val := regImmBinOp(exprtools.BitOr, immTypeI, i, width32)
+			val := regImmOp(exprtools.BitOr, immTypeI, i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -280,7 +280,7 @@ var integer32 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			val := regImmBinOp(exprtools.BitAnd, immTypeI, i, width32)
+			val := regImmOp(exprtools.BitAnd, immTypeI, i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -289,7 +289,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := regImmShift(expr.Lsh, i, 5, width32)
+			val := regImmShift(binOpFunc(expr.Lsh), i, 5, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -298,7 +298,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := regImmShift(expr.Rsh, i, 5, width32)
+			val := regImmShift(binOpFunc(expr.Rsh), i, 5, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -307,8 +307,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			reg := regLoad(rs1, i, width32)
-			val := exprtools.RshA(reg, immShift(5, i), width32)
+			val := regImmShift(exprtools.RshA, i, 5, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -317,7 +316,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2Op(expr.Add, i, width32)
+			val := reg2Op(binOpFunc(expr.Add), i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -326,7 +325,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2Op(expr.Sub, i, width32)
+			val := reg2Op(binOpFunc(expr.Sub), i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -367,7 +366,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2BinOp(exprtools.BitOr, i, width32)
+			val := reg2Op(exprtools.BitOr, i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -376,7 +375,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2BinOp(exprtools.BitAnd, i, width32)
+			val := reg2Op(exprtools.BitAnd, i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -385,7 +384,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2BinOp(exprtools.BitXor, i, width32)
+			val := reg2Op(exprtools.BitXor, i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -394,7 +393,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := maskedRegOp(expr.Lsh, i, 5, width32)
+			val := maskedRegOp(binOpFunc(expr.Lsh), i, 5, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -403,7 +402,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := maskedRegOp(expr.Rsh, i, 5, width32)
+			val := maskedRegOp(binOpFunc(expr.Rsh), i, 5, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -412,8 +411,7 @@ var integer32 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			shift := exprtools.MaskBits(regLoad(rs2, i, width32), 5, width32)
-			val := exprtools.RshA(regLoad(rs1, i, width32), shift, width32)
+			val := maskedRegOp(exprtools.RshA, i, 5, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -566,7 +564,7 @@ var mul32 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2Op(expr.Mul, i, width32)
+			val := reg2Op(binOpFunc(expr.Mul), i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -637,7 +635,7 @@ var mul32 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeR,
 		effects: func(i instruction) []expr.Effect {
-			val := reg2Op(expr.Div, i, width32)
+			val := reg2Op(binOpFunc(expr.Div), i, width32)
 			return []expr.Effect{regStore(val, i, width32)}
 		},
 	}, {
@@ -723,7 +721,7 @@ var atomic32 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicBinaryOp(expr.Add), i, width32)
+			return atomicOp(binOpFunc(expr.Add), i, width32)
 		},
 	}, {
 		name:         "amoxor.w",

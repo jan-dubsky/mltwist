@@ -6,7 +6,7 @@ import (
 )
 
 // Negate returns negative (multiplied by -1) integer value of an expression e
-// and width w.
+// of width w.
 func Negate(e expr.Expr, w expr.Width) expr.Expr {
 	return expr.NewBinary(expr.Sub, expr.Zero, e, w)
 }

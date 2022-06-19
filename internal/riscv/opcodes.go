@@ -96,7 +96,7 @@ func opcode17(high byte, mid byte, low byte) opcode.Opcode {
 	}
 }
 
-func assertshiftBits(shiftBits uint8) {
+func assertShiftBits(shiftBits uint8) {
 	if s := shiftBits; s != 5 && s != 6 {
 		panic(fmt.Sprintf("invalid immediate-encoded shift bit count: %d", s))
 	}
@@ -141,7 +141,7 @@ func assertshiftBits(shiftBits uint8) {
 func opcodeShiftImm(arithmetic bool, shiftBits uint8, mid byte, low byte) opcode.Opcode {
 	assertMask(low, low7Bits)
 	assertMask(mid, low3Bits)
-	assertshiftBits(shiftBits)
+	assertShiftBits(shiftBits)
 
 	var high byte = 0
 	if arithmetic {
@@ -208,13 +208,6 @@ func immConst(t immType, i instruction) expr.Const {
 	return expr.ConstFromInt(imm)
 }
 
-func immShift(shiftBits uint8, i instruction) expr.Const {
-	assertshiftBits(shiftBits)
-	mask := int32(1) << int32(shiftBits)
-	imm, _ := immTypeI.parseValue(i.value)
-	return expr.ConstFromInt(imm & mask)
-}
-
 func regLoad(r reg, i instruction, w expr.Width) expr.Expr {
 	num := r.regNum(i.value)
 	if num == 0 {
@@ -223,39 +216,33 @@ func regLoad(r reg, i instruction, w expr.Width) expr.Expr {
 	return expr.NewRegLoad(expr.Key(num.String()), w)
 }
 
-func regImmOp(op expr.BinaryOp, t immType, i instruction, w expr.Width) expr.Expr {
-	return expr.NewBinary(op, regLoad(rs1, i, w), immConst(t, i), w)
-}
-
 type binaryExprFunc func(e1, e2 expr.Expr, w expr.Width) expr.Expr
 
-func regImmBinOp(f binaryExprFunc, t immType, i instruction, w expr.Width) expr.Expr {
+func binOpFunc(op expr.BinaryOp) binaryExprFunc {
+	return func(e1, e2 expr.Expr, w expr.Width) expr.Expr {
+		return expr.NewBinary(op, e1, e2, w)
+	}
+}
+
+func regImmOp(f binaryExprFunc, t immType, i instruction, w expr.Width) expr.Expr {
 	return f(regLoad(rs1, i, w), immConst(t, i), w)
 }
 
-func addrImmConst(t immType, i instruction, w expr.Width) expr.Const {
-	imm, ok := t.parseValue(i.value)
-	if !ok {
-		panic(fmt.Sprintf("immediate encoding %d has no value", t))
-	}
-	return expr.NewConstUint(addrAddImm(i.addr, imm), w)
-}
-
-func reg2Op(op expr.BinaryOp, i instruction, w expr.Width) expr.Expr {
-	return expr.NewBinary(op, regLoad(rs1, i, w), regLoad(rs2, i, w), w)
-}
-
-func reg2BinOp(f binaryExprFunc, i instruction, w expr.Width) expr.Expr {
+func reg2Op(f binaryExprFunc, i instruction, w expr.Width) expr.Expr {
 	return f(regLoad(rs1, i, w), regLoad(rs2, i, w), w)
 }
 
-func maskedRegOp(op expr.BinaryOp, i instruction, bits uint8, w expr.Width) expr.Expr {
-	mask := exprtools.MaskBits(regLoad(rs2, i, w), exprtools.BitCnt(bits), w)
-	return expr.NewBinary(op, regLoad(rs1, i, w), mask, w)
+func maskedRegOp(f binaryExprFunc, i instruction, bits uint8, w expr.Width) expr.Expr {
+	masked := exprtools.MaskBits(regLoad(rs2, i, w), exprtools.BitCnt(bits), w)
+	return f(regLoad(rs1, i, w), masked, w)
 }
 
-func regImmShift(op expr.BinaryOp, i instruction, bits uint8, w expr.Width) expr.Expr {
-	return expr.NewBinary(op, regLoad(rs1, i, w), immShift(bits, i), w)
+func regImmShift(f binaryExprFunc, i instruction, bits uint8, w expr.Width) expr.Expr {
+	assertShiftBits(bits)
+	mask := int32(1) << int32(bits)
+	imm, _ := immTypeI.parseValue(i.value)
+	immShift := expr.ConstFromInt(imm & mask)
+	return f(regLoad(rs1, i, w), immShift, w)
 }
 
 func sext(e expr.Expr, signBit uint8, w expr.Width) expr.Expr {
@@ -278,6 +265,14 @@ func regStore(e expr.Expr, i instruction, w expr.Width) expr.Effect {
 		return nil
 	}
 	return expr.NewRegStore(e, expr.Key(num.String()), w)
+}
+
+func addrImmConst(t immType, i instruction, w expr.Width) expr.Const {
+	imm, ok := t.parseValue(i.value)
+	if !ok {
+		panic(fmt.Sprintf("immediate encoding %d has no value", t))
+	}
+	return expr.NewConstUint(addrAddImm(i.addr, imm), w)
 }
 
 func branchCmp(
@@ -304,12 +299,6 @@ func branchCmp(
 	)
 
 	return expr.NewRegStore(ip, expr.IPKey, w)
-}
-
-func atomicBinaryOp(op expr.BinaryOp) binaryExprFunc {
-	return func(e1, e2 expr.Expr, w expr.Width) expr.Expr {
-		return expr.NewBinary(op, e1, e2, w)
-	}
 }
 
 func atomicMinMax(c expr.Condition, negate bool) binaryExprFunc {
