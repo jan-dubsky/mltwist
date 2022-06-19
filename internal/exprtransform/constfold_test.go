@@ -99,7 +99,7 @@ func TestConstFold(t *testing.T) {
 		exp: expr.ConstFromUint[uint16](42),
 	}, {
 		name: "simplify_condition",
-		e: expr.NewCond(expr.Lts,
+		e: expr.NewCond(expr.Ltu,
 			expr.NewBinary(expr.Mul,
 				expr.ConstFromUint[uint8](5),
 				exprtools.BitOr(
@@ -122,7 +122,7 @@ func TestConstFold(t *testing.T) {
 			expr.ConstFromInt[int32](-1),
 			expr.Width16,
 		),
-		exp: expr.NewCond(expr.Lts,
+		exp: expr.NewCond(expr.Ltu,
 			expr.ConstFromUint(uint32(((0x1234|0xdbca8765)*5)&0xffffffff)),
 			expr.NewBinary(expr.Div,
 				expr.ConstFromUint[uint8](146-13),
@@ -177,7 +177,7 @@ func TestConstFold(t *testing.T) {
 		),
 	}, {
 		name: "eval_condition_output_width_change",
-		e: expr.NewCond(expr.Lts,
+		e: expr.NewCond(expr.Ltu,
 			expr.ConstFromUint[uint16](323),
 			expr.ConstFromUint[uint16](324),
 			expr.NewBinary(expr.Div,
@@ -211,7 +211,7 @@ func TestConstFold(t *testing.T) {
 	}, {
 		name: "eval_condition_intermediate_width_change_necessary",
 		e: expr.NewBinary(expr.Add,
-			expr.NewCond(expr.Lts,
+			expr.NewCond(expr.Ltu,
 				expr.ConstFromUint[uint16](323),
 				expr.ConstFromUint[uint16](324),
 				expr.NewBinary(expr.Div,

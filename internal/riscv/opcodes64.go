@@ -86,7 +86,7 @@ var integer64 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(condFunc(expr.Lts), true, i, width64)}
+			return []expr.Effect{branchCmp(exprtools.Lts, true, i, width64)}
 		},
 	}, {
 		name:         "bge",
@@ -95,7 +95,7 @@ var integer64 = []*instructionType{
 		hasOutputReg: false,
 		immediate:    immTypeB,
 		effects: func(i instruction) []expr.Effect {
-			return []expr.Effect{branchCmp(condFunc(expr.Lts), false, i, width64)}
+			return []expr.Effect{branchCmp(exprtools.Lts, false, i, width64)}
 		},
 	}, {
 		name:         "bltu",
@@ -261,8 +261,7 @@ var integer64 = []*instructionType{
 		hasOutputReg: true,
 		immediate:    immTypeI,
 		effects: func(i instruction) []expr.Effect {
-			val := expr.NewCond(
-				expr.Lts,
+			val := exprtools.Lts(
 				regLoad(rs1, i, width64),
 				immConst(immTypeI, i),
 				expr.One,
@@ -369,8 +368,7 @@ var integer64 = []*instructionType{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		effects: func(i instruction) []expr.Effect {
-			val := expr.NewCond(
-				expr.Lts,
+			val := exprtools.Lts(
 				regLoad(rs1, i, width64),
 				regLoad(rs2, i, width64),
 				expr.One,
@@ -735,7 +733,7 @@ var mul64 = []*instructionType{
 			shift := expr.ConstFromUint[uint8](64)
 			shifted := expr.NewBinary(expr.Rsh, mul, shift, width128)
 			val := exprtools.BoolCond(
-				exprtools.IntNegative(r1,width64),
+				exprtools.IntNegative(r1, width64),
 				shifted,
 				exprtools.Negate(shifted, width64),
 				width64,
@@ -946,7 +944,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicMinMax(expr.Lts, false), i, width64)
+			return atomicOp(atomicMinMax(exprtools.Lts, false), i, width64)
 		},
 	}, {
 		name:         "amomax.d",
@@ -957,7 +955,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicMinMax(expr.Lts, true), i, width64)
+			return atomicOp(atomicMinMax(exprtools.Lts, true), i, width64)
 		},
 	}, {
 		name:         "amominu.d",
@@ -968,7 +966,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicMinMax(expr.Ltu, false), i, width64)
+			return atomicOp(atomicMinMax(condFunc(expr.Ltu), false), i, width64)
 		},
 	}, {
 		name:         "amomaxu.d",
@@ -979,7 +977,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   8,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			return atomicOp(atomicMinMax(expr.Ltu, true), i, width64)
+			return atomicOp(atomicMinMax(condFunc(expr.Ltu), true), i, width64)
 		},
 	},
 
@@ -1085,7 +1083,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			f := atomicMinMax(expr.Lts, false)
+			f := atomicMinMax(exprtools.Lts, false)
 			return atomicOpWidth(f, i, width64, width32)
 		},
 	}, {
@@ -1097,7 +1095,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			f := atomicMinMax(expr.Lts, true)
+			f := atomicMinMax(exprtools.Lts, true)
 			return atomicOpWidth(f, i, width64, width32)
 		},
 	}, {
@@ -1109,7 +1107,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			f := atomicMinMax(expr.Ltu, false)
+			f := atomicMinMax(condFunc(expr.Ltu), false)
 			return atomicOpWidth(f, i, width64, width32)
 		},
 	}, {
@@ -1121,7 +1119,7 @@ var atomic64 = []*instructionType{
 		storeBytes:   4,
 		instrType:    model.TypeMemOrder,
 		effects: func(i instruction) []expr.Effect {
-			f := atomicMinMax(expr.Ltu, true)
+			f := atomicMinMax(condFunc(expr.Ltu), true)
 			return atomicOpWidth(f, i, width64, width32)
 		},
 	},

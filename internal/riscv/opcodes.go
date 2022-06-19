@@ -307,14 +307,14 @@ func branchCmp(
 	return expr.NewRegStore(ip, expr.IPKey, w)
 }
 
-func atomicMinMax(c expr.Condition, negate bool) binaryExprFunc {
+func atomicMinMax(f condExprFunc, negate bool) binaryExprFunc {
 	return func(e1, e2 expr.Expr, w expr.Width) expr.Expr {
-		t, f := e1, e2
+		trueExpr, falseExpr := e1, e2
 		if negate {
-			t, f = e2, e1
+			trueExpr, falseExpr = e2, e1
 		}
 
-		return expr.NewCond(c, e1, e2, t, f, w)
+		return f(e1, e2, trueExpr, falseExpr, w)
 	}
 }
 

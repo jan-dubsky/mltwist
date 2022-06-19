@@ -90,7 +90,7 @@ func TestPossibilities(t *testing.T) {
 		name: "mem_ref_cross",
 		e: expr.NewBinary(expr.Add,
 			expr.NewCond(
-				expr.Lts,
+				expr.Ltu,
 				expr.NewRegLoad("r1", expr.Width32),
 				expr.Zero,
 				expr.ConstFromUint[uint32](0x1000),

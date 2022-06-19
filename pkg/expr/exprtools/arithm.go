@@ -11,9 +11,17 @@ func Negate(e expr.Expr, w expr.Width) expr.Expr {
 	return expr.NewBinary(expr.Sub, expr.Zero, e, w)
 }
 
+// abs applies bit mask to e and returns absolute value of e in w bytes. Value
+// if w is width of mask which also determines width of the expression produced.
+func abs(e expr.Expr, mask expr.Expr) expr.Expr {
+	w := mask.Width()
+	return expr.NewCond(expr.Ltu, e, mask, e, Negate(e, w), w)
+}
+
 // Abs returns an absolute value of e with width w.
 func Abs(e expr.Expr, w expr.Width) expr.Expr {
-	return Les(expr.Zero, e, e, Negate(e, w), w)
+	mask := signBitMask(w)
+	return abs(e, mask)
 }
 
 // Ones returns expression of width w filled with all ones.
@@ -161,8 +169,7 @@ func RshA(e expr.Expr, shift expr.Expr, w expr.Width) expr.Expr {
 	sextRsh := SignExtend(rsh, signBitShiftedPos, w)
 
 	negativeRsh := Leu(shift, expr.NewConstUint(w.Bits(), w), sextRsh, Ones(w), w)
-	return expr.NewCond(
-		expr.Lts,
+	return Lts(
 		e,
 		expr.Zero,
 		negativeRsh,
