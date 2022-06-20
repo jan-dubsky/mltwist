@@ -86,13 +86,12 @@ func SignedMul(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
 		panic(fmt.Errorf("too big signed multiplication width: %d", w))
 	}
 
-	product := expr.NewBinary(expr.Mul, Abs(e1, w), Abs(e2, w), 2*w)
-	return BoolCond(
-		negativeSignJoin(e1, e2),
-		Negate(product, 2*w),
-		product,
-		2*w,
-	)
+	e1Ext := SignExtend(e1, expr.ConstFromUint(e1.Width().Bits()-1), 2*w)
+	e2Ext := SignExtend(e2, expr.ConstFromUint(e2.Width().Bits()-1), 2*w)
+
+	// Multiplication of k bit results has k lower bits same no matter
+	// whether it's signed or unsigned.
+	return expr.NewBinary(expr.Mul, e1Ext, e2Ext, 2*w)
 }
 
 func signedOp(

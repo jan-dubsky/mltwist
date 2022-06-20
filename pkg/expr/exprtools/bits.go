@@ -4,7 +4,7 @@ import "mltwist/pkg/expr"
 
 // BitNot negates every bit in e and returns result of width w.
 func BitNot(e expr.Expr, w expr.Width) expr.Expr {
-	return expr.NewBinary(expr.Nand, e, e, w)
+	return expr.NewBinary(expr.Nand, e, Ones(w), w)
 }
 
 // BitAnd calculates bitwise AND of e1 and e2 of width w.
