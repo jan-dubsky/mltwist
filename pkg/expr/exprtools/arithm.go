@@ -146,19 +146,25 @@ func SignedMod(e1 expr.Expr, e2 expr.Expr, w expr.Width) expr.Expr {
 // SignExtend implements sign extension of e, where bit at position signBit is
 // understood as sign bit. The resulting expression has width w. The result is
 // undefined if signBit is higher than width of resulting expression.
+//
+// SignBit is an index of bit starting with 0. So the least significant bit has
+// index zero.
+//
+// All bits higher than sign bit are set in both positive and negative cases.
+// Consequently, SignExpect(5, 1) is 1 ad bit 2 is set to the value of bit 1
+// which is zero.
 func SignExtend(e expr.Expr, signBit expr.Expr, w expr.Width) expr.Expr {
 	signMask := expr.NewBinary(expr.Lsh, expr.One, signBit, w)
 
-	validBitMask := Sub(signMask, expr.One, w)
-	validBits := BitAnd(e, validBitMask, w)
-
-	signBitMask := BitXor(Ones(w), validBitMask, w)
-	negative := BitOr(validBits, signBitMask, w)
+	// This is absolute value without sign.
+	valueBitsMask := Sub(signMask, expr.One, w)
+	valueSignBits := BitAnd(e, valueBitsMask, w)
+	signBitsMask := BitNot(valueBitsMask, w)
 
 	return BoolCond(
 		BitAnd(e, signMask, w),
-		negative,
-		validBits, // positive number,
+		BitOr(e, signBitsMask, w),
+		valueSignBits, // positive number,
 		w,
 	)
 }
@@ -169,19 +175,20 @@ func SignExtend(e expr.Expr, signBit expr.Expr, w expr.Width) expr.Expr {
 // Highest bits produced by shift are always filled by zeros for non-negative
 // number and always filled with ones for negative number.
 func RshA(e expr.Expr, shift expr.Expr, w expr.Width) expr.Expr {
+	ones := Ones(w)
+	shiftedMask := expr.NewBinary(expr.Rsh, ones, shift, w)
+	addedBitMask := Sub(ones, shiftedMask, w)
+
 	rsh := expr.NewBinary(expr.Rsh, e, shift, w)
+	rshNeg := BitOr(rsh, addedBitMask, w)
 
-	// Last bit in W bit number.
-	signBitOrigPos := expr.NewConstUint(w.Bits()-1, w)
-	signBitShiftedPos := Sub(signBitOrigPos, shift, w)
-	sextRsh := SignExtend(rsh, signBitShiftedPos, w)
-
-	negativeRsh := Leu(shift, expr.NewConstUint(w.Bits(), w), sextRsh, Ones(w), w)
-	return Lts(
+	// Note that negative numbers are greater then positive in unsigned
+	// comparison.
+	return expr.NewLess(
 		e,
-		expr.Zero,
-		negativeRsh,
+		signBitMask(w),
 		rsh,
+		rshNeg,
 		w,
 	)
 }

@@ -356,14 +356,21 @@ func TestSignExtend(t *testing.T) {
 		exp  expr.Expr
 	}{
 		{
-			name: "extend_positive",
-			e:    expr.ConstFromInt[int8](127),
+			name: "positive",
+			e:    expr.ConstFromInt[int8](0x7f),
 			sign: expr.ConstFromUint[uint8](7),
 			w:    expr.Width16,
 			exp:  expr.ConstFromInt[int16](127),
 		},
 		{
-			name: "extend_negative",
+			name: "negative",
+			e:    expr.ConstFromInt[int16](-567),
+			sign: expr.ConstFromUint[uint8](13),
+			w:    expr.Width64,
+			exp:  expr.ConstFromInt[int64](-567),
+		},
+		{
+			name: "negative_top_bit",
 			e:    expr.ConstFromInt[int16](-567),
 			sign: expr.ConstFromUint[uint8](15),
 			w:    expr.Width32,
