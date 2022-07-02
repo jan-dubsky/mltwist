@@ -18,8 +18,8 @@ func TestLtu(t *testing.T) {
 	}{
 		{
 			name: "equal",
-			v1:   expreval.NewValue([]byte{5, 7, 33, 249}),
-			v2:   expreval.NewValue([]byte{5, 7, 33, 249}),
+			v1:   newValue([]byte{5, 7, 33, 249}),
+			v2:   newValue([]byte{5, 7, 33, 249}),
 			w:    expr.Width32,
 			ltu:  false,
 		},
@@ -39,8 +39,8 @@ func TestLtu(t *testing.T) {
 		},
 		{
 			name: "cut_extend",
-			v1:   expreval.NewValue([]byte{45, 135, 0, 0, 34, 67, 87}),
-			v2:   expreval.NewValue([]byte{45, 135}),
+			v1:   newValue([]byte{45, 135, 0, 0, 34, 67, 87}),
+			v2:   newValue([]byte{45, 135}),
 			w:    expr.Width32,
 			ltu:  false,
 		},

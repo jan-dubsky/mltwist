@@ -1,53 +1,41 @@
-package expreval_test
+package expreval
 
 import (
-	"encoding/binary"
-	"mltwist/internal/exprtransform/internal/expreval"
 	"mltwist/pkg/expr"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func valUint(v uint64, w expr.Width) expreval.Value {
-	bs := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bs, v)
-	return expreval.NewValue(bs).SetWidth(w)
-}
-
-func TestValue_SetWidth(t *testing.T) {
+func TestValue_setWidth(t *testing.T) {
 	tests := []struct {
 		name string
-		v    expreval.Value
+		v    Value
 		w    expr.Width
-		exp  expreval.Value
-	}{
-		{
-			name: "same_size",
-			v:    expreval.NewValue([]byte{1, 2, 3, 4}),
-			w:    expr.Width32,
-			exp:  expreval.NewValue([]byte{1, 2, 3, 4}),
-		},
-		{
-			name: "cut_size",
-			v:    expreval.NewValue([]byte{1, 2, 3, 4}),
-			w:    expr.Width16,
-			exp:  expreval.NewValue([]byte{1, 2}),
-		},
-		{
-			name: "zero_extend",
-			v:    expreval.NewValue([]byte{1, 2, 3, 4}),
-			w:    expr.Width64,
-			exp:  expreval.NewValue([]byte{1, 2, 3, 4, 0, 0, 0, 0}),
-		},
-	}
+		exp  Value
+	}{{
+		name: "same_size",
+		v:    newValue([]byte{1, 2, 3, 4}),
+		w:    expr.Width32,
+		exp:  newValue([]byte{1, 2, 3, 4}),
+	}, {
+		name: "cut_size",
+		v:    newValue([]byte{1, 2, 3, 4}),
+		w:    expr.Width16,
+		exp:  newValue([]byte{1, 2}),
+	}, {
+		name: "zero_extend",
+		v:    newValue([]byte{1, 2, 3, 4}),
+		w:    expr.Width64,
+		exp:  newValue([]byte{1, 2, 3, 4, 0, 0, 0, 0}),
+	}}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			r := require.New(t)
 
-			r.Equal(tt.exp, tt.v.SetWidth(tt.w))
+			r.Equal(tt.exp, tt.v.setWidth(tt.w))
 		})
 	}
 }

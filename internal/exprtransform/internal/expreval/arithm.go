@@ -29,7 +29,7 @@ func init() {
 // Add calculates sum of val1 and val2 of width w.
 func Add(val1 Value, val2 Value, w expr.Width) Value {
 	sum := make([]byte, w)
-	bytes1, bytes2 := val1.SetWidth(w).bytes(), val2.SetWidth(w).bytes()
+	bytes1, bytes2 := val1.setWidth(w).bytes(), val2.setWidth(w).bytes()
 
 	var carry bool
 	for i := range sum {
@@ -86,10 +86,10 @@ func bitLsh(bs []byte, shift uint8) {
 func Lsh(val1 Value, val2 Value, w expr.Width) Value {
 	byteShift, bitShift, ok := shiftUint64(val2, w)
 	if !ok {
-		return Value{}.SetWidth(w)
+		return Value{}.setWidth(w)
 	}
 
-	val1Ext := val1.SetWidth(w).bytes()
+	val1Ext := val1.setWidth(w).bytes()
 	shifted := make([]byte, w)
 	for i := 0; i < int(w-expr.Width(byteShift)); i++ {
 		shifted[i+int(byteShift)] = val1Ext[i]
@@ -120,10 +120,10 @@ func bitRsh(bs []byte, shift uint8) {
 func Rsh(val1 Value, val2 Value, w expr.Width) Value {
 	byteShift, bitShift, ok := shiftUint64(val2, w)
 	if !ok {
-		return Value{}.SetWidth(w)
+		return Value{}.setWidth(w)
 	}
 
-	bytes1 := val1.SetWidth(w).bytes()
+	bytes1 := val1.setWidth(w).bytes()
 	shiftedLen := int(w - expr.Width(byteShift))
 	shifted := make([]byte, w)
 	for i := 0; i < shiftedLen; i++ {
@@ -140,7 +140,7 @@ func Rsh(val1 Value, val2 Value, w expr.Width) Value {
 func Mul(val1 Value, val2 Value, w expr.Width) Value {
 	val1Int, val2Int := val1.bigInt(w), val2.bigInt(w)
 	product := (&big.Int{}).Mul(val1Int, val2Int)
-	return parseBigInt(product).SetWidth(w)
+	return parseBigInt(product, w)
 }
 
 // Div calculates val1 (unsigned) divided by div2. The produced value is of
@@ -158,12 +158,12 @@ func Div(val1 Value, val2 Value, w expr.Width) Value {
 	}
 
 	div := (&big.Int{}).Div(val1.bigInt(w), val2Int)
-	return parseBigInt(div).SetWidth(w)
+	return parseBigInt(div, w)
 }
 
 func Nand(val1 Value, val2 Value, w expr.Width) Value {
 	result := make([]byte, w)
-	bytes1, bytes2 := val1.SetWidth(w).bytes(), val2.SetWidth(w).bytes()
+	bytes1, bytes2 := val1.setWidth(w).bytes(), val2.setWidth(w).bytes()
 
 	for i := range result {
 		result[i] = ^(bytes1[i] & bytes2[i])

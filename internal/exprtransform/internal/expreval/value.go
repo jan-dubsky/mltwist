@@ -1,7 +1,6 @@
 package expreval
 
 import (
-	"fmt"
 	"math/big"
 	"mltwist/pkg/expr"
 )
@@ -11,20 +10,9 @@ type Value struct {
 	bs []byte
 }
 
-// NewValue creates a new value comprising of bytes in b. Value overtakes
-// ownership of b. Consequently the caller is not allowed to modify b after this
-// call.
-func NewValue(b []byte) Value {
-	if ln := len(b); int(expr.Width(ln)) != ln {
-		panic(fmt.Sprintf("byte array is too long: %d", ln))
-	}
-
-	return newValue(b)
-}
-
 func newValue(b []byte) Value { return Value{bs: b} }
 
-// ParseConst converts contant expression into a value.
+// ParseConst converts constant expression into a value.
 func ParseConst(e expr.Const) Value {
 	// This implies that any modification of Value modified e as well. Given
 	// that we never modify Value in this package this is safe performance
@@ -33,10 +21,22 @@ func ParseConst(e expr.Const) Value {
 }
 
 // parseBigInt converts bit.Int into a value.
-func parseBigInt(i *big.Int) Value {
-	v := NewValue(i.Bytes())
-	v.revertBytes()
-	return v
+//
+// WANIRNG: The value of i is made invalid by this method and it's not allowed
+// to access i after this method returns.
+func parseBigInt(i *big.Int, w expr.Width) Value {
+	var bs []byte
+	if ln := len(i.Bytes()); ln >= int(w) {
+		// The byte order is big endian, so least significant bytes are
+		// at the end of the array.
+		bs = i.Bytes()[ln-int(w) : ln]
+	} else {
+		bs = make([]byte, w)
+		i.FillBytes(bs)
+	}
+
+	revertBytes(bs)
+	return newValue(bs)
 }
 
 // bytes return byte array stored in v.
@@ -45,8 +45,8 @@ func (v Value) bytes() []byte { return v.bs }
 // width returns number of bytes in v as expr.Width.
 func (v Value) width() expr.Width { return expr.Width(len(v.bytes())) }
 
-// SetWidth creates a new value with width w.
-func (v Value) SetWidth(w expr.Width) Value {
+// setWidth creates a new value with width w.
+func (v Value) setWidth(w expr.Width) Value {
 	if w <= v.width() {
 		return newValue(v.bytes()[:w])
 	}
@@ -58,11 +58,11 @@ func (v Value) SetWidth(w expr.Width) Value {
 
 // revertBytes converts bytes from big to little endian order and vice versa.
 //
-// WARNING: This method modified v.
-func (v *Value) revertBytes() {
-	ln := len(v.bs)
+// WARNING: This method modified bs.
+func revertBytes(bs []byte) {
+	ln := len(bs)
 	for i := 0; i < ln/2; i++ {
-		v.bs[i], v.bs[ln-1-i] = v.bs[ln-1-i], v.bs[i]
+		bs[i], bs[ln-1-i] = bs[ln-1-i], bs[i]
 	}
 }
 
@@ -70,20 +70,20 @@ func (v *Value) revertBytes() {
 func (v Value) clone() Value {
 	b := make([]byte, v.width())
 	copy(b, v.bytes())
-	return NewValue(b)
+	return newValue(b)
 }
 
 func (v Value) bigInt(w expr.Width) *big.Int {
 	// If w >= len(v), setting v into bigInt and setting v.SetWidth() is
-	// equivalent. Not calling SetWidth is juts a performance optimization
+	// equivalent. Not calling SetWidth is just a performance optimization
 	// not to copy the byte array multiple times.
 	vCut := v
 	if w < v.width() {
-		vCut = v.SetWidth(w)
+		vCut = v.setWidth(w)
 	}
 
 	vBig := vCut.clone()
-	vBig.revertBytes()
+	revertBytes(vBig.bs)
 
 	return (&big.Int{}).SetBytes(vBig.bytes())
 }
