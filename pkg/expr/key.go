@@ -8,6 +8,12 @@ const (
 	// IPKey identifies instruction pointer registers. Writes to this
 	// register will be interpreted as jumps.
 	//
+	// Reads of this register might result in undefined behaviour. This is
+	// true because internally the compiler is allowed to modify the
+	// position of an instruction and change the meaning if instruction
+	// pointer. Please prefer constant addressing based on the address of
+	// the instruction rather than reading this register.
+	//
 	// As the effect signature doesn't allow to express "conditional write"
 	// operation, a conditional jump has to unconditionally write this
 	// register key. This is not an issue as jump to following instruction

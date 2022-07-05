@@ -1,9 +1,21 @@
 package deps
 
-// insSpecial identifies if an instruction is a special type of an instructions.
+// isMemAccess checks if ins either loads or stores value from or to memory.
+func isMemAccess(ins *instruction) bool {
+	return len(ins.stores) > 0 || len(ins.loads) > 0
+}
+
+// insMemOrder identifies whether an instruction is a memory order special
+// instruction type.
+func insMemOrder(ins *instruction) bool {
+	return ins.typ.MemOrder()
+}
+
+// insSpecial identifies if an instruction is a special type of an instruction
+// other than memory order.
 func insSpecial(ins *instruction) bool {
 	t := ins.typ
-	return t.Syscall() || t.MemOrder() || t.CPUStateChange()
+	return t.Syscall() || t.CPUStateChange()
 }
 
 // parseSpecialDeps finds dependencies in between instructions we don't fully
@@ -22,26 +34,59 @@ func insSpecial(ins *instruction) bool {
 // an arbitrary memory address and value of an arbitrary register, so we have to
 // prohibit any reordering with the syscall instruction.
 func findSpecialDeps(instrs []*instruction) {
-	var last *instruction
+	var (
+		lastMemOrder *instruction
+		lastSpecial  *instruction
+	)
+
 	for _, ins := range instrs {
-		if last != nil {
-			addDep(last, ins)
+		if lastMemOrder != nil && isMemAccess(ins) {
+			addDep(lastMemOrder, ins)
+		}
+		if lastSpecial != nil {
+			addDep(lastSpecial, ins)
 		}
 
+		if insMemOrder(ins) {
+			lastMemOrder = ins
+		}
 		if insSpecial(ins) {
-			last = ins
+			// This is jump optimization of graph size. As special
+			// instruction is dependent on everything we don't need
+			// to add dependencies for memory order instructions as
+			// well.
+			lastMemOrder = nil
+			lastSpecial = ins
 		}
 	}
 
-	last = nil
+	// There is no special instruction in the block so the other walk will
+	// be no-op. This is just performance optimizations.
+	if lastMemOrder == nil && lastSpecial == nil {
+		return
+	}
+
+	lastMemOrder, lastSpecial = nil, nil
 	for i := len(instrs) - 1; i >= 0; i-- {
 		ins := instrs[i]
-		if last != nil {
-			addDep(ins, last)
+
+		if lastMemOrder != nil && (isMemAccess(ins) || insMemOrder(ins)) {
+			addDep(ins, lastMemOrder)
+		}
+		if lastSpecial != nil {
+			addDep(ins, lastSpecial)
 		}
 
+		if insMemOrder(ins) {
+			lastMemOrder = ins
+		}
 		if insSpecial(ins) {
-			last = ins
+			// This is jump optimization of graph size. As special
+			// instruction is dependent on everything we don't need
+			// to add dependencies for memory order instructions as
+			// well.
+			lastMemOrder = nil
+			lastSpecial = ins
 		}
 	}
 }
