@@ -25,7 +25,7 @@ const (
 	// where jump don't take an immediate effect some sort of redesign of
 	// this package or at least of this way of expressing jumps will be
 	// necessary.
-	IPKey Key = "#r:ip"
+	IPKey Key = "#r:w:ip"
 )
 
 // Key represents an arbitrary memory or register key used to identify memory
@@ -48,58 +48,83 @@ func NewKey(s string) Key { return Key(s) }
 func (k Key) allowedReserved() bool {
 	switch k {
 	case IPKey:
+		return true
 	default:
 		return false
 	}
-	return true
 }
 
 // validate checks that key value is valid (allowed) according to key
-// definition in a scope scope.
-func (k Key) validate(scope keyScope) error {
+// definition in a scope s and with permissions p.
+func (k Key) validate(s keyScope, p keyPermission) error {
 	if k == "" {
 		return fmt.Errorf("empty key is not allowed")
 	}
 	if k[0] != '#' {
 		return nil
 	}
-	if !k.allowedReserved() {
-		return fmt.Errorf("unknown key starting with #: %s", k)
+
+	if err := k.validateProps(s, p); err != nil {
+		return fmt.Errorf("invalid reserved key properties: %w", err)
 	}
 
-	err := k.validateScope(scope)
-	if err != nil {
-		return fmt.Errorf("invalid scope: %w", err)
+	if !k.allowedReserved() {
+		return fmt.Errorf("unknown reserved key: %s", k)
 	}
 
 	return nil
 }
 
-// validateScope checks that key k is allowed to be used in scope scope.
-func (k Key) validateScope(scope keyScope) error {
-	if l := len(k); l < 3 {
+func (k Key) validateProps(s keyScope, p keyPermission) error {
+	// Starting hash + scope + colon + permission + colon + at least one
+	// character of register name => 6 is the minimum.
+	if l := len(k); l < 6 {
 		return fmt.Errorf("key is to short (%d) for a reserved key: %s", l, k)
 	}
-	if k[2] != ':' {
-		return fmt.Errorf(
-			"reserved keys must start with single letter and colon: %s", k)
+	if k[2] != ':' || k[4] != ':' {
+		return fmt.Errorf("reserved key must have colons as index 2 and 4: %s", k)
 	}
 
-	keyScope := keyScope(k[1])
-	if err := keyScope.validate(); err != nil {
-		return err
+	keyScope, keyPermission := keyScope(k[1]), keyPermission(k[3])
+	if err := validateKeyProp(keyScope, s); err != nil {
+		return fmt.Errorf("reserved key scope not allowed: %w", err)
 	}
-	if !keyScope.allows(scope) {
-		return fmt.Errorf("key scope (%c) is not allowed in scope %c: %s",
-			keyScope, scope, k)
+	if err := validateKeyProp(keyPermission, p); err != nil {
+		return fmt.Errorf("reserved key permission not allowed: %w", err)
+	}
+
+	return nil
+}
+
+// keyProp describes any sort of information encoded in reserved register name.
+type keyProp[T any] interface {
+	// Present just to make the fmt.Errorf lister happy about it being char.
+	~byte
+	allows(T) bool
+	validate() error
+}
+
+// validateKeyProp validates whether both key and want are valid and then
+// asserts of wanted property w is allowed under a property k of the string key.
+func validateKeyProp[T keyProp[T]](k T, w T) error {
+	if err := k.validate(); err != nil {
+		return fmt.Errorf("invalid \"k\" property provides: %w", err)
+	}
+	if err := w.validate(); err != nil {
+		return fmt.Errorf("invalid \"w\" property provides: %w", err)
+	}
+	if !k.allows(w) {
+		return fmt.Errorf(
+			"key property of value '%c' doesn't allow wanted property: %c",
+			k, w)
 	}
 
 	return nil
 }
 
 // assertValid is a helper function which panics if key is not valid.
-func (k Key) assertValid(scope keyScope) {
-	if err := k.validate(scope); err != nil {
+func (k Key) assertValid(s keyScope, p keyPermission) {
+	if err := k.validate(s, p); err != nil {
 		panic(fmt.Sprintf("invalid key %q: %s", k, err.Error()))
 	}
 }
@@ -121,8 +146,8 @@ func (k Key) Reserved() bool { return k[0] == '#' }
 // introduce key scopes. Key scope is a single byte information at the beginning
 // of a reserved key (right after the starting hash), which is delimited from
 // the rest of the key by colon. This single byte can be either k or m to
-// represent either register or memory respectively. The scope b then indicates
-// conjunction of r and m.
+// represent either register or memory respectively. The scope b (both) then
+// indicates conjunction of r and m.
 //
 // As values of reserved keys are allowed to change in between package versions,
 // the notation of scopes can change as well.
@@ -150,13 +175,63 @@ func (s keyScope) allows(scope keyScope) bool {
 	return s == scope
 }
 
-// validate check is value of s is one of defined values and returns an error if
-// it's not.
+// validate check is value of s is one of defined values of scope and returns an
+// error if it's not.
 func (s keyScope) validate() error {
 	switch s {
 	case keyScopeReg, keyScopeMem, keyScopeRegMem:
 		return nil
 	default:
 		return fmt.Errorf("unknown scope: %c", s)
+	}
+}
+
+// keyPermission devotes which operations are valid for the key.
+//
+// Reserved keys have a special meaning defined by this package. For this reason
+// usage of reserved keys don;t have to always support both reads and written.
+// In other words some keys might have well-defined meaning only while read and
+// some only when written.
+//
+// To differentiate which operations are allowed for a given key, we introduce
+// key permissions. Key permission is a single byte information at the beginning
+// of a reserved key (right after the starting hash followed by scope and
+// colon), which is delimited from the rest of the key by (another) colon. This
+// single byte can be either r or w to represent either read or write
+// respectively. The permission b (both) then indicates conjunction of r and w.
+//
+// As values of reserved keys are allowed to change in between package versions,
+// the notation of permissions can change as well.
+type keyPermission byte
+
+const (
+	// keyPermissionRead specifies that the value can be only read.
+	keyPermissionRead = 'r'
+	// keyPermissionWrite specifies that the value can be only written.
+	keyPermissionWrite = 'w'
+	// keyPermissionReadWrite specifies that the value can be both read and
+	// written.
+	keyPermissionReadWrite = 'b'
+)
+
+// allows checks if scope p allows operation described by permission perm. In
+// other words, this check asserts that perm is subset of (or equal to) p using
+// set-related terms.
+func (p keyPermission) allows(perm keyPermission) bool {
+	if p == keyPermissionReadWrite {
+		return true
+	}
+
+	return p == perm
+}
+
+// validate check is value of p is one of defined values of permission and
+// returns an error if it's not.
+func (p keyPermission) validate() error {
+	switch p {
+	case keyPermissionRead, keyPermissionWrite, keyPermissionReadWrite:
+		return nil
+	default:
+		return fmt.Errorf("unknown permission string: %c", p)
 	}
 }
