@@ -44,10 +44,10 @@ type Step struct {
 	MemStores []MemAccess
 }
 
-func newEvaluation() *Step {
+func newStep(numEffects int) *Step {
 	return &Step{
 		RegLoads:  make(RegSet, 16),
-		RegStores: make(RegSet, 4),
+		RegStores: make(RegSet, numEffects),
 	}
 }
 

@@ -49,6 +49,7 @@ func New(
 // IP returns current state of instruction pointer of the program.
 func (e *Emulator) IP() model.Addr { return e.ip }
 
+// instruction returns instruction currently pointer by the instruction pointer.
 func (e *Emulator) instruction() (deps.Instruction, error) {
 	block, ok := e.code.Address(e.ip)
 	if !ok {
@@ -66,31 +67,39 @@ func (e *Emulator) instruction() (deps.Instruction, error) {
 }
 
 // Step performs a single instruction step of an emulation.
-func (e *Emulator) Step() (Step, error) {
+func (e *Emulator) Step() (*Step, error) {
 	ins, err := e.instruction()
 	if err != nil {
-		return Step{}, err
+		return nil, err
 	}
 
 	efs := ins.Effects()
-
-	eval := Step{
-		RegLoads:  make(RegSet, 16),
-		RegStores: make(RegSet, len(efs)),
-	}
+	s := newStep(len(efs))
 
 	efs = exprtransform.EffectsApply(efs, func(ex expr.Expr) expr.Expr {
-		return e.eval(ex, &eval)
+		return e.eval(ex, s)
 	})
 
 	nextIP := e.ip + ins.Len()
 	for _, ef := range efs {
+		// We can calculate new value of instruction pointer from our
+		// effects directly. The reason is that jump instruction can be
+		// never moved from it's last position n=in a basic block due to
+		// control dependencies. As we don't allow basic blocks to be
+		// moved in the address space, we are certain that all addresses
+		// (including constants pointing to the following instruction)
+		// are still valid.
 		if rStore, ok := ef.(expr.RegStore); ok && rStore.Key() == expr.IPKey {
 			val := rStore.Value().(expr.Const)
 			nextIP, _ = expr.ConstUint[model.Addr](val)
+
+			// We don't want the instruction pointer to be present
+			// in register storage as such a value would be ignored
+			// by future steps of the emulation.
+			continue
 		}
 
-		eval.recordOutput(ef)
+		s.recordOutput(ef)
 		ok := e.state.Apply(ef)
 		if !ok {
 			panic(fmt.Errorf("bug: state change couldn't be applied: %v", ef))
@@ -98,18 +107,25 @@ func (e *Emulator) Step() (Step, error) {
 	}
 
 	e.ip = nextIP
-	return eval, nil
+	return s, nil
 }
 
-func (e *Emulator) eval(ex expr.Expr, eval *Step) expr.Const {
-	ex = e.evalRegsFully(ex, eval)
-	ex = e.evalMemoryFully(ex, eval)
+// eval substitutes all non-constant expressions (register loads and memory
+// loads) for values from the emulator storage. If the value read is not stored
+// in the storage, the value is supplied by stateProvider interface and stored
+// into the storage.
+func (e *Emulator) eval(ex expr.Expr, s *Step) expr.Const {
+	ex = e.evalRegsFully(ex, s)
+	ex = e.evalMemoryFully(ex, s)
 
 	// We have replaced all register and memory loads by constants,
 	// so the result of const fold has to be constant.
 	return exprtransform.ConstFold(ex).(expr.Const)
 }
 
+// regValue reads constant value of register key of width w from the internal
+// storage. Is the value is not present in the register storage, it's obtained
+// using stateProvider interface and stored in the register storage.
 func (e *Emulator) regValue(key expr.Key, w expr.Width) expr.Const {
 	if val, ok := e.state.Regs.Load(key, w); ok {
 		return val.(expr.Const)
@@ -122,12 +138,12 @@ func (e *Emulator) regValue(key expr.Key, w expr.Width) expr.Const {
 	return val
 }
 
-func (e *Emulator) evalRegsFully(ex expr.Expr, eval *Step) expr.Expr {
+func (e *Emulator) evalRegsFully(ex expr.Expr, s *Step) expr.Expr {
 	ex = exprtransform.ReplaceAll(ex, func(curr expr.RegLoad) (expr.Expr, bool) {
 		key := curr.Key()
 		val := e.regValue(key, curr.Width())
 
-		eval.inputReg(key, val)
+		s.inputReg(key, val)
 		return val, true
 	})
 
@@ -137,6 +153,10 @@ func (e *Emulator) evalRegsFully(ex expr.Expr, eval *Step) expr.Expr {
 	return ex
 }
 
+// memValue reads a constant value of memory address adds in memory address
+// space key of width w from the internal storage. Is the value is not present
+// in the memory, it's obtained using stateProvider interface and stored in the
+// memory storage.
 func (e *Emulator) memValue(key expr.Key, addr model.Addr, w expr.Width) expr.Const {
 	if val, ok := e.state.Mems.Load(key, addr, w); ok {
 		return val.(expr.Const)
@@ -166,7 +186,7 @@ func (e *Emulator) memValue(key expr.Key, addr model.Addr, w expr.Width) expr.Co
 	return val.(expr.Const)
 }
 
-func (e *Emulator) evalMemoryFully(ex expr.Expr, eval *Step) expr.Expr {
+func (e *Emulator) evalMemoryFully(ex expr.Expr, s *Step) expr.Expr {
 	ex = exprtransform.ReplaceAll(ex, func(curr expr.MemLoad) (expr.Expr, bool) {
 		key, w := curr.Key(), curr.Width()
 
@@ -177,7 +197,7 @@ func (e *Emulator) evalMemoryFully(ex expr.Expr, eval *Step) expr.Expr {
 		addr, _ := expr.ConstUint[model.Addr](addrConst)
 
 		val := e.memValue(key, addr, w)
-		eval.memRead(key, addr, val)
+		s.memRead(key, addr, val)
 
 		return val, true
 	})

@@ -134,6 +134,9 @@ func nonzeroUpperIdx(b []byte) int {
 // ConstUint converts Const into an arbitrary uint type. The boolean return
 // value indicates if Const value fits T. If Const value doesn't fit T, returned
 // value contains lower sizeof(T) bytes.
+//
+// Stupid Go 1.18 doesn't allow type parameters for methods so this has to be a
+// function...
 func ConstUint[T constraints.Unsigned](c Const) (T, bool) {
 	fits := true
 	var val T
