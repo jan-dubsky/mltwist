@@ -10,7 +10,7 @@ import (
 
 type State struct {
 	// Regs represents state of registry file.
-	Regs RegMap
+	Regs *RegMap
 	// Mems is set of memories and their respective states.
 	Mems memory.MemMap
 }
@@ -38,7 +38,7 @@ func (s *State) Apply(ef expr.Effect) bool {
 		s.Mems.Store(e.Key(), addr, e.Value(), e.Width())
 		return true
 	case expr.RegStore:
-		s.Regs[e.Key()] = exprtransform.SetWidth(e.Value(), e.Width())
+		s.Regs.Store(e.Key(), e.Value(), e.Width())
 		return true
 	default:
 		panic(fmt.Sprintf("unknown expr.Effect type: %T", ef))

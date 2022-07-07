@@ -18,7 +18,9 @@ import (
 // this alias and to make the code more variable in the future.
 //
 // For future compatibility, it's guaranteed that this type will be always an
-// unsigned integer and that uint64 will be always castable to this type.
+// unsigned integer and that uint64 will be always convertible to this type. On
+// the other hand it's not guaranteed that Addr will be always convertible to
+// uint64.
 type Addr uint64
 
 const (

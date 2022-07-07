@@ -29,8 +29,9 @@ type Emulator struct {
 //
 // Argument stat will be used by the Emulator to store writes the emulated
 // program performs. Consequently it can be used to read/change the state of the
-// emulation. For the very same reason, an yaccess of stat must be synchronized
-// with Step method calls.
+// emulation. For the very same reason, any access of stat must be synchronized
+// with Step method calls. Any violation of this synchronization might result in
+// undefined behaviour.
 func New(
 	code *deps.Code,
 	ip model.Addr,
@@ -110,14 +111,14 @@ func (e *Emulator) eval(ex expr.Expr, eval *Step) expr.Const {
 }
 
 func (e *Emulator) regValue(key expr.Key, w expr.Width) expr.Const {
-	if val, ok := e.state.Regs[key]; ok {
+	if val, ok := e.state.Regs.Load(key, w); ok {
 		return val.(expr.Const)
 	}
 
 	val := e.stateProv.Register(key, w)
 	val = val.WithWidth(w)
+	e.state.Regs.Store(key, val, w)
 
-	e.state.Regs[key] = val
 	return val
 }
 

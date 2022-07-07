@@ -59,7 +59,7 @@ func TestState_Apply(t *testing.T) {
 			if tt.regChanged {
 				r.NotEmpty(s.Regs)
 			} else {
-				r.Empty(s.Regs)
+				r.Empty(s.Regs.Values())
 			}
 
 			if tt.memChanged {

@@ -27,8 +27,8 @@ func newRegView(state *state.State) *regView {
 }
 
 func (v *regView) lines() int {
-	regCnt := len(v.state.Regs)
-	if _, ok := v.state.Regs[expr.IPKey]; ok {
+	regCnt := v.state.Regs.Len()
+	if _, ok := v.state.Regs.Load(expr.IPKey, expr.Width8); ok {
 		regCnt--
 	}
 
@@ -43,9 +43,9 @@ func (v *regView) lines() int {
 func (v *regView) MinLines() int { return v.lines() }
 func (v *regView) MaxLines() int { return v.lines() }
 
-func regKeys(regs state.RegMap) []expr.Key {
-	keys := make([]expr.Key, 0, len(regs))
-	for k := range regs {
+func regKeys(regs *state.RegMap) []expr.Key {
+	keys := make([]expr.Key, 0, regs.Len())
+	for k := range regs.Values() {
 		// This one will be visualized by cursor position.
 		if k == expr.IPKey {
 			continue
@@ -61,7 +61,7 @@ func regKeys(regs state.RegMap) []expr.Key {
 func (v *regView) printLine(line []expr.Key) error {
 	regs := make([]string, len(line))
 	for i, k := range line {
-		val := v.state.Regs[k].(expr.Const)
+		val := v.state.Regs.Values()[k].(expr.Const)
 
 		bs := make([]byte, val.Width())
 		copy(bs, val.Bytes())

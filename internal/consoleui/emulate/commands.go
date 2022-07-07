@@ -85,12 +85,12 @@ func commands(m *mode) []consoleui.Command {
 			key := expr.Key(args[0].(string))
 			regs := m.stat.Regs
 
-			r, ok := regs[key]
+			r, ok := regs.Values()[key]
 			if !ok {
 				return fmt.Errorf("register is not set at all: %s", key)
 			}
 
-			regs[key] = readRegister(key, r.Width())
+			regs.Store(key, readRegister(key, r.Width()), r.Width())
 			return nil
 		},
 	}}
