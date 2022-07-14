@@ -17,7 +17,8 @@ func testInputInsJump(
 ) parser.Instruction {
 	jumps := make([]expr.Effect, len(jumpAddrs))
 	for i, j := range jumpAddrs {
-		jumps[i] = expr.NewRegStore(model.AddrExpr(j), expr.IPKey, expr.Width32)
+		a := expr.NewConstUint(j, model.AddrWidth)
+		jumps[i] = expr.NewRegStore(a, expr.IPKey, expr.Width32)
 	}
 
 	return parser.Instruction{

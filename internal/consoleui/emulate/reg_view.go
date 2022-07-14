@@ -46,11 +46,6 @@ func (v *regView) MaxLines() int { return v.lines() }
 func regKeys(regs *state.RegMap) []expr.Key {
 	keys := make([]expr.Key, 0, regs.Len())
 	for k := range regs.Values() {
-		// This one will be visualized by cursor position.
-		if k == expr.IPKey {
-			continue
-		}
-
 		keys = append(keys, k)
 	}
 

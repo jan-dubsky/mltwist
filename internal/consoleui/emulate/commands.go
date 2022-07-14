@@ -31,7 +31,7 @@ func commands(m *mode) []consoleui.Command {
 		Keys: []string{"memories", "mems", "ms"},
 		Help: "List all memories the program wrote.",
 		Action: func(_ *consoleui.UI, args ...interface{}) error {
-			mems := m.stat.Mems
+			mems := m.emul.State.Mems
 			keys := make([]expr.Key, 0, len(mems))
 			for k := range mems {
 				keys = append(keys, k)
@@ -57,14 +57,14 @@ func commands(m *mode) []consoleui.Command {
 		Args: []consoleui.ArgParseFunc{cmdtools.ParseString},
 		Action: func(ui *consoleui.UI, args ...interface{}) error {
 			key := expr.Key(args[0].(string))
-			mem := m.stat.Mems[key]
+			mem := m.emul.State.Mems[key]
 
 			mode := memview.New(mem)
 			name := fmt.Sprintf("memview(%s)", key)
 			return ui.AddMode(name, mode)
 		},
 	}, {
-		Keys: []string{"reqmod", "rmod"},
+		Keys: []string{"regmod", "rmod"},
 		Help: "Modify register of the running application.",
 		Args: []consoleui.ArgParseFunc{cmdtools.ParseString},
 		// Please note that it makes absolutely no sense to change the
@@ -83,7 +83,7 @@ func commands(m *mode) []consoleui.Command {
 		// dynamically.
 		Action: func(_ *consoleui.UI, args ...interface{}) error {
 			key := expr.Key(args[0].(string))
-			regs := m.stat.Regs
+			regs := m.emul.State.Regs
 
 			r, ok := regs.Values()[key]
 			if !ok {

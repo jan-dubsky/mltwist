@@ -10,56 +10,80 @@ import (
 )
 
 type Emulator struct {
-	code  *deps.Code
-	ip    model.Addr
-	state *state.State
-
+	code      *deps.Code
 	stateProv StateProvider
+
+	// State represents the current state of the emulation.
+	//
+	// It's allowed to both read and write values from this state. The only
+	// requirement on values written is that all those values have to be of
+	// type expr.Const. Violation of this requirement might result in
+	// undefined behaviour of the emulation.
+	//
+	// As this field is used by emulation, it's required that any access of
+	// State must be synchronized with Step method calls. Any violation of
+	// this synchronization might result in undefined behaviour.
+	State *state.State
 }
 
 // New creates new emulator instance.
 //
 // The newly created emulator emulates instructions in prog and starts emulation
 // at address ip. The initial state of program memory and registers is given by
-// stat. If value of any memory bytes or a register is unknown to the emulator,
+// state. If value of any memory bytes or a register is unknown to the emulator,
 // such value is obtained using stateProv.
 //
 // Argument prog is treated as read-only value, but it must not be modified
 // during the Emulator lifetime.
-//
-// Argument stat will be used by the Emulator to store writes the emulated
-// program performs. Consequently it can be used to read/change the state of the
-// emulation. For the very same reason, any access of stat must be synchronized
-// with Step method calls. Any violation of this synchronization might result in
-// undefined behaviour.
 func New(
 	code *deps.Code,
 	ip model.Addr,
-	stat *state.State,
 	stateProv StateProvider,
+	state *state.State,
 ) *Emulator {
+	state.Regs.Store(expr.IPKey, expr.ConstFromUint(ip), model.AddrWidth)
+
 	return &Emulator{
 		code:      code,
-		ip:        ip,
 		stateProv: stateProv,
-		state:     stat,
+		State:     state,
 	}
 }
 
-// IP returns current state of instruction pointer of the program.
-func (e *Emulator) IP() model.Addr { return e.ip }
+// MustIP returns a current value of instruction pointer.
+//
+// This function panics if the value of instruction pointer is not stored in a
+// state, if the value stored there is not constant or if the constant doesn't
+// fit model.Addr type.
+func (e *Emulator) MustIP() model.Addr {
+	ex, ok := e.State.Regs.Load(expr.IPKey, model.AddrWidth)
+	if !ok {
+		panic("instruction pointer register is missing in registry file.")
+	}
+
+	c := ex.(expr.Const)
+	ip, ok := expr.ConstUint[model.Addr](c)
+	if !ok {
+		panic(fmt.Sprintf(
+			"constant value of instruction pointer doesn't fit address: %v",
+			c.Bytes(),
+		))
+	}
+
+	return ip
+}
 
 // instruction returns instruction currently pointer by the instruction pointer.
-func (e *Emulator) instruction() (deps.Instruction, error) {
-	block, ok := e.code.Address(e.ip)
+func (e *Emulator) instruction(ip model.Addr) (deps.Instruction, error) {
+	block, ok := e.code.Address(ip)
 	if !ok {
-		err := fmt.Errorf("cannot find block at address 0x%x", e.ip)
+		err := fmt.Errorf("cannot find block at address 0x%x", ip)
 		return deps.Instruction{}, err
 	}
 
-	ins, ok := block.Address(e.ip)
+	ins, ok := block.Address(ip)
 	if !ok {
-		err := fmt.Errorf("cannot find instruction at address 0x%x", e.ip)
+		err := fmt.Errorf("cannot find instruction at address 0x%x", ip)
 		return deps.Instruction{}, err
 	}
 
@@ -68,7 +92,8 @@ func (e *Emulator) instruction() (deps.Instruction, error) {
 
 // Step performs a single instruction step of an emulation.
 func (e *Emulator) Step() (*Step, error) {
-	ins, err := e.instruction()
+	ip := e.MustIP()
+	ins, err := e.instruction(ip)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +105,7 @@ func (e *Emulator) Step() (*Step, error) {
 		return e.eval(ex, s)
 	})
 
-	nextIP := e.ip + ins.Len()
+	var jumped bool
 	for _, ef := range efs {
 		// We can calculate new value of instruction pointer from our
 		// effects directly. The reason is that jump instruction can be
@@ -90,23 +115,23 @@ func (e *Emulator) Step() (*Step, error) {
 		// (including constants pointing to the following instruction)
 		// are still valid.
 		if rStore, ok := ef.(expr.RegStore); ok && rStore.Key() == expr.IPKey {
-			val := rStore.Value().(expr.Const)
-			nextIP, _ = expr.ConstUint[model.Addr](val)
-
-			// We don't want the instruction pointer to be present
-			// in register storage as such a value would be ignored
-			// by future steps of the emulation.
-			continue
+			jumped = true
 		}
 
 		s.recordOutput(ef)
-		ok := e.state.Apply(ef)
+		ok := e.State.Apply(ef)
 		if !ok {
 			panic(fmt.Errorf("bug: state change couldn't be applied: %v", ef))
 		}
 	}
 
-	e.ip = nextIP
+	// Instruction is not a jump instruction so we have to adjust
+	// instruction pointer ourselves.
+	if !jumped {
+		c := expr.ConstFromUint(ins.End())
+		e.State.Regs.Store(expr.IPKey, c, model.AddrWidth)
+	}
+
 	return s, nil
 }
 
@@ -127,13 +152,13 @@ func (e *Emulator) eval(ex expr.Expr, s *Step) expr.Const {
 // storage. Is the value is not present in the register storage, it's obtained
 // using stateProvider interface and stored in the register storage.
 func (e *Emulator) regValue(key expr.Key, w expr.Width) expr.Const {
-	if val, ok := e.state.Regs.Load(key, w); ok {
+	if val, ok := e.State.Regs.Load(key, w); ok {
 		return val.(expr.Const)
 	}
 
 	val := e.stateProv.Register(key, w)
 	val = val.WithWidth(w)
-	e.state.Regs.Store(key, val, w)
+	e.State.Regs.Store(key, val, w)
 
 	return val
 }
@@ -158,11 +183,11 @@ func (e *Emulator) evalRegsFully(ex expr.Expr, s *Step) expr.Expr {
 // in the memory, it's obtained using stateProvider interface and stored in the
 // memory storage.
 func (e *Emulator) memValue(key expr.Key, addr model.Addr, w expr.Width) expr.Const {
-	if val, ok := e.state.Mems.Load(key, addr, w); ok {
+	if val, ok := e.State.Mems.Load(key, addr, w); ok {
 		return val.(expr.Const)
 	}
 
-	for _, intv := range e.state.Mems.Missing(key, addr, w).Intervals() {
+	for _, intv := range e.State.Mems.Missing(key, addr, w).Intervals() {
 		addr := intv.Begin()
 		// We are certain that length first expr.Width as we provided
 		// expr.Width to the missing call. The wort possible case is
@@ -173,10 +198,10 @@ func (e *Emulator) memValue(key expr.Key, addr model.Addr, w expr.Width) expr.Co
 		val := e.stateProv.Memory(key, intv.Begin(), w)
 		val = val.WithWidth(w)
 
-		e.state.Mems.Store(key, addr, val, w)
+		e.State.Mems.Store(key, addr, val, w)
 	}
 
-	val, ok := e.state.Mems.Load(key, addr, w)
+	val, ok := e.State.Mems.Load(key, addr, w)
 	if !ok {
 		panic(fmt.Sprintf(
 			"bug: memory with width %d at addr 0x%x not present",

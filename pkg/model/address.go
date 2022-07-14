@@ -30,8 +30,5 @@ const (
 	MaxAddress Addr = math.MaxUint64
 )
 
-// AddrExpr is a helper function creating expr.Const with width of Address type
-// and value of a.
-func AddrExpr(a Addr) expr.Const {
-	return expr.NewConstUint(a, expr.Width(unsafe.Sizeof(a)))
-}
+// AddrWidth is expression width capable of capturing any addr value.
+const AddrWidth = expr.Width(unsafe.Sizeof(Addr(0)))

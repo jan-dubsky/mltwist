@@ -15,7 +15,6 @@ var _ consoleui.Mode = &mode{}
 
 type mode struct {
 	code *deps.Code
-	stat *state.State
 	emul *emulator.Emulator
 
 	lineView *lines.View
@@ -23,14 +22,13 @@ type mode struct {
 }
 
 func New(code *deps.Code, ip model.Addr, stat *state.State) (*mode, error) {
-	emul := emulator.New(code, ip, stat, &stateProvider{})
+	emul := emulator.New(code, ip, &stateProvider{}, stat)
 
 	lineView := lines.NewView(code)
 	regView := newRegView(stat)
 
 	e := &mode{
 		code: code,
-		stat: stat,
 		emul: emul,
 
 		lineView: lineView,
@@ -48,8 +46,7 @@ func (e *mode) Commands() []consoleui.Command { return commands(e) }
 func (e *mode) View() view.View               { return e.view }
 
 func (e *mode) refreshCursor() error {
-	ip := e.emul.IP()
-
+	ip := e.emul.MustIP()
 	block, ok := e.code.Address(ip)
 	if !ok {
 		return fmt.Errorf("cannot find block containing address 0x%x", ip)
