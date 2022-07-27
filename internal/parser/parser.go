@@ -33,7 +33,7 @@ func (p *parsing) parse(offset uint64) error {
 
 	instr, err := p.s.Parse(bytes)
 	if err != nil {
-		return fmt.Errorf("cannot parse instruction ot offset 0x%x: %w",
+		return fmt.Errorf("cannot parse instruction at offset 0x%x: %w",
 			offset, err)
 	}
 

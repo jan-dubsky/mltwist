@@ -29,6 +29,9 @@ const (
 	TypeCJump
 	TypeLoad
 	TypeStore
+	TypeMemOrder
+	TypeCPUStateChange
+	TypeSyscall
 )
 
 func (t Type) Mov() bool   { return t&TypeMov != 0 }

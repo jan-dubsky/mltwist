@@ -53,9 +53,14 @@ func group(instrs []instr) []maskGroup {
 			return !byteEQ(instrs[i+begin].opcode.Mask, mask)
 		})
 
+		groupInstrs := instrs[begin:end]
+		sort.Slice(groupInstrs, func(i, j int) bool {
+			return byteLE(groupInstrs[i].masked, groupInstrs[j].masked)
+		})
+
 		g := maskGroup{
 			mask:         mask,
-			instructions: instrs[begin:end],
+			instructions: groupInstrs,
 		}
 
 		groups = append(groups, g)

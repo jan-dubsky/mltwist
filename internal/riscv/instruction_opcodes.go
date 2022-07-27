@@ -1,6 +1,7 @@
 package riscv
 
 import (
+	"decomp/internal/instruction"
 	"decomp/internal/opcode"
 	"fmt"
 	"sort"
@@ -18,6 +19,26 @@ func assertMask(b byte, mask byte) {
 	}
 }
 
+// revertBytes is an utility function which reverts b as a slice. For more
+// convenience, this function also returns b.
+//
+// The purpose of this method is to lower cognitive complexity of RISC-V
+// instruction definition in the code. The problem is that even though RISC-V
+// instructions are encoded in little endian byte order, the RICS-V
+// specification ifself user big endian notation (least significant byte is the
+// right-most byte). This misalignment in between ste specs and real
+// implementation is expected. In human readable documents, it's just common to
+// write least significant byte and bit to right. But as humans are not good in
+// reverting byte sequences they read, it's much better solution to write
+// instruction opcodes in big endian and then to revert the array.
+func revertBytes(b []byte) []byte {
+	for i := 0; i < len(b)/2; i++ {
+		j := len(b) - i - 1
+		b[i], b[j] = b[j], b[i]
+	}
+	return b
+}
+
 func opcode7(low byte) opcode.Opcode {
 	assertMask(low, low7Bits)
 
@@ -32,8 +53,8 @@ func opcode10(high byte, low byte) opcode.Opcode {
 	assertMask(high, low3Bits)
 
 	return opcode.Opcode{
-		Bytes: []byte{high << 4, low},
-		Mask:  []byte{low3Bits << 4, low7Bits},
+		Bytes: []byte{low, high << 4},
+		Mask:  []byte{low7Bits, low3Bits << 4},
 	}
 }
 
@@ -43,8 +64,8 @@ func opcode17(high byte, mid byte, low byte) opcode.Opcode {
 	assertMask(high, low7Bits)
 
 	return opcode.Opcode{
-		Bytes: []byte{high << 1, 0, mid << 4, low},
-		Mask:  []byte{low7Bits << 1, 0, low3Bits << 4, low7Bits},
+		Bytes: []byte{low, mid << 4, 0, high << 1},
+		Mask:  []byte{low7Bits, low3Bits << 4, 0, low7Bits << 1},
 	}
 }
 
@@ -118,60 +139,71 @@ var arithm32 = []*instructionOpcode{
 		inputRegCnt:  0,
 		hasOutputReg: true,
 		immediate:    immTypeU,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "auipc",
 		opcode:       opcode7(0b0010111),
 		inputRegCnt:  0,
 		hasOutputReg: true,
 		immediate:    immTypeU,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "jal",
 		opcode:       opcode7(0b1101111),
 		inputRegCnt:  0,
 		hasOutputReg: true,
 		immediate:    immTypeJ,
+		instrType:    instruction.TypeJump,
 	}, {
 		name:         "jalr",
 		opcode:       opcode10(0b000, 0b1100111),
-		inputRegCnt:  0,
+		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
+		// TODO: How to evaluate dynamic just target.
+		instrType: instruction.TypeJump,
 	}, {
 		name:         "beq",
 		opcode:       opcode10(0b000, 0b1100011),
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
+		instrType:    instruction.TypeCJump,
 	}, {
 		name:         "bne",
 		opcode:       opcode10(0b001, 0b1100011),
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
+		instrType:    instruction.TypeCJump,
 	}, {
 		name:         "blt",
 		opcode:       opcode10(0b100, 0b1100011),
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
+		instrType:    instruction.TypeCJump,
 	}, {
 		name:         "bge",
 		opcode:       opcode10(0b101, 0b1100011),
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
+		instrType:    instruction.TypeCJump,
 	}, {
 		name:         "bltu",
 		opcode:       opcode10(0b110, 0b1100011),
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
+		instrType:    instruction.TypeCJump,
 	}, {
 		name:         "bgeu",
 		opcode:       opcode10(0b111, 0b1100011),
 		inputRegCnt:  2,
 		hasOutputReg: false,
 		immediate:    immTypeB,
+		instrType:    instruction.TypeCJump,
 	}, {
 		name:         "lb",
 		opcode:       opcode10(0b000, 0b0000011),
@@ -179,6 +211,7 @@ var arithm32 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    1,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeLoad,
 	}, {
 		name:         "lh",
 		opcode:       opcode10(0b001, 0b0000011),
@@ -186,6 +219,7 @@ var arithm32 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    2,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeLoad,
 	}, {
 		name:         "lw",
 		opcode:       opcode10(0b010, 0b0000011),
@@ -193,6 +227,7 @@ var arithm32 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    4,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeLoad,
 	}, {
 		name:         "lbu",
 		opcode:       opcode10(0b100, 0b0000011),
@@ -201,6 +236,7 @@ var arithm32 = []*instructionOpcode{
 		loadBytes:    1,
 		unsigned:     true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeLoad,
 	}, {
 		name:         "lhu",
 		opcode:       opcode10(0b101, 0b0000011),
@@ -209,6 +245,7 @@ var arithm32 = []*instructionOpcode{
 		loadBytes:    2,
 		unsigned:     true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeLoad,
 	}, {
 		name:         "sb",
 		opcode:       opcode10(0b000, 0b0100011),
@@ -216,6 +253,7 @@ var arithm32 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   1,
 		immediate:    immTypeS,
+		instrType:    instruction.TypeStore,
 	}, {
 		name:         "sh",
 		opcode:       opcode10(0b001, 0b0100011),
@@ -223,6 +261,7 @@ var arithm32 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   2,
 		immediate:    immTypeS,
+		instrType:    instruction.TypeStore,
 	}, {
 		name:         "sw",
 		opcode:       opcode10(0b010, 0b0100011),
@@ -230,142 +269,166 @@ var arithm32 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   4,
 		immediate:    immTypeS,
+		instrType:    instruction.TypeStore,
 	}, {
 		name:         "addi",
 		opcode:       opcode10(0b000, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "slti",
 		opcode:       opcode10(0b010, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "sltiu",
 		opcode:       opcode10(0b011, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "xori",
 		opcode:       opcode10(0b100, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "ori",
 		opcode:       opcode10(0b110, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "andi",
 		opcode:       opcode10(0b111, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "slli",
 		opcode:       opcodeShiftImm(false, 5, 0b001, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeISh32,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "srli",
 		opcode:       opcodeShiftImm(false, 5, 0b101, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeISh32,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "srai",
 		opcode:       opcodeShiftImm(true, 5, 0b101, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeISh32,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "add",
 		opcode:       opcode17(0b0000000, 0b000, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "sub",
 		opcode:       opcode17(0b0100000, 0b000, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "sll",
 		opcode:       opcode17(0b0000000, 0b001, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "slt",
 		opcode:       opcode17(0b0000000, 0b010, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "sltu",
 		opcode:       opcode17(0b0000000, 0b011, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "xor",
 		opcode:       opcode17(0b0000000, 0b100, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "srl",
 		opcode:       opcode17(0b0000000, 0b101, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "sra",
 		opcode:       opcode17(0b0100000, 0b101, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "or",
 		opcode:       opcode17(0b0000000, 0b110, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "and",
 		opcode:       opcode17(0b0000000, 0b111, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name: "fence",
 		opcode: opcode.Opcode{
-			Bytes: []byte{0, 0, 0, 0b0001111},
-			Mask:  []byte{0xf0, 0x0f, 0xff, 0xff},
+			Bytes: revertBytes([]byte{0, 0, 0, 0b0001111}),
+			Mask:  revertBytes([]byte{0xf0, 0x0f, 0xff, 0xff}),
 		},
 		inputRegCnt:  0,
 		hasOutputReg: false,
+		instrType:    instruction.TypeMemOrder,
 	}, {
 		name: "fence.i",
 		opcode: opcode.Opcode{
-			Bytes: []byte{0, 0, 1 << 4, 0b0001111},
-			Mask:  []byte{0xff, 0xff, 0xff, 0xff},
+			Bytes: revertBytes([]byte{0, 0, 1 << 4, 0b0001111}),
+			Mask:  revertBytes([]byte{0xff, 0xff, 0xff, 0xff}),
 		},
 		inputRegCnt:  0,
 		hasOutputReg: false,
+		instrType:    instruction.TypeMemOrder,
 	}, {
 		name: "ecall",
 		opcode: opcode.Opcode{
-			Bytes: []byte{0, 0, 0, 0b1110011},
-			Mask:  []byte{0xff, 0xff, 0xff, 0xff},
+			Bytes: revertBytes([]byte{0, 0, 0, 0b1110011}),
+			Mask:  revertBytes([]byte{0xff, 0xff, 0xff, 0xff}),
 		},
 		inputRegCnt:  0,
 		hasOutputReg: false,
+		instrType:    instruction.TypeSyscall,
 	}, {
 		name: "ebreak",
 		opcode: opcode.Opcode{
-			Bytes: []byte{0, 1 << 4, 0, 0b1110011},
-			Mask:  []byte{0xff, 0xff, 0xff, 0xff},
+			Bytes: revertBytes([]byte{0, 1 << 4, 0, 0b1110011}),
+			Mask:  revertBytes([]byte{0xff, 0xff, 0xff, 0xff}),
 		},
 		inputRegCnt:  0,
 		hasOutputReg: false,
+		instrType:    instruction.TypeSyscall,
 	},
 	// TODO: Reconsider whether CSF address should be considered an
 	// immediate value or whether it should have a specific meaning.
@@ -375,18 +438,21 @@ var arithm32 = []*instructionOpcode{
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeCPUStateChange,
 	}, {
 		name:         "csrrs",
 		opcode:       opcode10(0b010, 0b1110011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeCPUStateChange,
 	}, {
 		name:         "csrrc",
 		opcode:       opcode10(0b011, 0b1110011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeCPUStateChange,
 	},
 	// FIXME: There are 2 independent immediate values in those 3
 	// instructions. Find a way how to parse and represent those
@@ -396,16 +462,19 @@ var arithm32 = []*instructionOpcode{
 		opcode:       opcode10(0b101, 0b1110011),
 		inputRegCnt:  0,
 		hasOutputReg: true,
+		instrType:    instruction.TypeCPUStateChange,
 	}, {
 		name:         "csrrsi",
 		opcode:       opcode10(0b110, 0b1110011),
 		inputRegCnt:  0,
 		hasOutputReg: true,
+		instrType:    instruction.TypeCPUStateChange,
 	}, {
 		name:         "csrrci",
 		opcode:       opcode10(0b111, 0b1110011),
 		inputRegCnt:  0,
 		hasOutputReg: true,
+		instrType:    instruction.TypeCPUStateChange,
 	},
 }
 
@@ -418,6 +487,7 @@ var arithm64 = []*instructionOpcode{
 		loadBytes:    4,
 		unsigned:     true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeLoad,
 	}, {
 		name:         "ld",
 		opcode:       opcode10(0b011, 0b0000011),
@@ -425,6 +495,7 @@ var arithm64 = []*instructionOpcode{
 		hasOutputReg: true,
 		loadBytes:    8,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeLoad,
 	}, {
 		name:         "sd",
 		opcode:       opcode10(0b011, 0b0100011),
@@ -432,78 +503,91 @@ var arithm64 = []*instructionOpcode{
 		hasOutputReg: false,
 		storeBytes:   8,
 		immediate:    immTypeS,
+		instrType:    instruction.TypeStore,
 	}, {
 		name:         "slli",
 		opcode:       opcodeShiftImm(false, 6, 0b001, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeISh64,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "srli",
 		opcode:       opcodeShiftImm(false, 6, 0b101, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeISh64,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "srai",
 		opcode:       opcodeShiftImm(true, 6, 0b101, 0b0010011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeISh64,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "addiw",
 		opcode:       opcode10(0b000, 0b0011011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeI,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "slliw",
 		opcode:       opcodeShiftImm(false, 5, 0b001, 0b0011011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeISh32,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "srliw",
 		opcode:       opcodeShiftImm(false, 5, 0b101, 0b0011011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeISh32,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "sraiw",
 		opcode:       opcodeShiftImm(true, 5, 0b101, 0b0011011),
 		inputRegCnt:  1,
 		hasOutputReg: true,
 		immediate:    immTypeISh32,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "addw",
 		opcode:       opcode17(0b0000000, 0b000, 0b0111011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "subw",
 		opcode:       opcode17(0b0100000, 0b000, 0b0111011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "sllw",
 		opcode:       opcode17(0b0000000, 0b001, 0b0111011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "srlw",
 		opcode:       opcode17(0b0000000, 0b101, 0b0111011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "sraw",
 		opcode:       opcode17(0b0100000, 0b101, 0b0111011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	},
 }
 
@@ -514,48 +598,56 @@ var mul32 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "mulh",
 		opcode:       opcode17(0b0000001, 0b001, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "mulhsu",
 		opcode:       opcode17(0b0000001, 0b010, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "mulhu",
 		opcode:       opcode17(0b0000001, 0b011, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "div",
 		opcode:       opcode17(0b0000001, 0b100, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "divu",
 		opcode:       opcode17(0b0000001, 0b101, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "rem",
 		opcode:       opcode17(0b0000001, 0b110, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "remu",
 		opcode:       opcode17(0b0000001, 0b111, 0b0110011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	},
 }
 
@@ -566,30 +658,35 @@ var mul64 = []*instructionOpcode{
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "divw",
 		opcode:       opcode17(0b0000001, 0b100, 0b0111011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "divuw",
 		opcode:       opcode17(0b0000001, 0b101, 0b0111011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "remw",
 		opcode:       opcode17(0b0000001, 0b110, 0b0111011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	}, {
 		name:         "remuw",
 		opcode:       opcode17(0b0000001, 0b111, 0b0111011),
 		inputRegCnt:  2,
 		hasOutputReg: true,
 		immediate:    immTypeR,
+		instrType:    instruction.TypeAritm,
 	},
 }
 
@@ -633,7 +730,7 @@ func overrideInstructions(
 	instrs []*instructionOpcode,
 	overrides []*instructionOpcode,
 ) []*instructionOpcode {
-	// Create own sorted copy to allow quick (log(n)) search. This trick
+	// Create own sorted copy to allow quick O(log(n)) search. This trick
 	// decreases the overall complexity from O(n^2) to O(n*log(n))
 	os := make([]*instructionOpcode, len(overrides))
 	copy(os, overrides)
@@ -643,16 +740,15 @@ func overrideInstructions(
 
 	// Preallocate the worst possible case - as there will be few filtered
 	// instructions, we are not waisting as much as in case of exponential
-	// growth of the buffer.
+	// growth of the buffer, which would most likely result in significantly
+	// bigger array.
 	replaced := make([]*instructionOpcode, 0, len(instrs)+len(overrides))
 	for _, instr := range instrs {
-		name := instr.Name()
-
 		i := sort.Search(len(os), func(i int) bool {
-			return strings.Compare(name, os[i].Name()) > -1
+			return strings.Compare(os[i].name, instr.name) > -1
 		})
 
-		if i == len(os) || os[i].Name() != name {
+		if i == len(os) || os[i].name != instr.name {
 			replaced = append(replaced, instr)
 		}
 	}
