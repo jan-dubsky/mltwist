@@ -144,6 +144,11 @@ func (i *instruction) Len() model.Addr { return model.Addr(len(i.bytes)) }
 // address taken into account is the one returned by Begin(), not OrigAddr().
 func (i *instruction) End() model.Addr { return i.currAddr + i.Len() }
 
+// Bytes returns byte representation of an instruction in machine code.
+//
+// WARNING: Slice returned by this function must be treated as read-only.
+func (i *instruction) Bytes() []byte { return i.bytes }
+
 // OrigAddr returns the in-memory address of the instruction in the original
 // binary.
 func (i *instruction) OrigAddr() model.Addr { return i.origAddr }

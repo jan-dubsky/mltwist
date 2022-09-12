@@ -1,12 +1,16 @@
 package lines
 
 import (
-	"mltwist/internal/deps"
 	"fmt"
+	"mltwist/internal/deps"
 	"strings"
 )
 
-var blockIndent = strings.Repeat(" ", 4)
+// instrMaxLen is maximal expected length of instruction textual representation.
+const instrMaxLen = 24
+
+// instrLineFormat is cached format string to produce an instruction line value.
+var instrLineFormat = fmt.Sprintf("%4s %%-%ds | %%s", "", instrMaxLen)
 
 // Line represents a single Line of the instruction visualization.
 type Line struct {
@@ -40,9 +44,23 @@ func newBlockLine(b deps.Block) Line {
 	}
 }
 
+func byteStr(bs []byte) string {
+	var sb strings.Builder
+	sb.Grow(3*len(bs) - 1)
+
+	for i, b := range bs {
+		if i > 0 {
+			sb.WriteByte(' ')
+		}
+		sb.WriteString(fmt.Sprintf("%02X", b))
+	}
+
+	return sb.String()
+}
+
 func newInstrLine(b deps.Block, ins deps.Instruction) Line {
 	return Line{
-		value: fmt.Sprintf("%s %s", blockIndent, ins.String()),
+		value: fmt.Sprintf(instrLineFormat, ins.String(), byteStr(ins.Bytes())),
 		block: b.Idx(),
 		instr: ins.Idx(),
 	}
