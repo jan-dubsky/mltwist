@@ -8,7 +8,7 @@ ENV LC_ALL=C
 
 # Initialization of submodules takes quite long to be worth of caching in a
 # separate layer.
-RUN git submodule update --init riscv-gcc riscv-binutils glibc
+RUN git submodule update --init glibc
 RUN ./configure --prefix=/opt/riscv --with-arch=rv64ima
 RUN make linux
 ENV PATH="/opt/riscv/bin:${PATH}" CC="riscv64-unknown-linux-gnu-gcc -misa-spec=2.2 -mabi=lp64 -march=rv64im"
